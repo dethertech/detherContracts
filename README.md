@@ -7,7 +7,9 @@ stop after 'saving artifacts'
 # to run test    
 `truffle test`   
 
-# to upgrade npm packages
+# to upgrade npm packages    
+https://www.npmjs.com/package/dethercontract    
+
 `cd build`   
 `npm version patch`   
 `npm publish`    

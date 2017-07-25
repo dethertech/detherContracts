@@ -1,6 +1,6 @@
 const LightWalletProvider = require('@digix/truffle-lightwallet-provider');
-const pass = 'Dether76';
-// kovan 0xD2805712d2fF5EFF50F8E28506F8e5A2acdD80a8
+const pass = 'azerty';
+// kovan 0xe2e8d89c9435a92eedfade8c94e14118a3156f09
 
 module.exports = {
   networks: {
@@ -11,7 +11,7 @@ module.exports = {
     },
     kovan: {
       provider: new LightWalletProvider({
-        keystore: './sigmate-v3-ropstenDeploy.json',
+        keystore: './sigmate-v3-deploysc.json',
         password: pass,
         rpcUrl: 'https://kovan.infura.io/v604Wu8pXGoPC41ARh0B',
         // debug: true, // optional, show JSON-RPC logs
