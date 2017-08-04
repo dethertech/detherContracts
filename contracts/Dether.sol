@@ -18,13 +18,14 @@ contract Dether is Ownable, SafeMath {
     string name;
     int8 currencyId;            // 1 = dollar , 2 = eur, 3 = CNY, 4 = KRW
     int8 avatarId;              // avatar
-    string messengerAddr;           // telegram account
+    string messengerAddr;       // telegram account
   }
 
 
   address[] public listAdressesTellers;
   mapping(address => Teller) tellers;
 
+  // will be modified with a circular listed chain to be able to delete
   mapping (uint => address[]) public tellerPerZone;
   event Transfer (address indexed _from, address indexed _to, uint256 _value);
 
@@ -52,6 +53,7 @@ contract Dether is Ownable, SafeMath {
         , tellers[_teller].zoneId);
   }
 
+  // add require > 100 finney
   function getTellerProfile(address _teller) constant returns (int8 rates,
     uint volumeTrade,
     uint nbTrade,
@@ -59,13 +61,14 @@ contract Dether is Ownable, SafeMath {
     int8 currency,
     int8 avatar,
     string telAddr) {
-        return (tellers[_teller].rates
-        , tellers[_teller].volumeTrade
-        , tellers[_teller].nbTrade
-        , tellers[_teller].name
-        , tellers[_teller].currencyId
-        , tellers[_teller].avatarId
-        , tellers[_teller].messengerAddr);
+      require(tellers[_teller].balance > 100 finney);
+      return (tellers[_teller].rates
+      , tellers[_teller].volumeTrade
+      , tellers[_teller].nbTrade
+      , tellers[_teller].name
+      , tellers[_teller].currencyId
+      , tellers[_teller].avatarId
+      , tellers[_teller].messengerAddr);
   }
 
   function updatePoint(uint lat, uint lng, uint zone, int8 rates, string _address) {
