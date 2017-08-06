@@ -9,12 +9,12 @@ contract Dether is Ownable, SafeMath {
   // state variables
 
   struct Teller {
-    int8 rate;                // commission rate teller is going to take 3 digit with 1 decimal
+    int16 rate;                // commission rate teller is going to take 3 digit with 1 decimal
     uint balance;             // balance credited in escrow
     uint volumeTrade;         // volume realised
     uint nbTrade;             // number of trade realised
-    uint lat;
-    uint lng;
+    int256 lat;
+    int256 lng;
     uint zoneId;
     string name;
     int8 currencyId;            // 1 = dollar , 2 = eur, 3 = CNY, 4 = KRW
@@ -33,10 +33,10 @@ contract Dether is Ownable, SafeMath {
   // public functions
 
   function registerPoint(
-    uint _lat,
-    uint _lng,
+    int256 _lat,
+    int256 _lng,
     uint _zone,
-    int8 _rate,
+    int16 _rate,
     int8 _avatar,
     int8 _currency,
     string _address,
@@ -57,25 +57,28 @@ contract Dether is Ownable, SafeMath {
   }
 
   function getTellerPos(address _teller) constant returns (
-    uint lat,
-    uint lng,
-    uint zone) {
+    int256 lat,
+    int256 lng,
+    uint zone,
+    uint balance) {
+    require(tellers[_teller].balance > 10 finney);
     return (
       tellers[_teller].lat,
       tellers[_teller].lng,
-      tellers[_teller].zoneId
+      tellers[_teller].zoneId,
+      tellers[_teller].balance
     );
   }
 
   // add require > 100 finney
-  function getTellerProfile(address _teller) constant returns (int8 rates,
+  function getTellerProfile(address _teller) constant returns (int16 rates,
     uint volumeTrade,
     uint nbTrade,
     string name,
     int8 currency,
     int8 avatar,
     string telAddr) {
-      require(tellers[_teller].balance > 100 finney);
+      require(tellers[_teller].balance > 10 finney);
       return (tellers[_teller].rate
       , tellers[_teller].volumeTrade
       , tellers[_teller].nbTrade
@@ -84,12 +87,12 @@ contract Dether is Ownable, SafeMath {
       , tellers[_teller].avatarId
       , tellers[_teller].messengerAddr);
   }
-
+/*
   function updatePoint(
     uint _lat,
     uint _lng,
     uint _zone,
-    int8 _rate,
+    int16 _rate,
     string _address
   ) {
       tellers[msg.sender].rate = _rate;
@@ -103,28 +106,30 @@ contract Dether is Ownable, SafeMath {
     uint _lat,
     uint _lng,
     uint _zone,
-    int8 _rate,
+    int16 _rate,
     string _address
   ) payable {
       require(tellers[msg.sender].balance > 1 finney);
-      tellers[msg.sender].balance = add(tellers[msg.sender].balance,msg.value);
+      tellers[msg.sender].balance = add(tellers[msg.sender].balance, msg.value);
       tellers[msg.sender].rate = _rate;
       tellers[msg.sender].lat = _lat;
       tellers[msg.sender].lng = _lng;
       tellers[msg.sender].zoneId = _zone;
       tellers[msg.sender].messengerAddr = _address;
-  }
+  }*/
 
   function sendCoin (address _receiver, uint _amount) returns (bool) {
-    require(tellers[msg.sender].balance > _amount);
+    require(tellers[msg.sender].balance >= _amount);
     _receiver.transfer(_amount);
     tellers[msg.sender].balance = sub(tellers[msg.sender].balance, _amount);
     tellers[msg.sender].volumeTrade = add(tellers[msg.sender].volumeTrade, _amount);
     ++tellers[msg.sender].nbTrade;
+    if (tellers[msg.sender].balance == 0) {
+      tellers[msg.sender].zoneId = 0;
+    }
     Transfer(msg.sender, _receiver, _amount);
     return true;
   }
-
 
   function getZone(uint _zone) constant returns (address[]) {
       return tellerPerZone[_zone];
@@ -134,6 +139,8 @@ contract Dether is Ownable, SafeMath {
   function withdrawAll() {
     msg.sender.transfer(tellers[msg.sender].balance);
     tellers[msg.sender].balance = 0;
+    tellers[msg.sender].zoneId = 0;
+    tellers[msg.sender].messengerAddr = "";
   }
 
   function getTellerBalances(address _address) constant returns (uint) {

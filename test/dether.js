@@ -17,13 +17,12 @@ contract('Dether', () => {
     [creator
     , teller1
     , teller2
-    , buyer1
-    , buyer2
-    , globalFund,
+    , teller3
+    , teller4
+    , teller5
     ] = web3.eth.accounts;
   // const escrow = "0x0303030303030303030303030303030303030303";
   let dether = null;
-  console.log('account', creator, teller1, teller2, buyer1, buyer2, globalFund);
   // const evmThrow = err =>
   //   assert.isOk(err.message.match(/invalid JUMP/), err.message, 'should throw');
   //
@@ -42,19 +41,49 @@ contract('Dether', () => {
   //           assert.equal(from, res.toFixed(), `not Phase.${PhaseStr[from]}`))));
 
 
-  it('can register a Teller', () => {
+  it('can register a Teller and send coin', () => {
+    let escrowBalance = 0;
+    let regularBalance = 0;
     Dether.new({ from: creator })
       .then((res) => {
-        console.log('contract ', res);
         dether = res;
-        return dether.registerPoint(123456, 987654, 42, 30, 1, 1, 'http://t.me/teller1', { from: teller1, value: web3.toWei('100', 'ether') });
-      })
-      .then(() => dether.registerPoint(444444, 5555555, 42, 25, 2, 2, 'http://t.me/teller2', { from: teller2, value: web3.toWei('100', 'ether') }))
-      .then(() => dether.tellers.call(teller1))
+        // return dether.getZone(42);
+        return dether.registerPoint(123456, 987654, 42, 300, 1, 1, "http://t.me/teller1", "teller1", { from: teller1, value: web3.toWei(1, 'ether'), gas: 1000000 });
+      }).then(() => dether.registerPoint(444444, 5555555, 42, 250, 2, 2, 'http://t.me/teller2', 'teller2', { from: teller2, value: web3.toWei(1, 'ether') }))
+      .then(() => dether.registerPoint(1234333, 234535, 42, 250, 2, 2, 'http://t.me/teller3', 'teller3', { from: teller3, value: web3.toWei(1, 'ether') }))
+      .then(() => dether.registerPoint(1234333, 234535, 41, 250, 2, 2, 'http://t.me/teller4', 'teller3', { from: teller4, value: web3.toWei(1, 'ether') }))
+      .then(() => dether.getTellerProfile(teller1))
       .then((res) => {
-        console.log('teller1 ', res[0].toString(), res[1].toString());
-        return assert.equal(1, 1, 'dumb equal');
+        return assert.equal(res[0].toNumber(), 300, 'verif rates');
+      }).then(() => dether.getTellerBalances(teller1))
+      .then((res) => {
+        escrowBalance = web3.fromWei(res.toNumber(), 'ether');
+        return web3.eth.getBalance(teller2);
+      }).then((res) => {
+        regularBalance = web3.fromWei(res.toNumber(), 'ether');
+        return dether.sendCoin(teller2, web3.toWei(0.01, 'ether') , { from: teller1, gas: 1000000});
+      }).then(() => dether.getTellerProfile(teller1))
+      .then((res) => {
+        assert.equal(res[1], web3.toWei(0.01, 'ether'), 'volume');
+        assert.equal(res[2], 1, 'volume');
+        return web3.eth.getBalance(teller2);
+      }).then((res) => {
+        assert.isAbove(web3.fromWei(res.toNumber(), 'ether'), regularBalance, 'receive eth');
+
+        // test number of point et delete point
+        return dether.getZone(42);
+      }).then((res) => {
+        console.log('zone 42 ', res);
+      //   return dether.registerPoint(1234333, 234535, 42, 250, 2, 2, 'http://t.me/teller4', 'teller3', { from: teller4, value: web3.toWei(1, 'ether') });
+      // }).then(() => {
+        return dether.withdrawAll({from: teller2});
+      }).then(() => dether.getZone(42))
+      .then((res) => {
+        console.log('res ', res);
+      }).catch((err) => {
+        console.log('err = ', err);
       });
+
   });
 
 
@@ -306,6 +335,5 @@ contract('Dether', () => {
   it("tokenManager can call withdrawEther in Phase.Migrated", () =>
     token.withdrawEther({from: tokenManager})
       .then(() => {}))
-
-  */
+*/
 });
