@@ -24,12 +24,12 @@ module.exports = {
     //   network_id: 3,
     //   from: "0xe070b23860FA281252aC4ABB8d3E120f088d1Fb1",
     // },
-    // kovan: {
-    //   host: "localhost",
-    //   port: 8545,
-    //   network_id: 42,
-    //   from: "0xbb5a8A90F2404f7F2DBd9777168F90A746386dBa",
-    // },
+    kovanManual: {
+      host: "localhost",
+      port: 8545,
+      network_id: 42,
+      from: "0x00816fD686EAa5C1B80463b7cb6cB8D76A505268",
+    },
     mainnet: {
       host: 'localhost',
       port: 8545,

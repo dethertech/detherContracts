@@ -52,7 +52,8 @@ contract Dether is Ownable, SafeMath {
       tellers[msg.sender].lng = _lng;
       tellers[msg.sender].name = _name;
       tellers[msg.sender].messengerAddr = _address;
-      tellerPerZone[_zone].push(msg.sender);
+      if (tellers[msg.sender].zoneId != _zone)
+        tellerPerZone[_zone].push(msg.sender);
       tellers[msg.sender].zoneId = _zone;
   }
 
@@ -87,36 +88,6 @@ contract Dether is Ownable, SafeMath {
       , tellers[_teller].avatarId
       , tellers[_teller].messengerAddr);
   }
-/*
-  function updatePoint(
-    uint _lat,
-    uint _lng,
-    uint _zone,
-    int16 _rate,
-    string _address
-  ) {
-      tellers[msg.sender].rate = _rate;
-      tellers[msg.sender].lat = _lat;
-      tellers[msg.sender].lng = _lng;
-      tellers[msg.sender].zoneId = _zone;
-      tellers[msg.sender].messengerAddr = _address;
-  }
-
-  function updatePointAddFund(
-    uint _lat,
-    uint _lng,
-    uint _zone,
-    int16 _rate,
-    string _address
-  ) payable {
-      require(tellers[msg.sender].balance > 1 finney);
-      tellers[msg.sender].balance = add(tellers[msg.sender].balance, msg.value);
-      tellers[msg.sender].rate = _rate;
-      tellers[msg.sender].lat = _lat;
-      tellers[msg.sender].lng = _lng;
-      tellers[msg.sender].zoneId = _zone;
-      tellers[msg.sender].messengerAddr = _address;
-  }*/
 
   function sendCoin (address _receiver, uint _amount) returns (bool) {
     require(tellers[msg.sender].balance >= _amount);
@@ -124,9 +95,9 @@ contract Dether is Ownable, SafeMath {
     tellers[msg.sender].balance = sub(tellers[msg.sender].balance, _amount);
     tellers[msg.sender].volumeTrade = add(tellers[msg.sender].volumeTrade, _amount);
     ++tellers[msg.sender].nbTrade;
-    if (tellers[msg.sender].balance == 0) {
+    /*if (tellers[msg.sender].balance == 0) {
       tellers[msg.sender].zoneId = 0;
-    }
+    }*/
     Transfer(msg.sender, _receiver, _amount);
     return true;
   }
@@ -139,12 +110,11 @@ contract Dether is Ownable, SafeMath {
   function withdrawAll() {
     msg.sender.transfer(tellers[msg.sender].balance);
     tellers[msg.sender].balance = 0;
-    tellers[msg.sender].zoneId = 0;
+    // tellers[msg.sender].zoneId = 0;
     tellers[msg.sender].messengerAddr = "";
   }
 
   function getTellerBalances(address _address) constant returns (uint) {
     return tellers[_address].balance;
   }
-
 }
