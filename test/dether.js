@@ -1,339 +1,105 @@
 /* global contract it artifacts web3 assert*/
-const Dether = artifacts.require('./Dether.sol');
+const DetherAbs = artifacts.require('./Dether.sol');
 
-// const Phase = {
-//   Created:   0,
-//   Running:   1,
-//   Paused:    2,
-//   Migrating: 3,
-//   Migrated:  4
-// };
+// --> TEST TO ADD:
+// ADD TELLER, AND DELETE FROM ZONE
+// REPUTATION
 
-// const PhaseStr = {};
-// Object.keys(Phase).forEach(k => PhaseStr[Phase[k]] = k);
 
 contract('Dether', () => {
+  /*
+   * init
+   */
+  const teller1 = {} , teller2 = {} , teller3 = {} , buyer1 = {} , buyer2 = {} , buyer3 = {};
+  teller1.rate = 300;
+  teller1.lat = 123456;
+  teller1.lng = 987654;
+  teller1.zoneId = 42;
+  teller1.name = 'teller1';
+  teller1.currencyId = 1;
+  teller1.avatarId = 1;
+  teller1.messengerAddr = 'http://t.me/teller1';
+  teller1.address = '';
+  teller1.balance = 0;
+  teller1.escrowBalance = 0;
+  let payment1 = 1;
+
+  teller2.rate = 123;
+  teller2.lat = 444444;
+  teller2.lng = 5555555;
+  teller2.zoneId = 42;
+  teller2.name = 'teller2';
+  teller2.currencyId = 2;
+  teller2.avatarId = 2;
+  teller2.messengerAddr = 'http://t.me/teller2';
+  teller2.balance = 0;
+  teller2.escrowBalance = 0;
+  let payment2 = 1;
+
+  teller3.rate = 222;
+  teller3.lat = 1234333;
+  teller3.lng = 234535;
+  teller3.zoneId = 42;
+  teller3.name = 'teller3';
+  teller3.currencyId = 2;
+  teller3.avatarId = 3;
+  teller3.messengerAddr = 'http://t.me/teller3';
+  teller3.balance = 0;
+  teller3.escrowBalance = 0;
+  let payment3 = 1;
+
   const
     [creator
-    , teller1
-    , teller2
-    , teller3
-    , teller4
-    , teller5
+    , teller1address
+    , teller2address
+    , teller3address
+    , buyer1address
+    , buyer2address
+    , buyer3address
     ] = web3.eth.accounts;
-  // const escrow = "0x0303030303030303030303030303030303030303";
+
   let dether = null;
-  // const evmThrow = err =>
-  //   assert.isOk(err.message.match(/invalid JUMP/), err.message, 'should throw');
-  //
-  // const ok = (from, to) =>
-  //   it(`can move from ${PhaseStr[from]} to ${PhaseStr[to]}`, () =>
-  //     token.setPresalePhase(to, {from: tokenManager}).then(() =>
-  //       token.currentPhase.call().then(res =>
-  //         assert.equal(to, res.toFixed(), `not Phase.${PhaseStr[to]}`))));
 
-  // const no = (from, to) =>
-  //   it(`can't move from ${PhaseStr[from]} to ${PhaseStr[to]}`, () =>
-  //     token.setPresalePhase(to, {from: tokenManager})
-  //       .then(assert.fail)
-  //       .catch(() =>
-  //         token.currentPhase.call().then(res =>
-  //           assert.equal(from, res.toFixed(), `not Phase.${PhaseStr[from]}`))));
+    before(async () => {
+      dether = await DetherAbs.deployed();
+    })
 
-
-  it('can register a Teller and send coin', () => {
+  it('can register a Teller and be on the map', async() => {
     let escrowBalance = 0;
     let regularBalance = 0;
-    Dether.new({ from: creator })
-      .then((res) => {
-        dether = res;
-        // return dether.getZone(42);
-        return dether.registerPoint(123456, 987654, 42, 300, 1, 1, "http://t.me/teller1", "teller1", { from: teller1, value: web3.toWei(1, 'ether'), gas: 1000000 });
-      }).then(() => dether.registerPoint(444444, 5555555, 42, 250, 2, 2, 'http://t.me/teller2', 'teller2', { from: teller2, value: web3.toWei(1, 'ether') }))
-      .then(() => dether.registerPoint(1234333, 234535, 42, 250, 2, 2, 'http://t.me/teller3', 'teller3', { from: teller3, value: web3.toWei(1, 'ether') }))
-      .then(() => dether.registerPoint(1234333, 234535, 41, 250, 2, 2, 'http://t.me/teller4', 'teller3', { from: teller4, value: web3.toWei(1, 'ether') }))
-      .then(() => dether.getTellerProfile(teller1))
-      .then((res) => {
-        return assert.equal(res[0].toNumber(), 300, 'verif rates');
-      }).then(() => dether.getTellerBalances(teller1))
-      .then((res) => {
-        escrowBalance = web3.fromWei(res.toNumber(), 'ether');
-        return web3.eth.getBalance(teller2);
-      }).then((res) => {
-        regularBalance = web3.fromWei(res.toNumber(), 'ether');
-        return dether.sendCoin(teller2, web3.toWei(0.01, 'ether') , { from: teller1, gas: 1000000});
-      }).then(() => dether.getTellerProfile(teller1))
-      .then((res) => {
-        assert.equal(res[1], web3.toWei(0.01, 'ether'), 'volume');
-        assert.equal(res[2], 1, 'volume');
-        return web3.eth.getBalance(teller2);
-      }).then((res) => {
-        assert.isAbove(web3.fromWei(res.toNumber(), 'ether'), regularBalance, 'receive eth');
+    await dether.registerPoint(teller1.lat, teller1.lng, teller1.zoneId, teller1.rate, teller1.avatarId, teller1.currencyId, teller1.messengerAddr, teller1.name, { from: teller1address, value: web3.toWei(payment1, 'ether'), gas: 1000000 });
+    await dether.registerPoint(teller2.lat, teller2.lng, teller2.zoneId, teller2.rate, teller2.avatarId, teller2.currencyId, teller2.messengerAddr, teller2.name, { from: teller2address, value: web3.toWei(payment2, 'ether'), gas: 1000000 });
+    await dether.registerPoint(teller3.lat, teller3.lng, teller3.zoneId, teller3.rate, teller3.avatarId, teller3.currencyId, teller3.messengerAddr, teller3.name, { from: teller3address, value: web3.toWei(payment3, 'ether'), gas: 1000000 });
 
-        // test number of point et delete point
-        return dether.getZone(42);
-      }).then((res) => {
-        console.log('zone 42 ', res);
-      //   return dether.registerPoint(1234333, 234535, 42, 250, 2, 2, 'http://t.me/teller4', 'teller3', { from: teller4, value: web3.toWei(1, 'ether') });
-      // }).then(() => {
-        return dether.withdrawAll({from: teller2});
-      }).then(() => dether.getZone(42))
-      .then((res) => {
-        console.log('res ', res);
-      }).catch((err) => {
-        console.log('err = ', err);
-      });
+    const pos2 = await dether.getTellerPos(teller2address);
+    assert.equal(pos2[0].toNumber(), teller2.lat, 'verif lat');
+    assert.equal(pos2[1].toNumber(), teller2.lng, 'verif lng');
+    assert.equal(pos2[2].toNumber(), teller2.zoneId, 'verif zone');
+    assert.equal(pos2[3].toNumber(), web3.toWei(teller2.balance + payment2, 'ether'), 'verif balance');
+
+    const profile3 = await dether.getTellerProfile(teller3address);
+    assert.equal(profile3[0].toNumber(), teller3.rate, 'verif rates');
+    assert.equal(profile3[3], teller3.name, 'verif name');
+    assert.equal(profile3[4].toNumber(), teller3.currencyId, 'verif currency');
+    assert.equal(profile3[5].toNumber(), teller3.avatarId, 'verif avatar');
+    assert.equal(profile3[6], teller3.messengerAddr, 'verif telegram');
 
   });
 
+  it('can send fund a win reputation', async() => {
 
-/*
-  it("can register a Teller", () =>
-    Dether.new({from: creator})
-      .then(res => {
-        dether = res;
-        dether.registerPoint(123456789, 987654321, 42, 30, 1, 1, "telegram", {from: teller1, amount: web3.toWei(10, "ether")});
-      }).then( => {
-        dether.tellers.call(teller1)
-        assert.equal()
-      }).then());
-
-      it("can call buyTokens in Phase.Running", () =>
-        Dether.new({from: creator})
-          .then(() => {
-            dether = res;
-            dether.registerPoint(123456789, 987654321, 42, 30, 1, 1, "telegram", {from: teller1, amount: web3.toWei(10, "ether")}).then(() => {
-
-            });
-
-
-            token.balanceOf.call(investor1).then(res =>
-              assert.equal(606, web3.fromWei(res.toFixed(), 'ether'),
-                "1 Ether should buy 606 SPT"))
-            const balance = web3.eth.getBalance(token.address)
-            return assert.equal(1, web3.fromWei(balance.toFixed(), 'ether'), "contract balance is 1 ether")
-          }))
-
-
-
-
-
-  it("should start in phase Created", () =>
-    token.currentPhase.call().then(res =>
-      assert.equal(0, res.toFixed(), "not Phase.Created")));
-
-  // At phase Created
-  // - buy
-  // - burn
-  // + withdraw
-  // + set crowdsale manager
-  it("should fail to buyTokens in Phase.Created", () =>
-    token.buyTokens(investor1, {value: web3.toWei(1, 'ether'), from: investor1})
-      .then(assert.fail).catch(evmThrow))
-
-  it("should fail to call burnTokens in Phase.Created", () =>
-    token.burnTokens(investor1, {from: crowdsaleManager})
-      .then(assert.fail).catch(evmThrow))
-
-  it("tokenManager can call withdrawEther in Phase.Created", () =>
-    token.withdrawEther({from: tokenManager})
-      .then(() => {}))
-
-  it("tokenManager can call setCrowdsaleManager in Phase.Created", () =>
-    token.setCrowdsaleManager(crowdsaleManager, {from: tokenManager})
-      .then(() => token.crowdsaleManager.call().then(res =>
-        assert.equal(crowdsaleManager, res, "Invalid crowdsaleManager"))))
-
-  it("random guy should fail to call setCrowdsaleManager in Phase.Created", () =>
-    token.setCrowdsaleManager(crowdsaleManager, {from: investor1})
-      .then(assert.fail).catch(evmThrow))
-
-  it("can succesfully create another PresaleToken", () =>
-    PresaleToken.new(tokenManager, escrow, {from: creator})
-      .then(res => {token = res}));
-
-  no(Phase.Created, Phase.Created);
-  no(Phase.Created, Phase.Paused);
-  no(Phase.Created, Phase.Migrating);
-  no(Phase.Created, Phase.Migrated);
-  ok(Phase.Created, Phase.Running);
-
-  // At phase Running
-  // + buy
-  // - burn
-  // + withdraw
-  // + set crowdsale manager
-  it("can call buyTokens in Phase.Running", () =>
-    token.buyTokens(investor1, {value: web3.toWei(1, 'ether'), from: investor1})
-      .then(() => {
-        token.balanceOf.call(investor1).then(res =>
-          assert.equal(606, web3.fromWei(res.toFixed(), 'ether'),
-            "1 Ether should buy 606 SPT"))
-        const balance = web3.eth.getBalance(token.address)
-        return assert.equal(1, web3.fromWei(balance.toFixed(), 'ether'), "contract balance is 1 ether")
-      }))
-
-  it("should fail to call burnTokens in Phase.Running", () =>
-    token.burnTokens(investor1, {from: crowdsaleManager})
-      .then(assert.fail).catch(evmThrow))
-
-  it("tokenManager can call withdrawEther in Phase.Running", () => {
-    const mgrBalance1 = web3.eth.getBalance(escrow).toFixed();
-    token.withdrawEther({from: tokenManager})
-      .then(() => {
-        const tokBalance = web3.fromWei(web3.eth.getBalance(token.address).toFixed(), 'ether');
-        assert.equal(0, tokBalance, "contract balance is 0 ether");
-        const mgrBalance2 = web3.eth.getBalance(escrow).toFixed();
-        return assert.isAbove(mgrBalance2, mgrBalance1, "escrow got some ether");
-      })
   });
 
-  it("tokenManager can call setCrowdsaleManager in Phase.Running", () =>
-    token.setCrowdsaleManager(crowdsaleManager, {from: tokenManager})
-      .then(() => token.crowdsaleManager.call().then(res =>
-          assert.equal(crowdsaleManager, res, "Invalid crowdsaleManager"))))
+  it('can register and unregister and be only on the new zone', async() => {
 
-  it("random guy should fail to call setCrowdsaleManager in Phase.Running", () =>
-    token.setCrowdsaleManager(crowdsaleManager, {from: investor1})
-      .then(assert.fail).catch(evmThrow))
-
-  it("can call buyTokens in Phase.Running again", () =>
-    token.buyTokens(investor2, {value: web3.toWei(1, 'ether'), from: investor2})
-      .then(() => {
-        token.balanceOf.call(investor2).then(res =>
-          assert.equal(606, web3.fromWei(res.toFixed(), 'ether'),
-            "1 Ether should buy 606 SPT"))
-        const balance = web3.eth.getBalance(token.address)
-        return assert.equal(1, web3.fromWei(balance.toFixed(), 'ether'), "contract balance is 1 ether")
-      }))
-
-
-  no(Phase.Running, Phase.Created);
-  no(Phase.Running, Phase.Running);
-  no(Phase.Running, Phase.Migrated);
-  ok(Phase.Running, Phase.Paused);
-
-  // At phase Paused
-  // - buy
-  // - burn
-  // + withdraw
-  // + set crowdsale manager
-  it("should fail to call buyTokens in Phase.Paused", () =>
-    token.buyTokens(investor1, {value: web3.toWei(1, 'ether'), from: investor1})
-      .then(assert.fail).catch(evmThrow))
-
-  it("should fail to call burnTokens in Phase.Paused", () =>
-    token.burnTokens(investor1, {from: crowdsaleManager})
-      .then(assert.fail).catch(evmThrow))
-
-  it("tokenManager can call withdrawEther in Phase.Paused", () => {
-    const mgrBalance1 = web3.eth.getBalance(escrow).toFixed();
-    token.withdrawEther({from: tokenManager})
-      .then(() => {
-        const tokBalance = web3.fromWei(web3.eth.getBalance(token.address).toFixed(), 'ether');
-        assert.equal(0, tokBalance, "contract balance is 0 ether");
-        const mgrBalance2 = web3.eth.getBalance(escrow).toFixed();
-        return assert.isAbove(mgrBalance2, mgrBalance1, "escrow got some ether");
-      })
   });
 
-  it("random guy should fail to call setCrowdsaleManager in Phase.Paused", () =>
-    token.setCrowdsaleManager(crowdsaleManager, {from: investor1})
-      .then(assert.fail).catch(evmThrow))
+  it('cannot send to mysefl and win reputation', async() => {
 
-  no(Phase.Paused, Phase.Created);
-  no(Phase.Paused, Phase.Paused);
-  no(Phase.Paused, Phase.Migrated);
-  ok(Phase.Paused, Phase.Running);
+  });
 
-  it("can call buyTokens in Phase.Running again", () =>
-    token.buyTokens(investor2, {value: web3.toWei(1, 'ether'), from: investor2})
-      .then(() => {
-        token.balanceOf.call(investor2).then(res =>
-          assert.equal(2*606, web3.fromWei(res.toFixed(), 'ether'),
-            "1 Ether should buy 606 DPT"))
-        const balance = web3.eth.getBalance(token.address)
-        return assert.equal(1, web3.fromWei(balance.toFixed(), 'ether'), "contract balance is 1 ether")
-      }))
+  it('register a new sell point delete old one', async() => {
 
+  });
 
-  // check if crowdsale manager is set
-  it("tokenManager can call setCrowdsaleManager in Phase.Running", () =>
-    token.setCrowdsaleManager('0x0', {from: tokenManager})
-      .then(() => token.crowdsaleManager.call().then(res =>
-          assert.equal('0x0000000000000000000000000000000000000000', res, "Invalid crowdsaleManager"))))
-
-  no(Phase.Running, Phase.Migrating);
-
-  it("tokenManager can call setCrowdsaleManager in Phase.Running", () =>
-    token.setCrowdsaleManager(crowdsaleManager, {from: tokenManager})
-      .then(() => token.crowdsaleManager.call().then(res =>
-          assert.equal(crowdsaleManager, res, "Invalid crowdsaleManager"))))
-
-  ok(Phase.Running, Phase.Migrating);
-
-  // At phase Migrating
-  // - buy
-  // + burn
-  // + withdraw
-  // - set crowdsale manager
-  it("should fail to call buyTokens in Phase.Migrating", () =>
-    token.buyTokens(investor1, {value: web3.toWei(1, 'ether'), from: investor1})
-      .then(assert.fail).catch(evmThrow))
-
-  it("random guy should fail to call burnTokens in Phase.Migrating", () =>
-    token.burnTokens(investor1, {from: investor1})
-      .then(assert.fail).catch(evmThrow))
-
-  it("crowdsaleManager can call burnTokens in Phase.Migrating", () =>
-    token.burnTokens(investor1, {from: crowdsaleManager}).then(() =>
-        token.balanceOf.call(investor1).then(res =>
-          assert.equal(0, web3.fromWei(res.toFixed(), 'ether'),
-            "tokens burned, balance is zero"))))
-
-  it("tokenManager can call withdrawEther in Phase.Migrating", () =>
-    token.withdrawEther({from: tokenManager})
-      .then(() => {}))
-
-  it("should fail to call setCrowdsaleManager in Phase.Migrating", () =>
-    token.setCrowdsaleManager(crowdsaleManager, {from: tokenManager})
-      .then(assert.fail).catch(evmThrow))
-
-  no(Phase.Migrating, Phase.Created);
-  no(Phase.Migrating, Phase.Running);
-  no(Phase.Migrating, Phase.Paused);
-  no(Phase.Migrating, Phase.Migrating);
-
-  // check if everyting is migrated
-  no(Phase.Migrating, Phase.Migrated);
-  // burn all
-  it("crowdsaleManager can call burnTokens in Phase.Migrating", () =>
-    token.burnTokens(investor2, {from: crowdsaleManager})
-      .then(() => {
-        token.balanceOf.call(investor2).then(res =>
-          assert.equal(0, web3.fromWei(res.toFixed(), 'ether'),
-            "tokens burned, balance is zero"))
-      }))
-  it("should automatically switch to Phase.Migrated when all tokens burned", () =>
-    token.currentPhase.call().then(res =>
-      assert.equal(Phase.Migrated, res.toFixed(), "not Phase.Migrated")));
-
-  no(Phase.Migrated, Phase.Created);
-  no(Phase.Migrated, Phase.Running);
-  no(Phase.Migrated, Phase.Paused);
-  no(Phase.Migrated, Phase.Migrating);
-  no(Phase.Migrated, Phase.Migrated);
-
-
-  // At phase Migrated
-  // - buy
-  // + withdraw
-  it("should fail to call buyTokens in Phase.Migrated", () =>
-    token.buyTokens(investor1, {value: web3.toWei(1, 'ether'), from: investor1})
-      .then(assert.fail).catch(evmThrow))
-
-  it("tokenManager can call withdrawEther in Phase.Migrated", () =>
-    token.withdrawEther({from: tokenManager})
-      .then(() => {}))
-*/
 });

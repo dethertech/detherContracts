@@ -1,7 +1,13 @@
-pragma solidity ^0.4.11;
-
+pragma solidity ^0.4.16;
+// pragma experimental ABIEncoderV2;
 import './import/Ownable.sol';
 import './import/SafeMath.sol';
+
+// TO DO
+// Storage contract
+// avoid auto selling
+// Whitelist modifier or seller
+// construct object for return array of teller (need 0.4.17)
 
 
 contract Dether is Ownable, SafeMath {
@@ -42,8 +48,8 @@ contract Dether is Ownable, SafeMath {
     string _address,
     string _name
     ) payable {
-      require(msg.value > 1 finney);
-      require(msg.value + tellers[msg.sender].balance < 10 ether);
+      require(msg.value > 10 finney);
+      require(msg.value + tellers[msg.sender].balance < 5 ether);
       tellers[msg.sender].rate = _rate;
       tellers[msg.sender].currencyId = _currency;
       tellers[msg.sender].avatarId = _avatar;
@@ -57,7 +63,7 @@ contract Dether is Ownable, SafeMath {
       tellers[msg.sender].zoneId = _zone;
   }
 
-  function getTellerPos(address _teller) constant returns (
+  function getTellerPos(address _teller) view returns (
     int256 lat,
     int256 lng,
     uint zone,
@@ -71,8 +77,7 @@ contract Dether is Ownable, SafeMath {
     );
   }
 
-  // add require > 100 finney
-  function getTellerProfile(address _teller) constant returns (int16 rates,
+  function getTellerProfile(address _teller) view returns (int16 rates,
     uint volumeTrade,
     uint nbTrade,
     string name,
@@ -95,14 +100,11 @@ contract Dether is Ownable, SafeMath {
     tellers[msg.sender].balance = sub(tellers[msg.sender].balance, _amount);
     tellers[msg.sender].volumeTrade = add(tellers[msg.sender].volumeTrade, _amount);
     ++tellers[msg.sender].nbTrade;
-    /*if (tellers[msg.sender].balance == 0) {
-      tellers[msg.sender].zoneId = 0;
-    }*/
     Transfer(msg.sender, _receiver, _amount);
     return true;
   }
 
-  function getZone(uint _zone) constant returns (address[]) {
+  function getZone(uint _zone) view returns (address[]) {
       return tellerPerZone[_zone];
   }
 
@@ -110,11 +112,10 @@ contract Dether is Ownable, SafeMath {
   function withdrawAll() {
     msg.sender.transfer(tellers[msg.sender].balance);
     tellers[msg.sender].balance = 0;
-    // tellers[msg.sender].zoneId = 0;
     tellers[msg.sender].messengerAddr = "";
   }
 
-  function getTellerBalances(address _address) constant returns (uint) {
+  function getTellerBalances(address _address) view returns (uint) {
     return tellers[_address].balance;
   }
 }
