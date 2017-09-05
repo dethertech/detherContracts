@@ -63,6 +63,11 @@ contract Dether is Ownable, SafeMath {
       tellers[msg.sender].zoneId = _zone;
   }
 
+  /*
+   * These 2 getter fonction allow to retrieve teller info, its cut in 2 part
+   * because of the limitations of return argument in solidity
+   */
+
   function getTellerPos(address _teller) view returns (
     int256 lat,
     int256 lng,
@@ -94,6 +99,10 @@ contract Dether is Ownable, SafeMath {
       , tellers[_teller].messengerAddr);
   }
 
+  /*
+   * Sendcoin allow seller to send ether they put in escriow in the smart contract
+   */
+
   function sendCoin (address _receiver, uint _amount) returns (bool) {
     require(tellers[msg.sender].balance >= _amount);
     _receiver.transfer(_amount);
@@ -104,17 +113,26 @@ contract Dether is Ownable, SafeMath {
     return true;
   }
 
+  /*
+   * the seller can withdraw the fund he puts in escrow in the smart contract
+   */
+  function withdrawAll() {
+    uint toSend = tellers[msg.sender].balance;
+    tellers[msg.sender].balance = 0;
+    msg.sender.transfer(toSend);
+    tellers[msg.sender].messengerAddr = "";
+  }
+
+  /*
+   * return an address array with all the teller located in this zone
+   */
   function getZone(uint _zone) view returns (address[]) {
       return tellerPerZone[_zone];
   }
 
-  /// withdraw the total bablance
-  function withdrawAll() {
-    msg.sender.transfer(tellers[msg.sender].balance);
-    tellers[msg.sender].balance = 0;
-    tellers[msg.sender].messengerAddr = "";
-  }
-
+  /*
+   * simple getter to retrieve balance
+   */
   function getTellerBalances(address _address) view returns (uint) {
     return tellers[_address].balance;
   }
