@@ -116,6 +116,14 @@ contract('Dether', () => {
       assert.strictEqual(balanceT1AfterSend, 1, 'T1 balance not correct');
 
       assert.strictEqual(web3.fromWei(await web3.eth.getBalance(account1), 'ether').toNumber(), balanceAccount1beforeSend + 1, 'Account1 balance not correct');
+
+      let transferEvent = dether.Transfer();
+      transferEvent.get((err, events) => {
+        if (err) assert.isNull(err, 'there was no event');
+        assert.equal(events[0].args._from, teller1address, 'T1 addr incorrect in event');
+        assert.equal(events[0].args._to, account1, 'A1 addr incorrect in event');
+        assert.equal(web3.fromWei(events[0].args._value, 'ether').toNumber(), 1, 'value incorrect in event');
+      })
     })
 
     it('should increase volumeTrade & nbTrade when coins are sent', async () => {
