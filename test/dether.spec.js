@@ -1,3 +1,4 @@
+const {expectThrow, waitForMined} = require('./utils');
 /* global contract it artifacts web3 assert*/
 const DetherAbs = artifacts.require('./Dether.sol');
 let dether = null;
@@ -151,6 +152,19 @@ contract('Dether', () => {
       profile1 = await dether.getTellerProfile(teller1address);
       assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), 0, 'volume trade');
       assert.equal(profile1[2].toNumber(), 0, 'number of trade');
+    })
+
+    it('should have teller able to withdraw all funds', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller2address, value: web3.toWei(4, 'ether'), gas: 300000});
+      const balanceT1AfterReg = web3.fromWei(await dether.getTellerBalances(teller2address), 'ether').toNumber();
+      assert.strictEqual(balanceT1AfterReg, 4, 'T1 balance not correct');
+
+      const balanceT1AccountBefore = web3.fromWei(await web3.eth.getBalance(teller2address), 'ether').toNumber();
+      const txHash = await dether.withdrawAll.sendTransaction({from: teller2address});
+      const receipt = await waitForMined(txHash);
+      const gasUsed = receipt.gasUsed;
+      const balanceT1AccountAfter = web3.fromWei(await web3.eth.getBalance(teller2address), 'ether').toNumber();
+      assert.strictEqual(balanceT1AccountAfter.toFixed(6), (balanceT1AccountBefore - (gasUsed/10000000) + 4).toFixed(6), 'T1 balance not correct');
     })
   })
 })
