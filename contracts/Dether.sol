@@ -1,7 +1,7 @@
-pragma solidity ^0.4.16;
+pragma solidity 0.4.16;
 // pragma experimental ABIEncoderV2;
-import './import/Ownable.sol';
-import './import/SafeMath.sol';
+import './base/Ownable.sol';
+import './base/SafeMath.sol';
 
 // TO DO
 // Storage contract
@@ -82,7 +82,8 @@ contract Dether is Ownable, SafeMath {
     );
   }
 
-  function getTellerProfile(address _teller) view returns (int16 rates,
+  function getTellerProfile(address _teller) view returns (
+    int16 rates,
     uint volumeTrade,
     uint nbTrade,
     string name,
@@ -100,9 +101,8 @@ contract Dether is Ownable, SafeMath {
   }
 
   /*
-   * Sendcoin allow seller to send ether they put in escriow in the smart contract
+   * Sendcoin allow seller to send ether they put in escrow in the smart contract
    */
-
   function sendCoin (address _receiver, uint _amount) returns (bool) {
     require(tellers[msg.sender].balance >= _amount);
     _receiver.transfer(_amount);
