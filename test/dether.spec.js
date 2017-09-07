@@ -45,6 +45,7 @@ const
       owner
     , teller1address
     , teller2address
+    , teller3address
     , account1
     , account2
     , buyer1address
@@ -58,9 +59,9 @@ contract('Dether', () => {
   })
 
   contract('Registration --', () => {
-    it('should register a Teller and be on the map', async () => {
+    it('should register a teller and be on the map', async () => {
       // Teller 1
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 1000000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
       // Check position info
       const pos1 = await dether.getTellerPos(teller1address);
       assert.equal(pos1[0].toNumber(), teller1.lat, 'verif lat');
@@ -92,6 +93,11 @@ contract('Dether', () => {
       assert.equal(profile2[6], teller2.messengerAddr, 'verif telegram');
     })
 
+    it('should throw registering teller if value not strictly > 10 finney', async () => {
+      await expectThrow(dether.registerPoint(...Object.values(teller1),
+        {from: teller1address, value: web3.toWei(10, 'finney'), gas: 300000}));
+    })
+
     it.skip('should register and unregister and be only on the new zone', async () => {
       // can't unregister at the moment
     })
@@ -99,9 +105,34 @@ contract('Dether', () => {
     it.skip('should update sell point', async () => {
 
     })
+
+    it('should get all tellers in a zone', async () => {
+      const teller4 = Object.assign({}, teller1, {zoneId: 17, name: 'teller4'});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 1000000});
+      await dether.registerPoint(...Object.values(teller2), {from: teller2address, value: web3.toWei(1, 'ether'), gas: 1000000});
+      await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 1000000});
+      await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 1000000});
+
+      const tellers42 = await dether.getZone(42);
+      const teller17 = await dether.getZone(17);
+      assert(tellers42, [teller1address, teller2address, teller3address], 'incorrect zone');
+      assert(teller17, [account1], 'incorrect zone');
+    })
+
+    it('should throw getting teller position if teller balance not strictly > 10 finney', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(11, 'finney'), gas: 300000});
+      await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
+      await expectThrow(dether.getTellerPos(teller1address));
+    })
+
+    it('should throw getting teller profile if teller balance not strictly > 10 finney', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(11, 'finney'), gas: 300000});
+      await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
+      await expectThrow(dether.getTellerProfile(teller1address));
+    })
   })
 
-  contract('Money transfer --', () => {
+  contract('Money --', () => {
     it('should have teller able to send coins to eth addr', async () => {
       const balanceT1BeforeReg = web3.fromWei(await dether.getTellerBalances(teller1address), 'ether').toNumber();
       assert.strictEqual(balanceT1BeforeReg, 0, 'T1 balance not empty');
@@ -164,7 +195,7 @@ contract('Dether', () => {
       const receipt = await waitForMined(txHash);
       const gasUsed = receipt.gasUsed;
       const balanceT1AccountAfter = web3.fromWei(await web3.eth.getBalance(teller2address), 'ether').toNumber();
-      assert.strictEqual(balanceT1AccountAfter.toFixed(6), (balanceT1AccountBefore - (gasUsed/10000000) + 4).toFixed(6), 'T1 balance not correct');
+      assert.strictEqual(balanceT1AccountAfter.toFixed(5), (balanceT1AccountBefore - (gasUsed/10000000) + 4).toFixed(5), 'T1 balance not correct');
     })
   })
 })
