@@ -80,7 +80,7 @@ contract('Dether', () => {
       assert.equal(web3.toUtf8(profile1[6]), teller1.messengerAddr, 'verif telegram');
 
       // Teller 2
-      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 1000000 });
+      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
       // Check position info
       const pos2 = await dether.getTellerPos(teller2address);
       assert.equal(pos2[0].toNumber(), teller2.lat, 'verif lat');
@@ -111,10 +111,10 @@ contract('Dether', () => {
 
     it('should get all tellers in a zone', async () => {
       const teller4 = Object.assign({}, teller1, {zoneId: 17, name: 'teller4'});
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 1000000});
-      await dether.registerPoint(...Object.values(teller2), {from: teller2address, value: web3.toWei(1, 'ether'), gas: 1000000});
-      await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 1000000});
-      await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 1000000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller2), {from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 300000});
 
       const tellers42 = await detherStorage.getZone(42);
       const teller17 = await detherStorage.getZone(17);
