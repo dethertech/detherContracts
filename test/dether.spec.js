@@ -56,8 +56,8 @@ const
 
 contract('Dether', () => {
   beforeEach(async () => {
-    detherStorage = await DetherStorageAbs.new()
-    dether = await DetherInterfaceAbs.new(detherStorage.address);
+    detherStorage = await DetherStorageAbs.new({gas: 1500000})
+    dether = await DetherInterfaceAbs.new(detherStorage.address, {gas: 1500000});
   })
 
   contract('Registration --', () => {
