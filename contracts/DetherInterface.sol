@@ -25,8 +25,8 @@ contract DetherInterface is SafeMath {
       require(msg.value > 10 finney);
       require(msg.value < 5 ether);
       //
-      detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
       detherStorage.setTellerZone(msg.sender, _zoneId);
+      detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
       detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
       detherStorage.setTellerBalance(msg.sender, msg.value);
   }
@@ -77,12 +77,6 @@ contract DetherInterface is SafeMath {
     msg.sender.transfer(toSend);
     detherStorage.clearMessagingAddress(msg.sender);
     return true;
-  }
-
-  /// @notice Return an address array with all the teller located in this zone
-  function getZone(uint _zone) view returns (address[5]) {
-      // todo can't return array
-      return detherStorage.getZone(_zone);
   }
 
 

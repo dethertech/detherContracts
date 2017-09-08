@@ -2,7 +2,7 @@ const {expectThrow, waitForMined} = require('./utils');
 /* global contract it artifacts web3 assert*/
 const DetherInterfaceAbs = artifacts.require('./DetherInterface.sol');
 const DetherStorageAbs = artifacts.require('./DetherStorage.sol');
-let dether = null;
+let dether, detherStorage;
 
 // --> TEST TO ADD:
 // ADD TELLER, AND DELETE FROM ZONE
@@ -56,7 +56,7 @@ const
 
 contract('Dether', () => {
   beforeEach(async () => {
-    let detherStorage = await DetherStorageAbs.new()
+    detherStorage = await DetherStorageAbs.new()
     dether = await DetherInterfaceAbs.new(detherStorage.address);
   })
 
@@ -116,10 +116,10 @@ contract('Dether', () => {
       await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 1000000});
       await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 1000000});
 
-      const tellers42 = await dether.getZone(42);
-      const teller17 = await dether.getZone(17);
-      assert(tellers42, [teller1address, teller2address, teller3address], 'incorrect zone');
-      assert(teller17, [account1], 'incorrect zone');
+      const tellers42 = await detherStorage.getZone(42);
+      const teller17 = await detherStorage.getZone(17);
+      assert.deepEqual(tellers42, [teller1address, teller2address, teller3address], 'incorrect zone');
+      assert.deepEqual(teller17, [account1], 'incorrect zone');
     })
 
     it('should throw getting teller position if teller balance not strictly > 10 finney', async () => {
