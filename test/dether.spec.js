@@ -66,7 +66,6 @@ contract('Dether', () => {
       await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
       // Check position info
       const pos1 = await dether.getTellerPos(teller1address);
-      //console.log('pos1', pos1)
       assert.equal(pos1[0].toNumber(), teller1.lat, 'verif lat');
       assert.equal(pos1[1].toNumber(), teller1.lng, 'verif lng');
       assert.equal(pos1[2].toNumber(), teller1.zoneId, 'verif zone');
