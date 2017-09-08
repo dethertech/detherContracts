@@ -21,6 +21,9 @@ contract DetherInterface is SafeMath {
     bytes32 _messagingAddress,
     bytes32 _name
     ) payable {
+      // Conditions
+      require(msg.value > 10 finney);
+      require(msg.value < 5 ether);
       //
       detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
       detherStorage.setTellerZone(msg.sender, _zoneId);
@@ -28,16 +31,16 @@ contract DetherInterface is SafeMath {
       detherStorage.setTellerBalance(msg.sender, msg.value);
   }
 
-    function getTellerPos(address _teller) view returns (
-      int256 lat,
-      int256 lng,
-      uint zoneId,
-      uint balance) {
-      //
-      (lat, lng, zoneId) = detherStorage.getTellerPosition(_teller);
+  function getTellerPos(address _teller) view returns (
+    int256 lat,
+    int256 lng,
+    uint zoneId,
+    uint balance) {
       balance = detherStorage.getTellerBalance(_teller);
+      require(balance > 10 finney);
+      (lat, lng, zoneId) = detherStorage.getTellerPosition(_teller);
       return (lat, lng, zoneId, balance);
-    }
+  }
 
   function getTellerProfile(address _teller) view returns (
     int16 rates,
@@ -47,6 +50,8 @@ contract DetherInterface is SafeMath {
     int8 currency,
     int8 avatar,
     bytes32 telAddr) {
+      uint balance = detherStorage.getTellerBalance(_teller);
+      require(balance > 10 finney);
       return detherStorage.getTellerProfile(_teller);
   }
 
@@ -60,7 +65,7 @@ contract DetherInterface is SafeMath {
     detherStorage.setTellerReputation(msg.sender, ++nbTrade, add(volumeTrade, _amount));
 
     _receiver.transfer(_amount);
-    Transfer(msg.sender, _receiver, _amount); // todo check event
+    Transfer(msg.sender, _receiver, _amount);
     return true;
   }
 
@@ -75,7 +80,7 @@ contract DetherInterface is SafeMath {
   }
 
   /// @notice Return an address array with all the teller located in this zone
-  function getZone(uint _zone) view returns (address[]) {
+  function getZone(uint _zone) view returns (address[5]) {
       // todo can't return array
       return detherStorage.getZone(_zone);
   }

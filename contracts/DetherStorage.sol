@@ -25,7 +25,7 @@ contract DetherStorage {
   }
 
   mapping(address => Teller) tellers;
-  mapping (uint => address[]) public tellerPerZone;
+  mapping (uint => address[5]) public tellerPerZone;
 
   // Teller Position
   function setTellerPosition(address _address, int256 lat, int256 lng, uint zoneId) {
@@ -82,11 +82,17 @@ contract DetherStorage {
   // Teller Zone
   function setTellerZone(address _address, uint _zoneId) {
     if (tellers[_address].tellerPosition.zoneId != _zoneId) {
-      tellerPerZone[_zoneId].push(_address);
+      //tellerPerZone[_zoneId].push(_address);
+      for (uint i = 0; i < tellerPerZone[_zoneId].length; i++) {
+        if (tellerPerZone[_zoneId][i] == 0) {
+           tellerPerZone[_zoneId][i] = _address;
+           break;
+        }
+      }
     }
   }
 
-  function getZone(uint _zone) view returns (address[]) {
+  function getZone(uint _zone) view returns (address[5]) {
     return tellerPerZone[_zone];
   }
 
