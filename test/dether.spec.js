@@ -164,15 +164,15 @@ contract('Dether', () => {
     it('should increase volumeTrade & nbTrade when coins are sent', async () => {
       await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(4, 'ether'), gas: 300000});
       let profile1 = await dether.getTellerProfile(teller1address);
-      assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), 0, 'volume trade');
-      assert.equal(profile1[2].toNumber(), 0, 'number of trade');
+      const volTrade = web3.fromWei(profile1[1], 'ether').toNumber();
+      const numTrade = profile1[2].toNumber();
 
       await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'ether'), {from: teller1address});
       await dether.sendCoin.sendTransaction(account2, web3.toWei(2.5, 'ether'), {from: teller1address});
 
       profile1 = await dether.getTellerProfile(teller1address);
-      assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), 3.5, 'volume trade');
-      assert.equal(profile1[2].toNumber(), 2, 'number of trade');
+      assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), volTrade + 3.5, 'volume trade');
+      assert.equal(profile1[2].toNumber(), numTrade + 2, 'number of trade');
     })
 
     it.skip('should not be able to send to myself and win reputation', async () => {
