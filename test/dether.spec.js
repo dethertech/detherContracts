@@ -1,7 +1,8 @@
 const {expectThrow, waitForMined} = require('./utils');
 /* global contract it artifacts web3 assert*/
-const DetherAbs = artifacts.require('./Dether.sol');
-let dether = null;
+const DetherInterfaceAbs = artifacts.require('./DetherInterface.sol');
+const DetherStorageAbs = artifacts.require('./DetherStorage.sol');
+let dether, detherStorage;
 
 // --> TEST TO ADD:
 // ADD TELLER, AND DELETE FROM ZONE
@@ -55,7 +56,8 @@ const
 
 contract('Dether', () => {
   beforeEach(async () => {
-    dether = await DetherAbs.new();
+    detherStorage = await DetherStorageAbs.new({gas: 1500000})
+    dether = await DetherInterfaceAbs.new(detherStorage.address, {gas: 1500000});
   })
 
   contract('Registration --', () => {
@@ -71,13 +73,13 @@ contract('Dether', () => {
       // Check profile info
       const profile1 = await dether.getTellerProfile(teller1address);
       assert.equal(profile1[0].toNumber(), teller1.rate, 'verif rates');
-      assert.equal(profile1[3], teller1.name, 'verif name');
+      assert.equal(web3.toUtf8(profile1[3]), teller1.name, 'verif name');
       assert.equal(profile1[4].toNumber(), teller1.currencyId, 'verif currency');
       assert.equal(profile1[5].toNumber(), teller1.avatarId, 'verif avatar');
-      assert.equal(profile1[6], teller1.messengerAddr, 'verif telegram');
+      assert.equal(web3.toUtf8(profile1[6]), teller1.messengerAddr, 'verif telegram');
 
       // Teller 2
-      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 1000000 });
+      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
       // Check position info
       const pos2 = await dether.getTellerPos(teller2address);
       assert.equal(pos2[0].toNumber(), teller2.lat, 'verif lat');
@@ -87,10 +89,10 @@ contract('Dether', () => {
       // Check profile info
       const profile2 = await dether.getTellerProfile(teller2address);
       assert.equal(profile2[0].toNumber(), teller2.rate, 'verif rates');
-      assert.equal(profile2[3], teller2.name, 'verif name');
+      assert.equal(web3.toUtf8(profile2[3]), teller2.name, 'verif name');
       assert.equal(profile2[4].toNumber(), teller2.currencyId, 'verif currency');
       assert.equal(profile2[5].toNumber(), teller2.avatarId, 'verif avatar');
-      assert.equal(profile2[6], teller2.messengerAddr, 'verif telegram');
+      assert.equal(web3.toUtf8(profile2[6]), teller2.messengerAddr, 'verif telegram');
     })
 
     it('should throw registering teller if value not strictly > 10 finney', async () => {
@@ -108,15 +110,15 @@ contract('Dether', () => {
 
     it('should get all tellers in a zone', async () => {
       const teller4 = Object.assign({}, teller1, {zoneId: 17, name: 'teller4'});
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 1000000});
-      await dether.registerPoint(...Object.values(teller2), {from: teller2address, value: web3.toWei(1, 'ether'), gas: 1000000});
-      await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 1000000});
-      await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 1000000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller2), {from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 300000});
 
-      const tellers42 = await dether.getZone(42);
-      const teller17 = await dether.getZone(17);
-      assert(tellers42, [teller1address, teller2address, teller3address], 'incorrect zone');
-      assert(teller17, [account1], 'incorrect zone');
+      const tellers42 = await detherStorage.getZone(42);
+      const teller17 = await detherStorage.getZone(17);
+      assert.deepEqual(tellers42, [teller1address, teller2address, teller3address], 'incorrect zone');
+      assert.deepEqual(teller17, [account1], 'incorrect zone');
     })
 
     it('should throw getting teller position if teller balance not strictly > 10 finney', async () => {
@@ -161,15 +163,15 @@ contract('Dether', () => {
     it('should increase volumeTrade & nbTrade when coins are sent', async () => {
       await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(4, 'ether'), gas: 300000});
       let profile1 = await dether.getTellerProfile(teller1address);
-      assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), 0, 'volume trade');
-      assert.equal(profile1[2].toNumber(), 0, 'number of trade');
+      const volTrade = web3.fromWei(profile1[1], 'ether').toNumber();
+      const numTrade = profile1[2].toNumber();
 
       await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'ether'), {from: teller1address});
       await dether.sendCoin.sendTransaction(account2, web3.toWei(2.5, 'ether'), {from: teller1address});
 
       profile1 = await dether.getTellerProfile(teller1address);
-      assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), 3.5, 'volume trade');
-      assert.equal(profile1[2].toNumber(), 2, 'number of trade');
+      assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), volTrade + 3.5, 'volume trade');
+      assert.equal(profile1[2].toNumber(), numTrade + 2, 'number of trade');
     })
 
     it.skip('should not be able to send to myself and win reputation', async () => {
