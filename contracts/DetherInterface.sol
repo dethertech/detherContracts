@@ -6,6 +6,8 @@ import './base/SafeMath.sol';
 contract DetherInterface is SafeMath {
   DetherStorage detherStorage;
   event Transfer (address indexed _from, address indexed _to, uint256 _value);
+  event RegisterPoint(int256 lat, int256 lng, int16 rate, address addr);
+  event SendCoin(address indexed _from, address indexed _to, uint256 _value, int256 lat, int256 lng);
 
   function DetherInterface(address _detherStorageAddress) {
     detherStorage = DetherStorage(_detherStorageAddress);
@@ -29,6 +31,7 @@ contract DetherInterface is SafeMath {
       detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
       detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
       detherStorage.setTellerBalance(msg.sender, msg.value);
+      RegisterPoint(_lat, _lng, _rate, msg.sender);
   }
 
   function getTellerPos(address _teller) view returns (
@@ -57,6 +60,7 @@ contract DetherInterface is SafeMath {
 
   /// @notice Sendcoin allow seller to send ether they put in escrow in the smart contract
   function sendCoin (address _receiver, uint _amount) returns (bool) {
+    require(_receiver != msg.sender);
     uint tellerBalance = detherStorage.getTellerBalance(msg.sender);
     require(tellerBalance >= _amount);
     detherStorage.setTellerBalance(msg.sender, sub(tellerBalance, _amount));
@@ -66,9 +70,10 @@ contract DetherInterface is SafeMath {
 
     _receiver.transfer(_amount);
     Transfer(msg.sender, _receiver, _amount);
+    var (lat, lng, zoneId) = detherStorage.getTellerPosition(msg.sender);
+    SendCoin(msg.sender, _receiver, _amount, lat, lng);
     return true;
   }
-
 
   /// @notice Seller can withdraw the fund he puts in escrow in the smart contract
   function withdrawAll() returns (bool) {
@@ -78,7 +83,6 @@ contract DetherInterface is SafeMath {
     detherStorage.clearMessagingAddress(msg.sender);
     return true;
   }
-
 
   /// @notice Getter to retrieve balance
   function getTellerBalances(address _address) view returns (uint) {
