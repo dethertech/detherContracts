@@ -8,6 +8,7 @@ contract DetherInterface is SafeMath {
   event Transfer (address indexed _from, address indexed _to, uint256 _value);
   event RegisterPoint(int256 lat, int256 lng, int16 rate, address addr);
   event SendCoin(address indexed _from, address indexed _to, uint256 _value, int256 lat, int256 lng);
+  event Withdraw(int256 lat, int256 lng, address addr);
 
   function DetherInterface(address _detherStorageAddress) {
     detherStorage = DetherStorage(_detherStorageAddress);
@@ -24,7 +25,7 @@ contract DetherInterface is SafeMath {
     bytes32 _name
     ) payable {
       // Conditions
-      require(msg.value > 10 finney);
+      require(msg.value >= 10 finney);
       require(msg.value < 5 ether);
       //
       detherStorage.setTellerZone(msg.sender, _zoneId);
@@ -40,7 +41,7 @@ contract DetherInterface is SafeMath {
     uint zoneId,
     uint balance) {
       balance = detherStorage.getTellerBalance(_teller);
-      require(balance > 10 finney);
+      require(balance >= 10 finney);
       (lat, lng, zoneId) = detherStorage.getTellerPosition(_teller);
       return (lat, lng, zoneId, balance);
   }
@@ -54,7 +55,7 @@ contract DetherInterface is SafeMath {
     int8 avatar,
     bytes32 telAddr) {
       uint balance = detherStorage.getTellerBalance(_teller);
-      require(balance > 10 finney);
+      require(balance >= 10 finney);
       return detherStorage.getTellerProfile(_teller);
   }
 
@@ -81,6 +82,8 @@ contract DetherInterface is SafeMath {
     detherStorage.setTellerBalance(msg.sender, 0);
     msg.sender.transfer(toSend);
     detherStorage.clearMessagingAddress(msg.sender);
+    var (lat, lng, zoneId) = detherStorage.getTellerPosition(msg.sender);
+    Withdraw(lat, lng, msg.sender);
     return true;
   }
 
