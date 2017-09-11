@@ -95,10 +95,10 @@ contract('Dether', () => {
       assert.equal(web3.toUtf8(profile2[6]), teller2.messengerAddr, 'verif telegram');
     })
 
-    // it('should throw registering teller if value not strictly > 10 finney', async () => {
-    //   await expectThrow(dether.registerPoint(...Object.values(teller1),
-    //     {from: teller1address, value: web3.toWei(10, 'finney'), gas: 300000}));
-    // })
+    it('should throw registering teller if value not >= 10 finney', async () => {
+      await expectThrow(dether.registerPoint(...Object.values(teller1),
+         {from: teller1address, value: web3.toWei(9, 'finney'), gas: 300000}));
+    })
 
     it.skip('should register and unregister and be only on the new zone', async () => {
       // can't unregister at the moment
@@ -121,17 +121,17 @@ contract('Dether', () => {
       assert.deepEqual(teller17, [account1], 'incorrect zone');
     })
 
-    // it('should throw getting teller position if teller balance not strictly > 10 finney', async () => {
-    //   await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(11, 'finney'), gas: 300000});
-    //   await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
-    //   await expectThrow(dether.getTellerPos(teller1address));
-    // })
+    it('should throw getting teller position if teller balance not >= 10 finney', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(10, 'finney'), gas: 300000});
+      await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
+      await expectThrow(dether.getTellerPos(teller1address));
+    })
 
-    // it('should throw getting teller profile if teller balance not strictly > 10 finney', async () => {
-    //   await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(11, 'finney'), gas: 300000});
-    //   await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
-    //   await expectThrow(dether.getTellerProfile(teller1address));
-    // })
+    it('should throw getting teller profile if teller balance not >= 10 finney', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(10, 'finney'), gas: 300000});
+      await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
+      await expectThrow(dether.getTellerProfile(teller1address));
+    })
   })
 
   contract('Money --', () => {
