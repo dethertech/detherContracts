@@ -2,8 +2,9 @@ pragma solidity 0.4.16;
 
 import './DetherStorage.sol';
 import './base/SafeMath.sol';
+import './base/Ownable.sol';
 
-contract DetherInterface is SafeMath {
+contract DetherInterface is SafeMath, Ownable {
   DetherStorage detherStorage;
   event Transfer (address indexed _from, address indexed _to, uint256 _value);
   event RegisterPoint(int256 lat, int256 lng, int16 rate, address addr);
@@ -33,6 +34,10 @@ contract DetherInterface is SafeMath {
       detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
       detherStorage.setTellerBalance(msg.sender, msg.value);
       RegisterPoint(_lat, _lng, _rate, msg.sender);
+  }
+
+  function changeStorageOwnership(address newOwner) onlyOwner {
+    detherStorage.transferOwnership(newOwner);
   }
 
   function getTellerPos(address _teller) view returns (
