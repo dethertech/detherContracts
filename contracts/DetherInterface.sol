@@ -1,10 +1,11 @@
 pragma solidity 0.4.16;
 
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import './DetherStorage.sol';
-import './base/SafeMath.sol';
-import './base/Ownable.sol';
 
-contract DetherInterface is SafeMath, Ownable {
+contract DetherInterface is Ownable {
+  using SafeMath for uint256;
   DetherStorage detherStorage;
   event Transfer (address indexed _from, address indexed _to, uint256 _value);
   event RegisterPoint(int256 lat, int256 lng, int16 rate, address addr);
@@ -69,14 +70,14 @@ contract DetherInterface is SafeMath, Ownable {
     require(_receiver != msg.sender);
     uint tellerBalance = detherStorage.getTellerBalance(msg.sender);
     require(tellerBalance >= _amount);
-    detherStorage.setTellerBalance(msg.sender, sub(tellerBalance, _amount));
+    detherStorage.setTellerBalance(msg.sender, tellerBalance.sub(_amount));
 
     var (nbTrade, volumeTrade) = detherStorage.getTellerReputation(msg.sender);
-    detherStorage.setTellerReputation(msg.sender, ++nbTrade, add(volumeTrade, _amount));
+    detherStorage.setTellerReputation(msg.sender, ++nbTrade, volumeTrade.add(_amount));
 
     _receiver.transfer(_amount);
     Transfer(msg.sender, _receiver, _amount);
-    var (lat, lng, zoneId) = detherStorage.getTellerPosition(msg.sender);
+    var (lat, lng,) = detherStorage.getTellerPosition(msg.sender);
     SendCoin(msg.sender, _receiver, _amount, lat, lng);
     return true;
   }
@@ -87,7 +88,7 @@ contract DetherInterface is SafeMath, Ownable {
     detherStorage.setTellerBalance(msg.sender, 0);
     msg.sender.transfer(toSend);
     detherStorage.clearMessagingAddress(msg.sender);
-    var (lat, lng, zoneId) = detherStorage.getTellerPosition(msg.sender);
+    var (lat, lng,) = detherStorage.getTellerPosition(msg.sender);
     Withdraw(lat, lng, msg.sender);
     return true;
   }

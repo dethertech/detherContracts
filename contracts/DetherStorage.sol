@@ -1,6 +1,6 @@
 pragma solidity 0.4.16;
 
-import './base/Ownable.sol';
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
 contract DetherStorage is Ownable {
 
@@ -94,7 +94,7 @@ contract DetherStorage is Ownable {
 
 
   // Teller Reputation
-  function setTellerReputation(address _address, uint _nbTrade, uint _volumeTrade) onlyOwner{
+  function setTellerReputation(address _address, uint _nbTrade, uint _volumeTrade) onlyOwner {
     tellers[_address].tellerProfile.nbTrade = _nbTrade;
     tellers[_address].tellerProfile.volumeTrade = _volumeTrade;
   }
@@ -105,7 +105,7 @@ contract DetherStorage is Ownable {
 
 
   // Teller Balance
-  function setTellerBalance(address _address, uint _balance)onlyOwner {
+  function setTellerBalance(address _address, uint _balance) onlyOwner {
     tellers[_address].balance = _balance;
   }
 
@@ -113,7 +113,7 @@ contract DetherStorage is Ownable {
     return tellers[_address].balance;
   }
 
-  function clearMessagingAddress(address _address)onlyOwner returns (bool){
+  function clearMessagingAddress(address _address) onlyOwner returns (bool){
     tellers[_address].tellerProfile.messagingAddr = "";
     return true;
   }
