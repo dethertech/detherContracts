@@ -1,6 +1,8 @@
 pragma solidity 0.4.16;
 
-contract DetherStorage {
+import './base/Ownable.sol';
+
+contract DetherStorage is Ownable {
 
   struct TellerPosition {
     int256 lat;
@@ -28,7 +30,7 @@ contract DetherStorage {
   mapping (uint => address[]) public tellerPerZone;
 
   // Teller Position
-  function setTellerPosition(address _address, int256 lat, int256 lng, uint zoneId) {
+  function setTellerPosition(address _address, int256 lat, int256 lng, uint zoneId) onlyOwner {
     tellers[_address].tellerPosition = TellerPosition(lat, lng, zoneId);
   }
 
@@ -51,7 +53,7 @@ contract DetherStorage {
     int8 _currencyId,
     bytes32 _messagingAddr,
     bytes32 _name,
-    int16 _rate) {
+    int16 _rate) onlyOwner {
       tellers[_address].tellerProfile.avatarId = _avatarId;
       tellers[_address].tellerProfile.currencyId = _currencyId;
       tellers[_address].tellerProfile.messagingAddr = _messagingAddr;
@@ -80,7 +82,7 @@ contract DetherStorage {
 
 
   // Teller Zone
-  function setTellerZone(address _address, uint _zoneId) {
+  function setTellerZone(address _address, uint _zoneId) onlyOwner {
     if (tellers[_address].tellerPosition.zoneId != _zoneId) {
       tellerPerZone[_zoneId].push(_address);
     }
@@ -92,7 +94,7 @@ contract DetherStorage {
 
 
   // Teller Reputation
-  function setTellerReputation(address _address, uint _nbTrade, uint _volumeTrade) {
+  function setTellerReputation(address _address, uint _nbTrade, uint _volumeTrade) onlyOwner{
     tellers[_address].tellerProfile.nbTrade = _nbTrade;
     tellers[_address].tellerProfile.volumeTrade = _volumeTrade;
   }
@@ -103,7 +105,7 @@ contract DetherStorage {
 
 
   // Teller Balance
-  function setTellerBalance(address _address, uint _balance) {
+  function setTellerBalance(address _address, uint _balance)onlyOwner {
     tellers[_address].balance = _balance;
   }
 
@@ -111,7 +113,7 @@ contract DetherStorage {
     return tellers[_address].balance;
   }
 
-  function clearMessagingAddress(address _address) returns (bool){
+  function clearMessagingAddress(address _address)onlyOwner returns (bool){
     tellers[_address].tellerProfile.messagingAddr = "";
     return true;
   }

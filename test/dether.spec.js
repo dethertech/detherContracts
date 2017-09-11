@@ -58,6 +58,7 @@ contract('Dether', () => {
   beforeEach(async () => {
     detherStorage = await DetherStorageAbs.new({gas: 1500000})
     dether = await DetherInterfaceAbs.new(detherStorage.address, {gas: 1500000});
+    detherStorage.transferOwnership(dether.address);
   })
 
   contract('Registration --', () => {
