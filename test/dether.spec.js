@@ -201,4 +201,29 @@ contract('Dether', () => {
       assert.strictEqual(balanceT1AccountAfter.toFixed(5), (balanceT1AccountBefore - (gasUsed/10000000) + 4).toFixed(5), 'T1 balance not correct');
     })
   })
+
+  contract(('Ownable --'), () => {
+    it('should Interface has a owner', async () => {
+      assert.equal(await dether.owner(), owner, 'owner not set');
+    })
+
+    it('should Interface transfer ownership', async () => {
+      await dether.transferOwnership(account1);
+      assert.equal(await dether.owner(), account1, 'owner not transferred');
+    })
+
+    it('should Interface change Storage ownership', async () => {
+      assert.equal(await detherStorage.owner(), await dether.address, 'storage owner not interface address');
+      await dether.changeStorageOwnership(account1);
+      assert.equal(await detherStorage.owner(), account1, 'owner not transferred');
+    })
+
+    it('should Storage has a owner', async () => {
+      assert.equal(await detherStorage.owner(), dether.address, 'owner not set');
+    })
+
+    it('should Storage throw if transfer ownership', async () => {
+      expectThrow(detherStorage.transferOwnership(account1));
+    })
+  })
 })
