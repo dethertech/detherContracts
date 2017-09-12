@@ -27,9 +27,11 @@ contract DetherInterface is Ownable {
     bytes32 _name
     ) payable {
       // Conditions
+      require(!detherStorage.isTeller(msg.sender));
       require(msg.value >= 10 finney);
       require(msg.value < 5 ether);
       //
+      detherStorage.setTellerIndex(msg.sender);
       detherStorage.setTellerZone(msg.sender, _zoneId);
       detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
       detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
@@ -60,8 +62,10 @@ contract DetherInterface is Ownable {
     int8 currency,
     int8 avatar,
     bytes32 telAddr) {
+      // Conditions
       uint balance = detherStorage.getTellerBalance(_teller);
       require(balance >= 10 finney);
+      //
       return detherStorage.getTellerProfile(_teller);
   }
 

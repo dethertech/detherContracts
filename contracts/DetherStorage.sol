@@ -24,10 +24,15 @@ contract DetherStorage is Ownable {
     TellerPosition tellerPosition;
     TellerProfile tellerProfile;
     uint balance;
+    uint index;         // the corresponding row number in the index
   }
 
   mapping(address => Teller) tellers;
   mapping (uint => address[]) public tellerPerZone;
+  address[] public tellerIndex; // unordered list of keys that actually exist
+
+  event LogDeleteTeller(address tellerAddress, uint rowToDelete);
+  event LogUpdateTeller(address keyToMove, uint rowToDelete);
 
   // Teller Position
   function setTellerPosition(address _address, int256 lat, int256 lng, uint zoneId) onlyOwner {
@@ -113,8 +118,45 @@ contract DetherStorage is Ownable {
     return tellers[_address].balance;
   }
 
+
+  // Misc
   function clearMessagingAddress(address _address) onlyOwner returns (bool){
     tellers[_address].tellerProfile.messagingAddr = "";
     return true;
+  }
+
+  function isTeller(address _address) view returns (bool isIndeed) {
+    if(tellerIndex.length == 0) return false;
+    return (tellerIndex[tellers[_address].index] == _address);
+  }
+
+  function setTellerIndex(address _address) {
+    tellers[_address].index = tellerIndex.push(_address) - 1;
+  }
+
+  function getTellerCount() view returns (uint count) {
+    return tellerIndex.length;
+  }
+
+  function getTellerAtIndex(uint _index) view returns (address teller) {
+    return tellerIndex[_index];
+  }
+
+  function getAllTellers() view returns (address[]) {
+    return tellerIndex;
+  }
+
+  // Delete teller
+  function deleteTeller(address _address) {
+    // Conditions
+    require(isTeller(_address));
+    //
+    uint rowToDelete = tellers[_address].index;
+    address keyToMove = tellerIndex[tellerIndex.length - 1];
+    tellerIndex[rowToDelete] = keyToMove;
+    tellers[keyToMove].index = rowToDelete;
+    tellerIndex.length--;
+    LogDeleteTeller(_address, rowToDelete);
+    LogUpdateTeller(keyToMove, rowToDelete);
   }
 }
