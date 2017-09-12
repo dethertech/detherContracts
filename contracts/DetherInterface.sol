@@ -16,6 +16,8 @@ contract DetherInterface is Ownable {
     detherStorage = DetherStorage(_detherStorageAddress);
   }
 
+  /// @notice Register a teller
+  /// @dev gasUsed: 292273
   function registerPoint(
     int256 _lat,
     int256 _lng,
@@ -70,6 +72,7 @@ contract DetherInterface is Ownable {
   }
 
   /// @notice Sendcoin allow seller to send ether they put in escrow in the smart contract
+  /// @dev gasUsed: 96681
   function sendCoin (address _receiver, uint _amount) returns (bool) {
     require(_receiver != msg.sender);
     uint tellerBalance = detherStorage.getTellerBalance(msg.sender);
@@ -87,6 +90,7 @@ contract DetherInterface is Ownable {
   }
 
   /// @notice Seller can withdraw the fund he puts in escrow in the smart contract
+  /// @dev gasUsed: 26497
   function withdrawAll() returns (bool) {
     uint toSend = detherStorage.getTellerBalance(msg.sender);
     detherStorage.setTellerBalance(msg.sender, 0);

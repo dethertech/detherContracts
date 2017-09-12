@@ -34,6 +34,7 @@ contract DetherStorage is Ownable {
   event LogDeleteTeller(address tellerAddress, uint rowToDelete);
   event LogUpdateTeller(address keyToMove, uint rowToDelete);
 
+
   // Teller Position
   function setTellerPosition(address _address, int256 lat, int256 lng, uint zoneId) onlyOwner {
     tellers[_address].tellerPosition = TellerPosition(lat, lng, zoneId);
@@ -130,7 +131,7 @@ contract DetherStorage is Ownable {
     return (tellerIndex[tellers[_address].index] == _address);
   }
 
-  function setTellerIndex(address _address) {
+  function setTellerIndex(address _address) onlyOwner {
     tellers[_address].index = tellerIndex.push(_address) - 1;
   }
 
@@ -147,7 +148,7 @@ contract DetherStorage is Ownable {
   }
 
   // Delete teller
-  function deleteTeller(address _address) {
+  function deleteTeller(address _address) onlyOwner {
     // Conditions
     require(isTeller(_address));
     //

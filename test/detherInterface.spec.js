@@ -119,15 +119,6 @@ contract('Dether Interface', () => {
          {from: teller1address, value: web3.toWei(9, 'finney'), gas: 300000}));
     })
 
-    it('should delete t1, t3 move to index 0', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
-      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
-      await dether.registerPoint(...Object.values(teller3), { from: teller3address, value: web3.toWei(1, 'ether'), gas: 300000 });
-      await detherStorage.deleteTeller(teller1address);
-      const tellers = await detherStorage.getAllTellers();
-      assert.deepEqual(tellers, [teller3address, teller2address], 'addresses dont match');
-    })
-
     it.skip('should register and unregister and be only on the new zone', async () => {
       // can't unregister at the moment
     })
