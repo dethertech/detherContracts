@@ -139,19 +139,17 @@ contract('Dether Interface', () => {
 
     it('should get all tellers in a zone', async () => {
       const teller4 = Object.assign({}, teller1, {zoneId: 17, name: 'teller4'});
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
-      await dether.registerPoint(...Object.values(teller2), {from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000});
-      await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 300000});
-      await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 400000});
+      await dether.registerPoint(...Object.values(teller2), {from: teller2address, value: web3.toWei(1, 'ether'), gas: 400000});
+      await dether.registerPoint(...Object.values(teller3), {from: teller3address, value: web3.toWei(1, 'ether'), gas: 400000});
+      await dether.registerPoint(...Object.values(teller4), {from: account1, value: web3.toWei(1, 'ether'), gas: 400000});
 
       const tellers42 = await detherStorage.getZone(42);
       const teller17 = await detherStorage.getZone(17);
       assert.deepEqual(tellers42, [teller1address, teller2address, teller3address], 'incorrect zone');
       assert.deepEqual(teller17, [account1], 'incorrect zone');
     })
-
   })
-
 
   contract('Money --', () => {
     beforeEach(async () => {
