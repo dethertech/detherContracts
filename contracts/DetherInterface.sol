@@ -123,7 +123,6 @@ contract DetherInterface is Ownable {
   function withdrawAll() isNotLockedForInitialMigration returns (bool) {
     uint toSend = detherStorage.getTellerBalance(msg.sender);
     detherStorage.setTellerBalance(msg.sender, 0);
-    /*msg.sender.transfer(toSend);*/
     detherStorage.releaseEth(msg.sender, toSend);
     detherStorage.clearMessagingAddress(msg.sender);
     var (lat, lng,) = detherStorage.getTellerPosition(msg.sender);
