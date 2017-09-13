@@ -41,6 +41,24 @@ contract DetherInterface is Ownable {
       RegisterPoint(_lat, _lng, _rate, msg.sender);
   }
 
+  function importTellers(
+    int256 _lat,
+    int256 _lng,
+    uint _zoneId,
+    int16 _rate,
+    int8 _avatarId,
+    int8 _currencyId,
+    bytes32 _messagingAddress,
+    bytes32 _name,
+    uint _balance
+    ) onlyOwner {
+    detherStorage.setTellerIndex(msg.sender);
+    detherStorage.setTellerZone(msg.sender, _zoneId);
+    detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
+    detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
+    detherStorage.setTellerBalance(msg.sender, _balance);
+  }
+
   function changeStorageOwnership(address newOwner) onlyOwner {
     detherStorage.transferOwnership(newOwner);
   }
