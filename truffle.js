@@ -9,22 +9,22 @@ module.exports = {
       port: 8545,
       network_id: "*" // Match any network id
     },
-    kovan: {
-      provider: new LightWalletProvider({
-        keystore: './sigmate-v3-deploysc.json',
-        password: pass,
-        rpcUrl: 'https://kovan.infura.io/v604Wu8pXGoPC41ARh0B',
-        // debug: true, // optional, show JSON-RPC logs
-      }),
-      network_id: 42,
-    },
+    // kovan: {
+    //   provider: new LightWalletProvider({
+    //     keystore: './sigmate-v3-deploysc.json',
+    //     password: pass,
+    //     rpcUrl: 'https://kovan.infura.io/v604Wu8pXGoPC41ARh0B',
+    //     // debug: true, // optional, show JSON-RPC logs
+    //   }),
+    //   network_id: 42,
+    // },
     // ropsten: {
     //   host: "localhost",
     //   port: 8545,
     //   network_id: 3,
     //   from: "0xe070b23860FA281252aC4ABB8d3E120f088d1Fb1",
     // },
-    kovanManual: {
+    kovan: {
       host: "localhost",
       port: 8545,
       network_id: 42,
