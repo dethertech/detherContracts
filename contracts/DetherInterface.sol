@@ -51,7 +51,6 @@ contract DetherInterface is Ownable {
     uint zoneId,
     uint balance) {
       balance = detherStorage.getTellerBalance(_teller);
-      require(balance >= 10 finney);
       (lat, lng, zoneId) = detherStorage.getTellerPosition(_teller);
       return (lat, lng, zoneId, balance);
   }
@@ -66,7 +65,6 @@ contract DetherInterface is Ownable {
     bytes32 telAddr) {
       // Conditions
       uint balance = detherStorage.getTellerBalance(_teller);
-      require(balance >= 10 finney);
       //
       return detherStorage.getTellerProfile(_teller);
   }
