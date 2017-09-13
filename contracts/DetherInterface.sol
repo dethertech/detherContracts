@@ -33,7 +33,7 @@ contract DetherInterface is Ownable {
   }
 
   /// @notice Register a teller
-  /// @dev gasUsed: 292273
+  /// @dev gasUsed: 299600
   function registerPoint(
     int256 _lat,
     int256 _lng,
