@@ -13,12 +13,12 @@ contract DetherInterface is Ownable {
   event SendCoin(address indexed _from, address indexed _to, uint256 _value, int256 lat, int256 lng);
   event Withdraw(int256 lat, int256 lng, address addr);
 
-  modifier isNotInit() {
+  modifier isLockedForInitialMigration() {
     require(!initialised);
     _;
   }
 
-  modifier isInit() {
+  modifier isNotLockedForInitialMigration() {
     require(initialised);
     _;
   }
@@ -43,7 +43,7 @@ contract DetherInterface is Ownable {
     int8 _currencyId,
     bytes32 _messagingAddress,
     bytes32 _name
-    ) payable isInit {
+    ) payable isNotLockedForInitialMigration {
       // Conditions
       require(!detherStorage.isTeller(msg.sender));
       require(msg.value >= 10 finney);
@@ -67,7 +67,7 @@ contract DetherInterface is Ownable {
     bytes32 _messagingAddress,
     bytes32 _name,
     uint _balance
-    ) onlyOwner isNotInit {
+    ) onlyOwner isLockedForInitialMigration {
     detherStorage.setTellerIndex(msg.sender);
     detherStorage.setTellerZone(msg.sender, _zoneId);
     detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
@@ -105,7 +105,7 @@ contract DetherInterface is Ownable {
 
   /// @notice Sendcoin allow seller to send ether they put in escrow in the smart contract
   /// @dev gasUsed: 96681
-  function sendCoin (address _receiver, uint _amount) isInit returns (bool) {
+  function sendCoin (address _receiver, uint _amount) isNotLockedForInitialMigration returns (bool) {
     require(_receiver != msg.sender);
     uint tellerBalance = detherStorage.getTellerBalance(msg.sender);
     require(tellerBalance >= _amount);
@@ -123,7 +123,7 @@ contract DetherInterface is Ownable {
 
   /// @notice Seller can withdraw the fund he puts in escrow in the smart contract
   /// @dev gasUsed: 26497
-  function withdrawAll() isInit returns (bool) {
+  function withdrawAll() isNotLockedForInitialMigration returns (bool) {
     uint toSend = detherStorage.getTellerBalance(msg.sender);
     detherStorage.setTellerBalance(msg.sender, 0);
     msg.sender.transfer(toSend);
