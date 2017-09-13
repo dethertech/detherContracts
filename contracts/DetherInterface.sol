@@ -97,9 +97,6 @@ contract DetherInterface is Ownable {
     int8 currency,
     int8 avatar,
     bytes32 telAddr) {
-      // Conditions
-      uint balance = detherStorage.getTellerBalance(_teller);
-      //
       return detherStorage.getTellerProfile(_teller);
   }
 
