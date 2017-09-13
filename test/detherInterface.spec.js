@@ -64,6 +64,10 @@ contract('Dether Interface', () => {
 
 
   contract('Registration --', () => {
+    beforeEach(async () => {
+      dether.setInit();
+    })
+
     it('should register a teller and be on the map', async () => {
       // Teller 1
       await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
@@ -161,6 +165,10 @@ contract('Dether Interface', () => {
 
 
   contract('Money --', () => {
+    beforeEach(async () => {
+      dether.setInit();
+    })
+
     it('should have teller able to send coins to eth addr', async () => {
       const balanceT1BeforeReg = web3.fromWei(await dether.getTellerBalances(teller1address), 'ether').toNumber();
       assert.strictEqual(balanceT1BeforeReg, 0, 'T1 balance not empty');
@@ -229,6 +237,10 @@ contract('Dether Interface', () => {
 
 
   contract(('Ownable --'), () => {
+    beforeEach(async () => {
+      dether.setInit();
+    })
+
     it('should Interface has a owner', async () => {
       assert.equal(await dether.owner(), owner, 'owner not set');
     })
@@ -254,17 +266,6 @@ contract('Dether Interface', () => {
   })
 
   contract(('Utils --'), () => {
-    it('should export all tellers', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
-      const tellers = await detherStorage.getAllTellers();
-      const data = await Promise.all(tellers.map(async (address) => {
-        const profile = (await dether.getTellerProfile(address)).map(convertTypes)
-        const position = (await dether.getTellerPos(address)).map(convertTypes)
-        return [...position, ...profile]
-      }))
-      assert.deepEqual(data, [[123456, 987654, 42, 1000000000000000000, 300, 0, 0, 'teller1', 1, 1, 'http://t.me/teller1']], 'data not correct')
-    })
-
     it('should import tellers', async () => {
       await dether.importTellers(...Object.values(teller1), web3.toWei(1, 'ether'), {gas: 300000})
       const tellers = await detherStorage.getAllTellers();
@@ -275,5 +276,18 @@ contract('Dether Interface', () => {
       }))
       assert.deepEqual(data, [[123456, 987654, 42, 1000000000000000000, 300, 0, 0, 'teller1', 1, 1, 'http://t.me/teller1']], 'data not correct')
     })
+
+    it('should export all tellers', async () => {
+            dether.setInit();
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      const tellers = await detherStorage.getAllTellers();
+      const data = await Promise.all(tellers.map(async (address) => {
+        const profile = (await dether.getTellerProfile(address)).map(convertTypes)
+        const position = (await dether.getTellerPos(address)).map(convertTypes)
+        return [...position, ...profile]
+      }))
+      assert.deepEqual(data, [[123456, 987654, 42, 1000000000000000000, 300, 0, 0, 'teller1', 1, 1, 'http://t.me/teller1']], 'data not correct')
+    })
+
   })
 })
