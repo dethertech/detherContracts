@@ -49,6 +49,12 @@ const
     , buyer3address
   ] = web3.eth.accounts;
 
+const convertTypes = x => {
+  if (typeof x === 'string') return web3.toUtf8(x)
+  else if (x.constructor.name === 'BigNumber') return x.toNumber()
+  else return x
+}
+
 contract('Dether Interface', () => {
   beforeEach(async () => {
     detherStorage = await DetherStorageAbs.new({gas: 1500000})
@@ -233,6 +239,30 @@ contract('Dether Interface', () => {
 
     it('should Storage throw if transfer ownership', async () => {
       await expectThrow(detherStorage.transferOwnership(account1));
+    })
+  })
+
+  contract(('Utils --'), () => {
+    it('should export all tellers', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      const tellers = await detherStorage.getAllTellers();
+      const data = await Promise.all(tellers.map(async (address) => {
+        const profile = (await dether.getTellerProfile(address)).map(convertTypes)
+        const position = (await dether.getTellerPos(address)).map(convertTypes)
+        return [...position, ...profile]
+      }))
+      assert.deepEqual(data, [[123456, 987654, 42, 1000000000000000000, 300, 0, 0, 'teller1', 1, 1, 'http://t.me/teller1']], 'data not correct')
+    })
+
+    it('should import tellers', async () => {
+      await dether.importTellers(...Object.values(teller1), web3.toWei(1, 'ether'), {gas: 300000})
+      const tellers = await detherStorage.getAllTellers();
+      const data = await Promise.all(tellers.map(async (address) => {
+        const profile = (await dether.getTellerProfile(address)).map(convertTypes)
+        const position = (await dether.getTellerPos(address)).map(convertTypes)
+        return [...position, ...profile]
+      }))
+      assert.deepEqual(data, [[123456, 987654, 42, 1000000000000000000, 300, 0, 0, 'teller1', 1, 1, 'http://t.me/teller1']], 'data not correct')
     })
   })
 })
