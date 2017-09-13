@@ -6,14 +6,30 @@ import './DetherStorage.sol';
 
 contract DetherInterface is Ownable {
   using SafeMath for uint256;
+  bool initialised;
   DetherStorage detherStorage;
   event Transfer (address indexed _from, address indexed _to, uint256 _value);
   event RegisterPoint(int256 lat, int256 lng, int16 rate, address addr);
   event SendCoin(address indexed _from, address indexed _to, uint256 _value, int256 lat, int256 lng);
   event Withdraw(int256 lat, int256 lng, address addr);
 
+  modifier isNotInit() {
+    require(!initialised);
+    _;
+  }
+
+  modifier isInit() {
+    require(initialised);
+    _;
+  }
+
+  function setInit() {
+    initialised = true;
+  }
+
   function DetherInterface(address _detherStorageAddress) {
     detherStorage = DetherStorage(_detherStorageAddress);
+    initialised = false;
   }
 
   /// @notice Register a teller
@@ -27,7 +43,7 @@ contract DetherInterface is Ownable {
     int8 _currencyId,
     bytes32 _messagingAddress,
     bytes32 _name
-    ) payable {
+    ) payable isInit {
       // Conditions
       require(!detherStorage.isTeller(msg.sender));
       require(msg.value >= 10 finney);
@@ -51,7 +67,7 @@ contract DetherInterface is Ownable {
     bytes32 _messagingAddress,
     bytes32 _name,
     uint _balance
-    ) onlyOwner {
+    ) onlyOwner isNotInit {
     detherStorage.setTellerIndex(msg.sender);
     detherStorage.setTellerZone(msg.sender, _zoneId);
     detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
@@ -89,7 +105,7 @@ contract DetherInterface is Ownable {
 
   /// @notice Sendcoin allow seller to send ether they put in escrow in the smart contract
   /// @dev gasUsed: 96681
-  function sendCoin (address _receiver, uint _amount) returns (bool) {
+  function sendCoin (address _receiver, uint _amount) isInit returns (bool) {
     require(_receiver != msg.sender);
     uint tellerBalance = detherStorage.getTellerBalance(msg.sender);
     require(tellerBalance >= _amount);
@@ -107,7 +123,7 @@ contract DetherInterface is Ownable {
 
   /// @notice Seller can withdraw the fund he puts in escrow in the smart contract
   /// @dev gasUsed: 26497
-  function withdrawAll() returns (bool) {
+  function withdrawAll() isInit returns (bool) {
     uint toSend = detherStorage.getTellerBalance(msg.sender);
     detherStorage.setTellerBalance(msg.sender, 0);
     msg.sender.transfer(toSend);
