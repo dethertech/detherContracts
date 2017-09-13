@@ -1,13 +1,10 @@
+/* global contract it artifacts web3 assert */
 const {expectThrow, waitForMined} = require('./utils');
-/* global contract it artifacts web3 assert*/
 const DetherInterfaceAbs = artifacts.require('./DetherInterface.sol');
 const DetherStorageAbs = artifacts.require('./DetherStorage.sol');
 let dether, detherStorage;
 
-// --> TEST TO ADD:
-// ADD TELLER, AND DELETE FROM ZONE
-// REPUTATION
-
+// todo Move to mock data file
 const teller1 = {
   lat: 123456,
   lng: 987654,
@@ -18,7 +15,6 @@ const teller1 = {
   messengerAddr: 'http://t.me/teller1',
   name: 'teller1'
 }
-
 const teller2 = {
   lat: 444444,
   lng: 5555555,
@@ -29,7 +25,6 @@ const teller2 = {
   messengerAddr: 'http://t.me/teller2',
   name: 'teller2'
 }
-
 const teller3 = {
   lat: 1234333,
   lng: 234535,
@@ -54,12 +49,13 @@ const
     , buyer3address
   ] = web3.eth.accounts;
 
-contract('Dether', () => {
+contract('Dether Interface', () => {
   beforeEach(async () => {
     detherStorage = await DetherStorageAbs.new({gas: 1500000})
     dether = await DetherInterfaceAbs.new(detherStorage.address, {gas: 1500000});
     detherStorage.transferOwnership(dether.address);
   })
+
 
   contract('Registration --', () => {
     it('should register a teller and be on the map', async () => {
@@ -94,6 +90,28 @@ contract('Dether', () => {
       assert.equal(profile2[4].toNumber(), teller2.currencyId, 'verif currency');
       assert.equal(profile2[5].toNumber(), teller2.avatarId, 'verif avatar');
       assert.equal(web3.toUtf8(profile2[6]), teller2.messengerAddr, 'verif telegram');
+    })
+
+    it('should increment tellerIndex array', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      const count = await detherStorage.getTellerCount();
+      assert.equal(count.toNumber(), 1, 'count not correct');
+    })
+
+    it('should get teller at index', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
+      const tel1 = await detherStorage.getTellerAtIndex(0);
+      const tel2 = await detherStorage.getTellerAtIndex(1);
+      assert.equal(tel1, teller1address, 'address t1 not correct');
+      assert.equal(tel2, teller2address, 'address t2 not correct');
+    })
+
+    it('should get all teller\'s address', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
+      const tellers = await detherStorage.getAllTellers();
+      assert.deepEqual(tellers, [teller1address, teller2address], 'addresses dont match');
     })
 
     it('should throw registering teller if value not >= 10 finney', async () => {
@@ -135,6 +153,7 @@ contract('Dether', () => {
     })
   })
 
+
   contract('Money --', () => {
     it('should have teller able to send coins to eth addr', async () => {
       const balanceT1BeforeReg = web3.fromWei(await dether.getTellerBalances(teller1address), 'ether').toNumber();
@@ -152,7 +171,7 @@ contract('Dether', () => {
 
       assert.strictEqual(web3.fromWei(await web3.eth.getBalance(account1), 'ether').toNumber(), balanceAccount1beforeSend + 1, 'Account1 balance not correct');
 
-      let transferEvent = dether.Transfer();
+      let transferEvent = await dether.Transfer();
       transferEvent.get((err, events) => {
         if (err) assert.isNull(err, 'there was no event');
         assert.equal(events[0].args._from, teller1address, 'T1 addr incorrect in event');
@@ -202,6 +221,7 @@ contract('Dether', () => {
     })
   })
 
+
   contract(('Ownable --'), () => {
     it('should Interface has a owner', async () => {
       assert.equal(await dether.owner(), owner, 'owner not set');
@@ -223,7 +243,7 @@ contract('Dether', () => {
     })
 
     it('should Storage throw if transfer ownership', async () => {
-      expectThrow(detherStorage.transferOwnership(account1));
+      await expectThrow(detherStorage.transferOwnership(account1));
     })
   })
 })
