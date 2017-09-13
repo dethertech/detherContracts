@@ -53,7 +53,7 @@ contract DetherInterface is Ownable {
       detherStorage.setTellerZone(msg.sender, _zoneId);
       detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
       detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
-      detherStorage.setTellerBalance(msg.sender, msg.value);
+      detherStorage.setTellerBalance.value(msg.value)(msg.sender, msg.value);
       RegisterPoint(_lat, _lng, _rate, msg.sender);
   }
 
@@ -111,7 +111,7 @@ contract DetherInterface is Ownable {
     var (nbTrade, volumeTrade) = detherStorage.getTellerReputation(msg.sender);
     detherStorage.setTellerReputation(msg.sender, ++nbTrade, volumeTrade.add(_amount));
 
-    _receiver.transfer(_amount);
+    detherStorage.releaseEth(_receiver, _amount);
     Transfer(msg.sender, _receiver, _amount);
     var (lat, lng,) = detherStorage.getTellerPosition(msg.sender);
     SendCoin(msg.sender, _receiver, _amount, lat, lng);
@@ -123,7 +123,8 @@ contract DetherInterface is Ownable {
   function withdrawAll() isNotLockedForInitialMigration returns (bool) {
     uint toSend = detherStorage.getTellerBalance(msg.sender);
     detherStorage.setTellerBalance(msg.sender, 0);
-    msg.sender.transfer(toSend);
+    /*msg.sender.transfer(toSend);*/
+    detherStorage.releaseEth(msg.sender, toSend);
     detherStorage.clearMessagingAddress(msg.sender);
     var (lat, lng,) = detherStorage.getTellerPosition(msg.sender);
     Withdraw(lat, lng, msg.sender);

@@ -111,7 +111,7 @@ contract DetherStorage is Ownable {
 
 
   // Teller Balance
-  function setTellerBalance(address _address, uint _balance) onlyOwner {
+  function setTellerBalance(address _address, uint _balance) onlyOwner payable {
     tellers[_address].balance = _balance;
   }
 
@@ -145,6 +145,10 @@ contract DetherStorage is Ownable {
 
   function getAllTellers() view returns (address[]) {
     return tellerIndex;
+  }
+
+  function releaseEth(address _receiver, uint _amount) onlyOwner returns (bool) {
+    _receiver.transfer(_amount);
   }
 
   // Delete teller
