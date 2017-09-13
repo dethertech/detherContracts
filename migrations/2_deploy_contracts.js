@@ -5,12 +5,12 @@ var DetherStorageJson = require("../build/contracts/DetherStorage.json");
 module.exports = function(deployer, network) {
   console.log('Migration --', network);
   if (network == 'kovan') {
-    console.log('-> kovan');
-    //deployer.deploy(DetherInterface, DetherStorageJson.networks[42].address, {gas: 1500000});
-    deployer.deploy(DetherStorage, {gas: 1500000})
-    .then(() => deployer.deploy(DetherInterface, DetherStorage.address, {gas: 1500000}))
-  } else {
-    // to deploy interface with new storage
+      console.log('-> kovan');
+      deployer.deploy(DetherStorage, {gas: 1500000})
+      .then(() => deployer.deploy(DetherInterface, DetherStorage.address, {gas: 1500000}))
+      .then(() => DetherStorage.at(DetherStorage.address).transferOwnership(DetherInterface.address, {gas: 300000} ))
+      .then(() => DetherInterface.at(DetherInterface.address).setInit({gas: 300000}))
+    } else {
     console.log('=>Other')
       deployer.deploy(DetherStorage, {gas: 1500000})
       .then(() => deployer.deploy(DetherInterface, DetherStorage.address, {gas: 1500000}))

@@ -45,7 +45,8 @@ contract DetherInterface is Ownable {
     bytes32 _name
     ) payable isNotLockedForInitialMigration {
       // Conditions
-      require(!detherStorage.isTeller(msg.sender));
+      uint balance = detherStorage.getTellerBalance(msg.sender);
+      require(balance == 0);
       require(msg.value >= 10 finney);
       require(msg.value < 5 ether);
       //
