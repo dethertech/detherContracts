@@ -140,17 +140,6 @@ contract('Dether Interface', () => {
       assert.deepEqual(teller17, [account1], 'incorrect zone');
     })
 
-    // it('should throw getting teller position if teller balance not >= 10 finney', async () => {
-    //   await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(10, 'finney'), gas: 300000});
-    //   await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
-    //   await expectThrow(dether.getTellerPos(teller1address));
-    // })
-    //
-    // it('should throw getting teller profile if teller balance not >= 10 finney', async () => {
-    //   await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(10, 'finney'), gas: 300000});
-    //   await dether.sendCoin.sendTransaction(account1, web3.toWei(1, 'finney'), {from: teller1address});
-    //   await expectThrow(dether.getTellerProfile(teller1address));
-    // })
   })
 
 
