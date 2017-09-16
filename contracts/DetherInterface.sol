@@ -49,7 +49,6 @@ contract DetherInterface is Ownable {
       require(balance == 0);
       require(msg.value >= 10 finney);
       require(msg.value < 5 ether);
-      //
       detherStorage.setTellerIndex(msg.sender);
       detherStorage.setTellerZone(msg.sender, _zoneId);
       detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);

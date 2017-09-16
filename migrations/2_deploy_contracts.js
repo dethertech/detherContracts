@@ -12,7 +12,9 @@ module.exports = function(deployer, network) {
       .then(() => DetherInterface.at(DetherInterface.address).setInit({gas: 300000}))
     } else {
     console.log('=>Other')
-      deployer.deploy(DetherStorage, {gas: 1500000})
-      .then(() => deployer.deploy(DetherInterface, DetherStorage.address, {gas: 1500000}))
+    deployer.deploy(DetherStorage, {gas: 2000000})
+    .then(() => deployer.deploy(DetherInterface, DetherStorage.address, {gas: 2000000}))
+    .then(() => DetherStorage.at(DetherStorage.address).transferOwnership(DetherInterface.address, {gas: 400000} ))
+    .then(() => DetherInterface.at(DetherInterface.address).setInit({gas: 400000}))
   }
 };
