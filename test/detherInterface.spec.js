@@ -57,11 +57,10 @@ const convertTypes = x => {
 
 contract('Dether Interface', () => {
   beforeEach(async () => {
-    detherStorage = await DetherStorageAbs.new({gas: 1500000})
-    dether = await DetherInterfaceAbs.new(detherStorage.address, {gas: 1500000});
+    detherStorage = await DetherStorageAbs.new({gas: 2000000})
+    dether = await DetherInterfaceAbs.new(detherStorage.address, {gas: 2000000});
     detherStorage.transferOwnership(dether.address);
   })
-
 
   contract('Registration --', () => {
     beforeEach(async () => {
@@ -69,8 +68,9 @@ contract('Dether Interface', () => {
     })
 
     it('should register a teller and be on the map', async () => {
+
       // Teller 1
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 350000});
       // Check position info
       const pos1 = await dether.getTellerPos(teller1address);
       assert.equal(pos1[0].toNumber(), teller1.lat, 'verif lat');
@@ -86,7 +86,7 @@ contract('Dether Interface', () => {
       assert.equal(web3.toUtf8(profile1[6]), teller1.messengerAddr, 'verif telegram');
 
       // Teller 2
-      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
+      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 350000 });
       // Check position info
       const pos2 = await dether.getTellerPos(teller2address);
       assert.equal(pos2[0].toNumber(), teller2.lat, 'verif lat');
@@ -103,14 +103,14 @@ contract('Dether Interface', () => {
     })
 
     it('should increment tellerIndex array', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 350000});
       const count = await detherStorage.getTellerCount();
       assert.equal(count.toNumber(), 1, 'count not correct');
     })
 
     it('should get teller at index', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
-      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 350000});
+      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 350000 });
       const tel1 = await detherStorage.getTellerAtIndex(0);
       const tel2 = await detherStorage.getTellerAtIndex(1);
       assert.equal(tel1, teller1address, 'address t1 not correct');
@@ -118,15 +118,15 @@ contract('Dether Interface', () => {
     })
 
     it('should get all teller\'s address', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
-      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 350000});
+      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 350000 });
       const tellers = await detherStorage.getAllTellers();
       assert.deepEqual(tellers, [teller1address, teller2address], 'addresses dont match');
     })
 
     it('should throw registering teller if value not >= 10 finney', async () => {
       await expectThrow(dether.registerPoint(...Object.values(teller1),
-         {from: teller1address, value: web3.toWei(9, 'finney'), gas: 300000}));
+         {from: teller1address, value: web3.toWei(9, 'finney'), gas: 350000}));
     })
 
     it.skip('should register and unregister and be only on the new zone', async () => {
@@ -160,7 +160,7 @@ contract('Dether Interface', () => {
       const balanceT1BeforeReg = web3.fromWei(await dether.getTellerBalances(teller1address), 'ether').toNumber();
       assert.strictEqual(balanceT1BeforeReg, 0, 'T1 balance not empty');
 
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(2, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(2, 'ether'), gas: 350000});
       const balanceT1AfterReg = web3.fromWei(await dether.getTellerBalances(teller1address), 'ether').toNumber();
       assert.strictEqual(balanceT1AfterReg, 2, 'T1 balance not correct');
 
@@ -182,7 +182,7 @@ contract('Dether Interface', () => {
     })
 
     it('should increase volumeTrade & nbTrade when coins are sent', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(4, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(4, 'ether'), gas: 350000});
       let profile1 = await dether.getTellerProfile(teller1address);
       const volTrade = web3.fromWei(profile1[1], 'ether').toNumber();
       const numTrade = profile1[2].toNumber();
@@ -196,7 +196,7 @@ contract('Dether Interface', () => {
     })
 
     it.skip('should not be able to send to myself and win reputation', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(4, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(4, 'ether'), gas: 350000});
       let profile1 = await dether.getTellerProfile(teller1address);
       assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), 0, 'volume trade');
       assert.equal(profile1[2].toNumber(), 0, 'number of trade');
@@ -209,7 +209,7 @@ contract('Dether Interface', () => {
     })
 
     it('should have teller able to withdraw all funds', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller2address, value: web3.toWei(4, 'ether'), gas: 300000});
+      await dether.registerPoint(...Object.values(teller1), {from: teller2address, value: web3.toWei(4, 'ether'), gas: 350000});
       const balanceT1AfterReg = web3.fromWei(await dether.getTellerBalances(teller2address), 'ether').toNumber();
       assert.strictEqual(balanceT1AfterReg, 4, 'T1 balance not correct');
 
@@ -221,7 +221,6 @@ contract('Dether Interface', () => {
       assert.strictEqual(balanceT1AccountAfter.toFixed(5), (balanceT1AccountBefore - (gasUsed/10000000) + 4).toFixed(5), 'T1 balance not correct');
     })
   })
-
 
   contract(('Ownable --'), () => {
     beforeEach(async () => {
@@ -254,7 +253,7 @@ contract('Dether Interface', () => {
 
   contract(('Utils --'), () => {
     it('should import tellers', async () => {
-      await dether.importTellers(...Object.values(teller1), web3.toWei(1, 'ether'), {gas: 300000})
+      await dether.importTellers(...Object.values(teller1), web3.toWei(1, 'ether'), {gas: 400000})
       const tellers = await detherStorage.getAllTellers();
       const data = await Promise.all(tellers.map(async (address) => {
         const profile = (await dether.getTellerProfile(address)).map(convertTypes)
@@ -265,8 +264,8 @@ contract('Dether Interface', () => {
     })
 
     it('should export all tellers', async () => {
-            dether.setInit();
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      dether.setInit();
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 400000});
       const tellers = await detherStorage.getAllTellers();
       const data = await Promise.all(tellers.map(async (address) => {
         const profile = (await dether.getTellerProfile(address)).map(convertTypes)

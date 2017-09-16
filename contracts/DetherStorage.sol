@@ -1,8 +1,10 @@
 pragma solidity 0.4.16;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 
 contract DetherStorage is Ownable {
+  using SafeMath for uint256;
 
   struct TellerPosition {
     int256 lat;
@@ -34,7 +36,6 @@ contract DetherStorage is Ownable {
   event LogDeleteTeller(address tellerAddress, uint rowToDelete);
   event LogUpdateTeller(address keyToMove, uint rowToDelete);
 
-
   // Teller Position
   function setTellerPosition(address _address, int256 lat, int256 lng, uint zoneId) onlyOwner {
     tellers[_address].tellerPosition = TellerPosition(lat, lng, zoneId);
@@ -50,7 +51,6 @@ contract DetherStorage is Ownable {
       tellers[_teller].tellerPosition.zoneId
     );
   }
-
 
   // Teller Profile
   function setTellerProfile(
@@ -86,7 +86,6 @@ contract DetherStorage is Ownable {
       );
   }
 
-
   // Teller Zone
   function setTellerZone(address _address, uint _zoneId) onlyOwner {
     if (tellers[_address].tellerPosition.zoneId != _zoneId) {
@@ -109,7 +108,6 @@ contract DetherStorage is Ownable {
       return (tellers[_address].tellerProfile.nbTrade, tellers[_address].tellerProfile.volumeTrade);
   }
 
-
   // Teller Balance
   function setTellerBalance(address _address, uint _balance) onlyOwner payable {
     tellers[_address].balance = _balance;
@@ -118,7 +116,6 @@ contract DetherStorage is Ownable {
   function getTellerBalance(address _address) view returns (uint) {
     return tellers[_address].balance;
   }
-
 
   // Misc
   function clearMessagingAddress(address _address) onlyOwner returns (bool){
