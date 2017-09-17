@@ -1,7 +1,6 @@
 require('dotenv').config({path: '.env'})
-const {PASSWORD, KEYSTORE} = process.env
+const {ADDRESS, KEYSTORE, PASSWORD} = process.env
 const LightWalletProvider = require('@digix/truffle-lightwallet-provider')
-// kovan 0xe2e8d89c9435a92eedfade8c94e14118a3156f09
 
 module.exports = {
   networks: {
@@ -23,14 +22,14 @@ module.exports = {
       host: 'localhost',
       port: 8545,
       network_id: 42,
-      from: '0x13DD7902e989e7eA28874F6D8C28681b1105Fe84',
+      from: ADDRESS,
     },
-    // ropsten: {
-    //   host: "localhost",
-    //   port: 8545,
-    //   network_id: 3,
-    //   from: "0xe070b23860FA281252aC4ABB8d3E120f088d1Fb1",
-    // },
+    ropsten: {
+      host: "localhost",
+      port: 8545,
+      network_id: 3,
+      from: ADDRESS,
+    },
     mainnet: {
       host: 'localhost',
       port: 8545,
