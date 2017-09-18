@@ -1,40 +1,9 @@
 /* global contract it artifacts web3 assert */
 const {expectThrow, waitForMined} = require('./utils');
+const {teller1, teller2, teller3} = require('./mock.json');
 const DetherInterfaceAbs = artifacts.require('./DetherInterface.sol');
 const DetherStorageAbs = artifacts.require('./DetherStorage.sol');
 let dether, detherStorage;
-
-// todo Move to mock data file
-const teller1 = {
-  lat: 123456,
-  lng: 987654,
-  zoneId: 42,
-  rate: 300,
-  avatarId: 1,
-  currencyId: 1,
-  messengerAddr: 'http://t.me/teller1',
-  name: 'teller1'
-}
-const teller2 = {
-  lat: 444444,
-  lng: 5555555,
-  zoneId: 42,
-  rate: 123,
-  avatarId: 2,
-  currencyId: 2,
-  messengerAddr: 'http://t.me/teller2',
-  name: 'teller2'
-}
-const teller3 = {
-  lat: 1234333,
-  lng: 234535,
-  zoneId: 42,
-  rate: 222,
-  avatarId: 3,
-  currencyId: 2,
-  messengerAddr: 'http://t.me/teller3',
-  name: 'teller3'
-}
 
 const
   [
@@ -129,12 +98,14 @@ contract('Dether Interface', () => {
          {from: teller1address, value: web3.toWei(9, 'finney'), gas: 300000}));
     })
 
-    it.skip('should register and unregister and be only on the new zone', async () => {
-      // can't unregister at the moment
-    })
-
-    it.skip('should update sell point', async () => {
-
+    it('should register, sell, unregister, register and keep its reputation', async () => {
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      await dether.sendCoin(account1, web3.toWei(0.5, 'ether'), {from: teller1address});
+      await dether.withdrawAll({from: teller1address});
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
+      let profile1 = await dether.getTellerProfile(teller1address);
+      assert.equal(web3.fromWei(profile1[1], 'ether').toNumber(), 0.5, 'volume trade');
+      assert.equal(profile1[2].toNumber(), 1, 'number of trade');
     })
 
     it('should get all tellers in a zone', async () => {
@@ -209,15 +180,15 @@ contract('Dether Interface', () => {
     })
 
     it('should have teller able to withdraw all funds', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller2address, value: web3.toWei(4, 'ether'), gas: 300000});
-      const balanceT1AfterReg = web3.fromWei(await dether.getTellerBalances(teller2address), 'ether').toNumber();
+      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(4, 'ether'), gas: 300000});
+      const balanceT1AfterReg = web3.fromWei(await dether.getTellerBalances(teller1address), 'ether').toNumber();
       assert.strictEqual(balanceT1AfterReg, 4, 'T1 balance not correct');
 
-      const balanceT1AccountBefore = web3.fromWei(await web3.eth.getBalance(teller2address), 'ether').toNumber();
-      const txHash = await dether.withdrawAll.sendTransaction({from: teller2address});
+      const balanceT1AccountBefore = web3.fromWei(await web3.eth.getBalance(teller1address), 'ether').toNumber();
+      const txHash = await dether.withdrawAll.sendTransaction({from: teller1address});
       const receipt = await waitForMined(txHash);
       const gasUsed = receipt.gasUsed;
-      const balanceT1AccountAfter = web3.fromWei(await web3.eth.getBalance(teller2address), 'ether').toNumber();
+      const balanceT1AccountAfter = web3.fromWei(await web3.eth.getBalance(teller1address), 'ether').toNumber();
       assert.strictEqual(balanceT1AccountAfter.toFixed(5), (balanceT1AccountBefore - (gasUsed/10000000) + 4).toFixed(5), 'T1 balance not correct');
     })
   })

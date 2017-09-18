@@ -1,39 +1,8 @@
 /* global contract it artifacts web3 assert */
 const {expectThrow, waitForMined} = require('./utils');
+const {teller1, teller2, teller3} = require('./mock.json');
 const DetherStorageAbs = artifacts.require('./DetherStorage.sol');
 let detherStorage;
-
-// todo Move to mock data file
-const teller1 = {
-  lat: 123456,
-  lng: 987654,
-  zoneId: 42,
-  rate: 300,
-  avatarId: 1,
-  currencyId: 1,
-  messengerAddr: 'http://t.me/teller1',
-  name: 'teller1'
-}
-const teller2 = {
-  lat: 444444,
-  lng: 5555555,
-  zoneId: 42,
-  rate: 123,
-  avatarId: 2,
-  currencyId: 2,
-  messengerAddr: 'http://t.me/teller2',
-  name: 'teller2'
-}
-const teller3 = {
-  lat: 1234333,
-  lng: 234535,
-  zoneId: 42,
-  rate: 222,
-  avatarId: 3,
-  currencyId: 2,
-  messengerAddr: 'http://t.me/teller3',
-  name: 'teller3'
-}
 
 const
   [
@@ -63,15 +32,11 @@ contract('Dether Storage', () => {
       assert.equal(pos1[2].toNumber(), teller1.zoneId, 'verif zone');
     })
 
-    it.skip('should setTellerProfile', async () => {})
-
-    it.skip('should getTellerProfile', async () => {})
-
     it.skip('should delete t1, t3 move to index 0', async () => {
       await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
       await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
       await dether.registerPoint(...Object.values(teller3), { from: teller3address, value: web3.toWei(1, 'ether'), gas: 300000 });
-      await detherStorage.deleteTeller(teller1address);
+      await dether.deleteTeller(teller1address);
       const tellers = await detherStorage.getAllTellers();
       assert.deepEqual(tellers, [teller3address, teller2address], 'addresses dont match');
     })
