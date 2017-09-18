@@ -135,9 +135,4 @@ contract DetherInterface is Ownable {
   function getTellerBalances(address _address) view returns (uint) {
     return detherStorage.getTellerBalance(_address);
   }
-
-  /// @notice Delete a teller
-  function deleteTeller(address _address) onlyOwner {
-     detherStorage.deleteTeller(_address);
-  }
 }

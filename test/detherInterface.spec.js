@@ -120,15 +120,6 @@ contract('Dether Interface', () => {
       assert.deepEqual(tellers42, [teller1address, teller2address, teller3address], 'incorrect zone');
       assert.deepEqual(teller17, [account1], 'incorrect zone');
     })
-
-    it('should delete t1, t3 move to index 0', async () => {
-      await dether.registerPoint(...Object.values(teller1), {from: teller1address, value: web3.toWei(1, 'ether'), gas: 300000});
-      await dether.registerPoint(...Object.values(teller2), { from: teller2address, value: web3.toWei(1, 'ether'), gas: 300000 });
-      await dether.registerPoint(...Object.values(teller3), { from: teller3address, value: web3.toWei(1, 'ether'), gas: 300000 });
-      await dether.deleteTeller(teller1address);
-      const tellers = await detherStorage.getAllTellers();
-      assert.deepEqual(tellers, [teller3address, teller2address], 'addresses dont match');
-    })
   })
 
   contract('Money --', () => {
