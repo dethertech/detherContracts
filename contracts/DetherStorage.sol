@@ -132,7 +132,9 @@ contract DetherStorage is Ownable {
   }
 
   function setTellerIndex(address _address) onlyOwner {
-    tellers[_address].index = tellerIndex.push(_address) - 1;
+    if (!isTeller(_address)) {
+      tellers[_address].index = tellerIndex.push(_address) - 1;
+    }
   }
 
   function getTellerCount() view returns (uint count) {
