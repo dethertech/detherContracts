@@ -1,19 +1,39 @@
 pragma solidity 0.4.16;
 
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import './DetherStorage.sol';
-import './base/SafeMath.sol';
 
-contract DetherInterface is SafeMath {
+contract DetherInterface is Ownable {
+  using SafeMath for uint256;
+  bool initialised;
   DetherStorage detherStorage;
   event Transfer (address indexed _from, address indexed _to, uint256 _value);
   event RegisterPoint(int256 lat, int256 lng, int16 rate, address addr);
   event SendCoin(address indexed _from, address indexed _to, uint256 _value, int256 lat, int256 lng);
   event Withdraw(int256 lat, int256 lng, address addr);
 
-  function DetherInterface(address _detherStorageAddress) {
-    detherStorage = DetherStorage(_detherStorageAddress);
+  modifier isLockedForInitialMigration() {
+    require(!initialised);
+    _;
   }
 
+  modifier isNotLockedForInitialMigration() {
+    require(initialised);
+    _;
+  }
+
+  function setInit() {
+    initialised = true;
+  }
+
+  function DetherInterface(address _detherStorageAddress) {
+    detherStorage = DetherStorage(_detherStorageAddress);
+    initialised = false;
+  }
+
+  /// @notice Register a teller
+  /// @dev gasUsed: 299600
   function registerPoint(
     int256 _lat,
     int256 _lng,
@@ -23,16 +43,41 @@ contract DetherInterface is SafeMath {
     int8 _currencyId,
     bytes32 _messagingAddress,
     bytes32 _name
-    ) payable {
+    ) payable isNotLockedForInitialMigration {
       // Conditions
+      uint balance = detherStorage.getTellerBalance(msg.sender);
+      require(balance == 0);
       require(msg.value >= 10 finney);
       require(msg.value < 5 ether);
       //
+      detherStorage.setTellerIndex(msg.sender);
       detherStorage.setTellerZone(msg.sender, _zoneId);
       detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
       detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
-      detherStorage.setTellerBalance(msg.sender, msg.value);
+      detherStorage.setTellerBalance.value(msg.value)(msg.sender, msg.value);
       RegisterPoint(_lat, _lng, _rate, msg.sender);
+  }
+
+  function importTellers(
+    int256 _lat,
+    int256 _lng,
+    uint _zoneId,
+    int16 _rate,
+    int8 _avatarId,
+    int8 _currencyId,
+    bytes32 _messagingAddress,
+    bytes32 _name,
+    uint _balance
+    ) onlyOwner isLockedForInitialMigration {
+    detherStorage.setTellerIndex(msg.sender);
+    detherStorage.setTellerZone(msg.sender, _zoneId);
+    detherStorage.setTellerPosition(msg.sender, _lat, _lng, _zoneId);
+    detherStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress, _name, _rate);
+    detherStorage.setTellerBalance(msg.sender, _balance);
+  }
+
+  function changeStorageOwnership(address newOwner) onlyOwner {
+    detherStorage.transferOwnership(newOwner);
   }
 
   function getTellerPos(address _teller) view returns (
@@ -41,7 +86,6 @@ contract DetherInterface is SafeMath {
     uint zoneId,
     uint balance) {
       balance = detherStorage.getTellerBalance(_teller);
-      require(balance >= 10 finney);
       (lat, lng, zoneId) = detherStorage.getTellerPosition(_teller);
       return (lat, lng, zoneId, balance);
   }
@@ -54,35 +98,35 @@ contract DetherInterface is SafeMath {
     int8 currency,
     int8 avatar,
     bytes32 telAddr) {
-      uint balance = detherStorage.getTellerBalance(_teller);
-      require(balance >= 10 finney);
       return detherStorage.getTellerProfile(_teller);
   }
 
   /// @notice Sendcoin allow seller to send ether they put in escrow in the smart contract
-  function sendCoin (address _receiver, uint _amount) returns (bool) {
+  /// @dev gasUsed: 96681
+  function sendCoin (address _receiver, uint _amount) isNotLockedForInitialMigration returns (bool) {
     require(_receiver != msg.sender);
     uint tellerBalance = detherStorage.getTellerBalance(msg.sender);
     require(tellerBalance >= _amount);
-    detherStorage.setTellerBalance(msg.sender, sub(tellerBalance, _amount));
+    detherStorage.setTellerBalance(msg.sender, tellerBalance.sub(_amount));
 
     var (nbTrade, volumeTrade) = detherStorage.getTellerReputation(msg.sender);
-    detherStorage.setTellerReputation(msg.sender, ++nbTrade, add(volumeTrade, _amount));
+    detherStorage.setTellerReputation(msg.sender, ++nbTrade, volumeTrade.add(_amount));
 
-    _receiver.transfer(_amount);
+    detherStorage.releaseEth(_receiver, _amount);
     Transfer(msg.sender, _receiver, _amount);
-    var (lat, lng, zoneId) = detherStorage.getTellerPosition(msg.sender);
+    var (lat, lng,) = detherStorage.getTellerPosition(msg.sender);
     SendCoin(msg.sender, _receiver, _amount, lat, lng);
     return true;
   }
 
   /// @notice Seller can withdraw the fund he puts in escrow in the smart contract
-  function withdrawAll() returns (bool) {
+  /// @dev gasUsed: 26497
+  function withdrawAll() isNotLockedForInitialMigration returns (bool) {
     uint toSend = detherStorage.getTellerBalance(msg.sender);
     detherStorage.setTellerBalance(msg.sender, 0);
-    msg.sender.transfer(toSend);
+    detherStorage.releaseEth(msg.sender, toSend);
     detherStorage.clearMessagingAddress(msg.sender);
-    var (lat, lng, zoneId) = detherStorage.getTellerPosition(msg.sender);
+    var (lat, lng,) = detherStorage.getTellerPosition(msg.sender);
     Withdraw(lat, lng, msg.sender);
     return true;
   }
