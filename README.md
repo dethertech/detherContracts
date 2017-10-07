@@ -1,5 +1,7 @@
 # Dether - Ethereum smart contracts
 
+### Warning: Don't use on mainnet! This contracts has not been thoroughly audited, it will evolve and improve before launching on mainnet.
+
 Dether provides a decentralized peer-to-peer ether network that enables anyone on Earth to buy ether
 with cash and spend it at physical stores nearby. No bank account is needed, just a mobile phone with
 internet access. Our belief is that the beauty and power of the Ethereum technology should be easily
@@ -69,11 +71,6 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 ## Versioning
 
 We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/dethertech/dethercontracts/tags). 
-
-## Authors
-
-* **Mehdi Amari** - [Fukunaga42](https://github.com/Fukunaga42)
-* **Stéphane Roche** - [Janaka-Steph](https://github.com/Janaka-Steph)
 
 ## License
 
