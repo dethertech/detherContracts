@@ -1,5 +1,7 @@
 # Dether - Ethereum smart contracts
 
+[![Join the chat at https://gitter.im/dether-contracts/Lobby](https://badges.gitter.im/dether-contracts/Lobby.svg)]
+
 ### Warning: Don't use on mainnet! This contracts has not been thoroughly audited, it will evolve and improve before launching on mainnet.
 
 Dether provides a decentralized peer-to-peer ether network that enables anyone on Earth to buy ether
@@ -15,7 +17,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 * Node.js 8
 
-* Solc ^0.4.16 
+* Solc ^0.4.16
 
 If Truffle is shipped with an older version, then update it manually
 ```
@@ -42,7 +44,7 @@ npm run test
 Tests on Kovan Infura
 ```
 npm run testKovanInfura
-``` 
+```
 
 ## Deployment
 
@@ -54,13 +56,13 @@ npm run migrate
 Migrate on Kovan Infura
 ```
 npm run migrateKovanInfura
-``` 
+```
 
 ## Built With
 
 * [Truffle](http://truffleframework.com) - Development framework for Ethereum
 * [Truffle-lightwallet-provider](https://github.com/DigixGlobal/truffle-lightwallet-provider) - RPC Provider using Eth-Lightwallet & Web3-Provider-Engine
-* [Sigmate](https://github.com/DigixGlobal/sigmate) - An Ethereum keystore creation tool 
+* [Sigmate](https://github.com/DigixGlobal/sigmate) - An Ethereum keystore creation tool
 * [Web3](https://github.com/ethereum/web3.js/) - Ethereum JavaScript API
 * [Open Zeppelin](https://openzeppelin.org/) - Framework to build secure smart contracts on Ethereum
 
@@ -70,7 +72,7 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 
 ## Versioning
 
-We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/dethertech/dethercontracts/tags). 
+We use [SemVer](http://semver.org/) for versioning. For the versions available, see the [tags on this repository](https://github.com/dethertech/dethercontracts/tags).
 
 ## License
 
