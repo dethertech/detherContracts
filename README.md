@@ -1,5 +1,7 @@
 # Dether - Ethereum smart contracts
 
+[![Join the chat at https://gitter.im/dethertech/detherContracts](https://badges.gitter.im/dethertech/detherContracts.svg)](https://gitter.im/dethertech/detherContracts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 ### Warning: Don't use on mainnet! This contracts has not been thoroughly audited, it will evolve and improve before launching on mainnet.
 
 Dether provides a decentralized peer-to-peer ether network that enables anyone on Earth to buy ether
