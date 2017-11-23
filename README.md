@@ -82,3 +82,9 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 We took our inspiration from many Ethereum projects, especially the work done by Digix (Sigmate, Truffle-light-wallet, the ICS pattern) and Open Zeppelin.
 Big thanks to all of you contributing to the ecosystem.
+
+## Donation
+* [Ethereum Foundation](https://ethereum.org/donate)
+* [Etherscan](https://etherscan.io/address/0x71c7656ec7ab88b098defb751b7401b5f6d8976f)
+* [MyEtherWallet](https://etherscan.io/address/0x7cB57B5A97eAbe94205C07890BE4c1aD31E486A8)
+* [CoinMarketCap](https://etherscan.io/address/0x0074709077B8AE5a245E4ED161C971Dc4c3C8E2B)
