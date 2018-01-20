@@ -24,27 +24,9 @@ contract('Sms certifier', () => {
       await smsCertifier.addDelegate(delegate1, 'tester', {gas: 4000000, from: owner});
 
       assert.equal(await smsCertifier.isDelegate(delegate1), true, 'verif delegate');
+      assert.equal(await smsCertifier.isCertified(user1), false, 'verif certified');
       const tsx = await smsCertifier.certify(user1, {gas: 4000000, from: delegate1});
-      // console.log('tsx', tsx);
-      // assert.equal(smsCertifier.isCertified(user1), true, 'verif certified');
-
-
-
-
-      // const pos1 = await dether.getTellerPos(teller1address);
-      // assert.equal(pos1[0].toNumber(), teller1.lat, 'verif lat');
-      // assert.equal(pos1[1].toNumber(), teller1.lng, 'verif lng');
-      // assert.equal(pos1[2].toNumber(), teller1.zoneId, 'verif zone');
-      // assert.equal(pos1[3].toNumber(), web3.toWei(1, 'ether'), 'verif balance');
-      // // Check profile info
-      // const profile1 = await dether.getTellerProfile(teller1address);
-      // const profile1 = await dethercontract.getTellerProfile(teller1address);
-      // console.log('profile ', profile1);
-      // const balance1 = await dethercontract.getTellerBalance(web3.eth.coinbase);
-      // console.log('profile ', balance1);
-
+      assert.equal(await smsCertifier.isCertified(user1), true, 'verif certified');
     })
-
   })
-
 })

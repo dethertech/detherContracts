@@ -1,4 +1,4 @@
-pragma solidity ^0.4.19;
+pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
@@ -219,7 +219,7 @@ contract DetherInterface is Ownable {
 
 
   /// @notice Getter to retrieve balance
-  function getTellerBalances(address _address) public view returns (uint) {
+  function getTellerBalance(address _address) public view returns (uint) {
     return tellerStorage.getTellerBalance(_address);
   }
 }
