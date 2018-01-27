@@ -19,7 +19,6 @@ contract('Sms certifier', () => {
 
     it('should certify', async () => {
       // Teller 1
-      //console.log('dtr contract', dethercontract);
       assert.equal(await smsCertifier.isDelegate(delegate1), false, 'verif not delegate');
       await smsCertifier.addDelegate(delegate1, 'tester', {gas: 4000000, from: owner});
 
