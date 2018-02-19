@@ -6,8 +6,6 @@ import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 
 contract DetherTellerStorage is Ownable {
   using SafeMath for uint;
-  event TempLog(string _log);
-  event TempLogInt(uint _log);
   struct TellerPosition {
     uint lat;
     uint lng;
@@ -83,6 +81,7 @@ contract DetherTellerStorage is Ownable {
       if (!isTeller(_address)){
         teller[_address].generalIndex = tellerIndex.push(_address) - 1;
       }
+      /* Teller storage newteller = teller[_address; */
       teller[_address].profile = TellerProfile(_avatarId, _currencyId, _messagingAddr, _messagingAddr2, _rates);
       teller[_address].online = true;
   }
