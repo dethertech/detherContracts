@@ -22,6 +22,7 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
   DetherToken public dth;
   DthRegistry public dthRegistry;
   uint public limit = 2 ether;
+  uint public licencePrice = 10 ;
 
   event RegisterTeller(address indexed tellerAddress);
   event DeleteTeller(address indexed tellerAddress);
@@ -45,6 +46,11 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
     _;
   }
 
+  modifier hasStaked(uint amount) {
+    require(dthRegistry.getStaked(msg.sender) >= amount);
+    _;
+  }
+
   /* function setInit() public  {
     initialised = true;
   } */
@@ -63,7 +69,7 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
   } */
 
   /// @notice Register a teller
-  /// @dev gasUsed: 299600
+  /// @dev gasUsed: 360000
   function registerTeller(
     uint _lat,
     uint _lng,
@@ -74,7 +80,7 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
     string _messagingAddress,
     string _messagingAddress2,
     int16 _rates
-    ) public payable isSmsWhitelisted(msg.sender) {
+    ) public payable isSmsWhitelisted(msg.sender) hasStaked(licencePrice) {
       // Conditions
       require(tellerStorage.isOnline(msg.sender) != true);
       uint bal = tellerStorage.getTellerBalance(msg.sender);
@@ -164,7 +170,7 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
       tellerStorage.setTellerBalance(msg.sender, _balance);
     }*/
 
-    function addressToBytes(address i)  returns (bytes by) {
+    /* function addressToBytes(address i)  returns (bytes by) {
       by = new bytes(20);
       assembly {
         let count := 0
@@ -186,15 +192,6 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
             b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
     }
 
-    function _toBytes(address a) internal pure returns (bytes b){
-       assembly {
-            let m := mload(0x40)
-            mstore(add(m, 20), xor(0x140000000000000000000000000000000000000000, a))
-            mstore(0x40, add(m, 52))
-            b := m
-       }
-    }
-
     function bytes32ToString (bytes32 data) returns (string) {
         bytes memory bytesString = new bytes(32);
         for (uint j=0; j<32; j++) {
@@ -211,20 +208,24 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
 
             string memory myString= bytes32ToString( myInteger );
     return myString;
-       }
+    } */
 
 
 
 
-    // gasused 113630
+    // gasused 109111
     function tokenFallback(address _from, uint _value, bytes _data) public {
       //TKN memory tkn;
       receiveDth(_from, _value, _data);
-      bytes memory addr = addressToBytes(_from);
-      if (_data == '')
-        dth.transfer(address(dthRegistry), _value, addr);
 
-      /* dthRegistry.addToken(_from, _value); */
+      // with tokenfallback (consume more gas)
+      /* bytes memory addr = addressToBytes(_from);
+      dth.transfer(address(dthRegistry), _value, addr); */
+
+      // with a secondary function
+      dth.transfer(address(dthRegistry), _value);
+      dthRegistry.addToken(_from ,_value);
+
       /* tkn variable is analogue of msg variable of Ether transaction
       *  tkn.sender is person who initiated this token transaction   (analogue of msg.sender)
       *  tkn.value the number of tokens that were sent   (analogue of msg.value)

@@ -2,45 +2,54 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
+import './dth/DetherToken.sol';
 /// @title Contract that will store the Dth from user
 contract DthRegistry is Ownable, ERC223ReceivingContract {
 
     mapping(address => uint) public registry;
+    DetherToken public dth;
     event receiveDthreg(address indexed _from, uint _amount, bytes _bytes);
 
-    modifier hasStaked(uint amount) {
-      require(registry[msg.sender] >= amount);
-      _;
+    function withdraw(address _to) onlyOwner {
+      uint tosend = registry[_to];
+      registry[_to] = 0;
+      dth.transfer(_to, tosend);
     }
 
-    /* function withdraw(amount) {
+    function DthRegistry (address _dth) {
+      dth = DetherToken(_dth);
+    }
 
-    } */
-
-    function bytesToAddress(bytes _address) public returns (address) {
+    /* function bytesToAddress(bytes _address) public returns (address) {
       uint160 m = 0;
       uint160 b = 0;
-
       for (uint8 i = 0; i < 20; i++) {
         m *= 256;
         b = uint160(_address[i]);
         m += (b);
       }
-
       return address(m);
+    } */
+
+    function getStaked(address _user) public returns (uint) {
+      return registry[_user];
     }
 
+    function addToken(address _from, uint _value) onlyOwner {
+      registry[_from] += _value;
+    }
     /// @dev Standard ERC223 function that will handle incoming token transfers.
     /// @param _from  Token sender address.
     /// @param _value Amount of tokens.
     /// @param _data  Transaction metadata.
     function tokenFallback(address _from, uint _value, bytes _data) {
-      //TKN memory tkn;
-      require(_from == owner);
-      /* address from = bytesToAddr(_data); */
+
+      /* receiveDthreg(_from, _value, _data); */
+
+      /* require(_from == owner);
       address from = bytesToAddress(_data);
-      receiveDthreg(msg.sender, _value, _data);
-      registry[from] += _value;
+      registry[from] += _value; */
+
       /* tkn variable is analogue of msg variable of Ether transaction
       *  tkn.sender is person who initiated this token transaction   (analogue of msg.sender)
       *  tkn.value the number of tokens that were sent   (analogue of msg.value)

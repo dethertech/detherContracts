@@ -81,18 +81,17 @@ contract('Dether Dth', async () => {
 
   contract('Send token and get by interface --', async () =>  {
 
-    it('trigger token fallback', async () => {
+    it('trigger token fallback and able to register', async () => {
       // tricks to solve truffle pblm with overloading
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
               dether.address,
               20,
-              // web3.toHex('111111112222222223344444444445556666677777777777777777777')
-              ''
+              web3.toHex('ffbdgfndghn')
           ]
       );
-      let tsx = await web3.eth.sendTransaction({from: owner, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+      let tsx = await web3.eth.sendTransaction({from: teller1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
       // const events = dether.receiveDth({},{ fromBlock: 0, toBlock: 'latest' });
       // const res = await events.get( (err,res) => console.log(res));
       // const logs = await new Promise((resolve, reject) => {
@@ -101,22 +100,20 @@ contract('Dether Dth', async () => {
       //     resolve(logs);
       //   });
       // });
-      console.log('tsx', web3.eth.getTransactionReceipt(tsx))
       let balanceAccount1 = await dthToken.balanceOf.call(dether.address);
       let balanceAccount2 = await dthToken.balanceOf.call(dthRegistry.address);
-      console.log("owner", owner,"dth", dthToken.address, "dthregistry", dthRegistry.address);
       assert.equal(balanceAccount1.toNumber(), 0, 'should be 0');
       assert.equal(balanceAccount2.toNumber(), 20, 'should be 20');
-      console.log(await dthRegistry.registry.call(owner));
+      console.log(await dthRegistry.registry.call(teller1address));
 
-      const events = dthRegistry.receiveDthreg({},{ fromBlock: 0, toBlock: 'latest' });
-      const res = await events.get( (err,res) => console.log(res));
-      const logs = await new Promise((resolve, reject) => {
-        events.get((errors, logs) => {
-          if (errors) reject(errors);
-          resolve(logs);
-        });
-      });
+      tsx = await dether.registerTeller(...Object.values(teller1), {from: teller1address, gas:4000000, value: web3.toWei(1, 'ether')});
+      let pos1 = await detherStorage.getTellerPositionRaw(teller1address);
+      console.log('register ',tsx)
+      assert.equal(pos1[0].toNumber(), teller1.lat, 'verif lat');
+      assert.equal(pos1[1].toNumber(), teller1.lng, 'verif lng');
+      assert.equal(pos1[2], teller1.countryCode, 'verif country code');
+      assert.equal(pos1[3].toNumber(), teller1.postalCode, 'verif postal code');
+
 
     })
 
