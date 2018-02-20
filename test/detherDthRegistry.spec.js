@@ -88,7 +88,7 @@ contract('Dether Dth', async () => {
           [
               dether.address,
               20,
-              web3.toHex('ffbdgfndghn')
+              web3.toHex('test')
           ]
       );
       let tsx = await web3.eth.sendTransaction({from: teller1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});

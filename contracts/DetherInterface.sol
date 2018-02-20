@@ -131,9 +131,11 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
     UpdateTeller(msg.sender);
   }
 
-  function deleteMyProfile() {
+  // Maybe remove the modifier
+  function deleteMyProfile() hasStaked(licencePrice)  {
     tellerStorage.deleteTeller(msg.sender);
     // unstack token
+    dthRegistry.withdraw(msg.sender);
     DeleteTeller(msg.sender);
   }
 

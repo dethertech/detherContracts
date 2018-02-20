@@ -4,7 +4,41 @@ const {teller1, teller2, teller3} = require('./mock.json');
 const DetherInterfaceAbs = artifacts.require('./DetherInterface.sol');
 const DetherStorageAbs = artifacts.require('./DetherTellerStorage.sol');
 const SmsCertifierAbs = artifacts.require('./certifier/SmsCertifier.sol');
-let dether, detherStorage, smsCertifier ;
+const DthAbs = artifacts.require('./token/DetherToken.sol');
+const DthRegistryAbs = artifacts.require('./DthRegistry.sol');
+
+// fix to solve truffle pblm with overloading
+const web3Abi = require('web3-eth-abi');
+const web3 = DthAbs.web3;
+const overloadedTransferAbi = {
+    "constant": false,
+    "inputs": [
+        {
+            "name": "_to",
+            "type": "address"
+        },
+        {
+            "name": "_value",
+            "type": "uint256"
+        },
+        {
+            "name": "_data",
+            "type": "bytes"
+        }
+    ],
+    "name": "transfer",
+    "outputs": [
+        {
+            "name": "",
+            "type": "bool"
+        }
+    ],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+};
+
+let dether, detherStorage, smsCertifier, dthToken, dthRegistry ;
 
 const
   [
@@ -27,20 +61,44 @@ contract('Dether Interface', async () => {
   beforeEach( async () => {
     detherStorage = await DetherStorageAbs.new({gas: 4000000, from: owner});
     smsCertifier = await SmsCertifierAbs.new({gas: 4000000, from: owner});
-    dether = await DetherInterfaceAbs.new(detherStorage.address, smsCertifier.address, {gas: 4000000, from: owner});
+    dthToken = await DthAbs.new({gas: 4000000, from: owner});
+    dthRegistry = await DthRegistryAbs.new(dthToken.address, {gas: 4000000, from: owner});
+    dether = await DetherInterfaceAbs.new(detherStorage.address, smsCertifier.address, dthToken.address, dthRegistry.address  ,{gas: 4000000, from: owner});
+    await dthRegistry.transferOwnership(dether.address, {gas: 4000000, from: owner});
     await detherStorage.transferOwnership(dether.address, {gas: 4000000, from: owner});
     await smsCertifier.addDelegate(certifier, 'test', {gas: 4000000, from: owner});
     await smsCertifier.certify(teller1address, {gas: 4000000, from: certifier});
     await smsCertifier.certify(teller2address, {gas: 4000000, from: certifier});
     await smsCertifier.certify(teller3address, {gas: 4000000, from: certifier});
+
+    await dthToken.mint(owner, 1000);
+    await dthToken.mint(teller1address, 1000);
+    await dthToken.mint(teller2address, 1000);
+    await dthToken.mint(teller3address, 1000);
+    await dthToken.finishMinting();
+
+    const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [
+            dether.address,
+            20,
+            web3.toHex('test')
+        ]
+    );
+    await web3.eth.sendTransaction({from: teller1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+    await web3.eth.sendTransaction({from: teller2address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+    await web3.eth.sendTransaction({from: teller3address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+
+
   })
 
   contract('Registration --', async () =>  {
 
     it('should register a teller and be on the map', async () => {
 
-      let tsx = await dether.registerTeller(...Object.values(teller1), {from: teller1address, gas:4000000, value: web3.toWei(1, 'ether')});
 
+
+      let tsx = await dether.registerTeller(...Object.values(teller1), {from: teller1address, gas:4000000, value: web3.toWei(1, 'ether')});
       let pos1 = await detherStorage.getTellerPositionRaw(teller1address);
 
       assert.equal(pos1[0].toNumber(), teller1.lat, 'verif lat');
@@ -77,8 +135,6 @@ contract('Dether Interface', async () => {
       assert.equal(profile2[2].toNumber(), 0, 'verif volume buy');
       assert.equal(profile2[3].toNumber(), 0, 'verif nbr trade');
       assert.equal(profile2[4].toNumber(), web3.toWei(1, 'ether'), 'verif balance');
-      console.log('index -> ', await detherStorage.getGeneralIndex(teller2address));
-
 
     })
 
@@ -126,13 +182,20 @@ contract('Dether Interface', async () => {
       let verif = await detherStorage.isTeller(teller1address);
       assert.equal(verif, true, 'verif still registered');
 
-      // assert delete, no more in the zone and no more registered teller
+      let balanceRegistry = await dthToken.balanceOf.call(dthRegistry.address);
+      assert.equal(await dthRegistry.getStaked.call(teller1address) , 20, 'verif staked')
+      assert.equal(await dthToken.balanceOf.call(teller1address) , 980, 'verif staked')
+      assert.equal(await dthToken.balanceOf.call(teller1address) , 980, 'verif staked')
       await dether.registerTeller(...Object.values(teller1), {from: teller1address, gas:4000000, value: web3.toWei(1, 'ether')});
       tsx = await dether.deleteMyProfile({from: teller1address, gas:4000000});
       verif = await detherStorage.isOnline(teller1address);
       assert.equal(verif , false, 'verif offline')
       verif = await detherStorage.isTeller(teller1address)
       assert.equal(verif, false, 'verif unvisible');
+      assert.equal(await dthRegistry.getStaked.call(teller1address) , 0, 'verif staked');
+      assert.equal(await dthToken.balanceOf.call(teller1address) , 1000, 'verif staked');
+      assert.equal(await dthToken.balanceOf.call(dthRegistry.address), balanceRegistry - 20, 'verif staked');
+
     })
 
     it('should send from teller', async () => {
@@ -146,7 +209,6 @@ contract('Dether Interface', async () => {
 
       await dether.sendCoin(user1, web3.toWei(0.5, 'ether'), {from: teller1address, gas:4000000});
       teller1Bal = await detherStorage.getTellerBalance(teller1address);
-      console.log('teller1Bal', teller1Bal);
       user1Bal = await web3.eth.getBalance(user1);
       assert.equal(teller1Bal.toNumber(), 0, 'verif balance teller1 post send');
       assert.equal( web3.fromWei(user1Bal.toNumber(), 'ether') , 100.5, 'verif balance user1 post send');

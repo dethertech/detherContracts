@@ -31,7 +31,7 @@ contract DthRegistry is Ownable, ERC223ReceivingContract {
       return address(m);
     } */
 
-    function getStaked(address _user) public returns (uint) {
+    function getStaked(address _user) public view returns (uint) {
       return registry[_user];
     }
 
