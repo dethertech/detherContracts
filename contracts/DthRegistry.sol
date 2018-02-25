@@ -20,24 +20,15 @@ contract DthRegistry is Ownable, ERC223ReceivingContract {
       dth = DetherToken(_dth);
     }
 
-    /* function bytesToAddress(bytes _address) public returns (address) {
-      uint160 m = 0;
-      uint160 b = 0;
-      for (uint8 i = 0; i < 20; i++) {
-        m *= 256;
-        b = uint160(_address[i]);
-        m += (b);
-      }
-      return address(m);
-    } */
-
     function getStaked(address _user) public view returns (uint) {
       return registry[_user];
     }
 
-    function addToken(address _from, uint _value) onlyOwner {
+    function addToken(address _from, uint _value) public onlyOwner {
       registry[_from] += _value;
     }
+
+
     /// @dev Standard ERC223 function that will handle incoming token transfers.
     /// @param _from  Token sender address.
     /// @param _value Amount of tokens.

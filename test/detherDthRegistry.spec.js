@@ -63,10 +63,11 @@ contract('Dether Dth', async () => {
     smsCertifier = await SmsCertifierAbs.new({gas: 4000000, from: owner});
     dthToken = await DthAbs.new({gas: 4000000, from: owner});
     dthRegistry = await DthRegistryAbs.new({gas: 4000000, from: owner});
-
-    dether = await DetherInterfaceAbs.new(detherStorage.address, smsCertifier.address, dthToken.address, dthRegistry.address  ,{gas: 4000000, from: owner});
+    dether = await DetherInterfaceAbs.new(detherStorage.address, smsCertifier.address, dthRegistry.address  ,{gas: 4000000, from: owner});
     await dthRegistry.transferOwnership(dether.address, {gas: 4000000, from: owner});
     await detherStorage.transferOwnership(dether.address, {gas: 4000000, from: owner});
+    await dether.addDth(dthToken.address);
+
     await smsCertifier.addDelegate(certifier, 'test', {gas: 4000000, from: owner});
     await smsCertifier.certify(teller1address, {gas: 4000000, from: certifier});
     await smsCertifier.certify(teller2address, {gas: 4000000, from: certifier});
@@ -116,6 +117,16 @@ contract('Dether Dth', async () => {
 
 
     })
+
+  })
+
+  contract('lifecycle -- ', async () => {
+
+it('should refund all teller in case of emergency', async () => {
+  // register some sellers
+  // block the contract
+  // refund token
+})
 
   })
 

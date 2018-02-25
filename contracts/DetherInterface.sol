@@ -2,7 +2,9 @@ pragma solidity ^0.4.18;
 pragma experimental ABIEncoderV2;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
+import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
 import './DetherTellerStorage.sol';
 import './dth/DetherToken.sol';
 import './certifier/SmsCertifier.sol';
@@ -14,15 +16,17 @@ import './DthRegistry.sol';
 // MINT LOYALTY WHEN TRADE
 // limitation
 
-contract DetherInterface is Ownable, ERC223ReceivingContract {
+contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223ReceivingContract {
   using SafeMath for uint256;
-  bool public initialised;
+  bool public run;
   DetherTellerStorage public tellerStorage;
   SmsCertifier public smsCertifier;
   DetherToken public dth;
   DthRegistry public dthRegistry;
   uint public limit = 2 ether;
-  uint public licencePrice = 10 ;
+  uint public licencePrice = 10;
+  mapping (bytes2 => bool) authorisedTellerCountry;
+  mapping (bytes2 => bool) authorisedShopCountry;
 
   event RegisterTeller(address indexed tellerAddress);
   event DeleteTeller(address indexed tellerAddress);
@@ -31,15 +35,6 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
   event receiveDth(address indexed _from, uint _amount, bytes _bytes);
 
 // modifier
-  modifier isLockedForInitialMigration() {
-    require(!initialised);
-    _;
-  }
-
-  modifier isNotLockedForInitialMigration() {
-    require(initialised);
-    _;
-  }
 
   modifier isSmsWhitelisted(address _teller) {
     require(smsCertifier.isCertified(_teller));
@@ -51,17 +46,37 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
     _;
   }
 
-  /* function setInit() public  {
-    initialised = true;
-  } */
+  modifier isTellerCountryOn(bytes2 country) {
+    require(authorisedTellerCountry[country]);
+    _;
+  }
 
-  function DetherInterface(address _tellerStorageAddress, address _smsCertifier, address _dth, address _dthRegistry) public {
+  modifier isShopCountryOn(bytes2 country) {
+    require(authorisedShopCountry[country]);
+    _;
+  }
+
+  function emergencyTurnOff() public onlyOwner  {
+    run = false;
+  }
+
+  function openTellerCountry(bytes2 country) {
+    authorisedTellerCountry[country] = true;
+  }
+
+  function closeShopCountry(bytes2 country) {
+    authorisedShopCountry[country] = false;
+  }
+
+  function DetherInterface(address _tellerStorageAddress, address _smsCertifier, address _dthRegistry) public {
     tellerStorage = DetherTellerStorage(_tellerStorageAddress);
     smsCertifier = SmsCertifier(_smsCertifier);
-    dth = DetherToken(_dth);
     dthRegistry = DthRegistry(_dthRegistry);
-    initialised = true;
-    // initialised = false;
+  }
+
+  function addDth(address _dth) public onlyOwner {
+    dth = DetherToken(_dth);
+    run = true;
   }
 
   /* function updateLimit(uint newLimit)  public onlyOwner {
@@ -80,7 +95,7 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
     string _messagingAddress,
     string _messagingAddress2,
     int16 _rates
-    ) public payable isSmsWhitelisted(msg.sender) hasStaked(licencePrice) {
+    ) public payable whenNotPaused isSmsWhitelisted(msg.sender) hasStaked(licencePrice) {
       // Conditions
       require(tellerStorage.isOnline(msg.sender) != true);
       uint bal = tellerStorage.getTellerBalance(msg.sender);
@@ -88,11 +103,10 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
       tellerStorage.setTellerPosition(msg.sender, _lat, _lng, _countryCode, _postalcode);
       tellerStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddress,_messagingAddress2, _rates);
       tellerStorage.addBalance.value(msg.value)(msg.sender, msg.value); // send money
-      //detherStorage.setTellerBalance.value(msg.value)(msg.sender, msg.value)
       RegisterTeller(msg.sender);
   }
 
-  function sendCoin (address _receiver, uint _amount) public isNotLockedForInitialMigration returns (bool) {
+  function sendCoin (address _receiver, uint _amount) public whenNotPaused nonReentrant returns (bool) {
     require(_receiver != msg.sender);
     tellerStorage.releaseEth(msg.sender ,_receiver, _amount);
     Sent(msg.sender, _receiver, _amount);
@@ -105,7 +119,7 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
     string _messagingAddr,
     string _messagingAddr2,
     int16 _rates
-    ) public payable {
+    ) public payable whenNotPaused {
       require(tellerStorage.isTeller(msg.sender) == true);
       tellerStorage.setTellerProfile(msg.sender, _avatarId, _currencyId, _messagingAddr,_messagingAddr2, _rates);
       tellerStorage.addBalance.value(msg.value)(msg.sender, msg.value); // send money
@@ -118,39 +132,39 @@ contract DetherInterface is Ownable, ERC223ReceivingContract {
     uint _lng,
     string _countryCode,
     int32 _postalcode
-    ) public payable  {
+    ) public payable whenNotPaused  {
       require(tellerStorage.isTeller(msg.sender) == true);
       tellerStorage.setTellerPosition(msg.sender, _lat, _lng, _countryCode, _postalcode);
       tellerStorage.addBalance.value(msg.value)(msg.sender, msg.value); // send money
       UpdateTeller(msg.sender);
   }
 
-  function addBalance() public payable {
+  function addBalance() public payable whenNotPaused {
     require(tellerStorage.isOnline(msg.sender) == true);
     tellerStorage.addBalance.value(msg.value)(msg.sender, msg.value); // send money
     UpdateTeller(msg.sender);
   }
 
   // Maybe remove the modifier
-  function deleteMyProfile() hasStaked(licencePrice)  {
+  function deleteMyProfile() hasStaked(licencePrice) whenNotPaused  {
     tellerStorage.deleteTeller(msg.sender);
     // unstack token
     dthRegistry.withdraw(msg.sender);
     DeleteTeller(msg.sender);
   }
 
-  function switchTellerOffline() public {
+  function switchTellerOffline() public whenNotPaused {
     // delete point on map and messagery
     assert(tellerStorage.isOnline(msg.sender));
     tellerStorage.turnOffline(msg.sender);
     DeleteTeller(msg.sender);
   }
 
-  function changeStorageOwnership(address newOwner) public onlyOwner {
+  function changeStorageOwnership(address newOwner) public whenPaused onlyOwner {
     tellerStorage.transferOwnership(newOwner);
   }
 
-  function changeDthRegistryOwnership(address newOwner) public onlyOwner {
+  function changeDthRegistryOwnership(address newOwner) public whenPaused onlyOwner {
     dthRegistry.transferOwnership(newOwner);
   }
 
