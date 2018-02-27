@@ -24,7 +24,7 @@ contract DetherCore is DetherSetup, DthRegistry {
     bytes16 cat;
     bytes16 name;
     bytes32 description; // max length 100 char
-    bytes32 opening;
+    bytes16 opening;
     uint zoneIndex;
     uint generalIndex;
   }
@@ -49,6 +49,7 @@ contract DetherCore is DetherSetup, DthRegistry {
       ContractUpgrade(_v2Address);
   }
 
+  // gas used 244000
   function addShop(
     uint lat,
     uint lng,
@@ -57,20 +58,19 @@ contract DetherCore is DetherSetup, DthRegistry {
     bytes16 cat,
     bytes16 name,
     bytes32 description,
-    bytes32 opening
+    bytes16 opening
     )  public isSmsWhitelisted(msg.sender) shopHasStaked(licenceShop) {
       require(!isShop(msg.sender));
-      Shop memory newshop;
-      newshop.lat = lat;
-      newshop.lng = lng;
-      newshop.name = name;
-      newshop.description = description;
-      newshop.opening = opening;
-      newshop.countryId = countryId;
-      newshop.postalCode = postalCode;
-      newshop.generalIndex = shopIndex.push(msg.sender) - 1;
-      newshop.zoneIndex = shopInZone[countryId][postalCode].push(msg.sender) - 1;
-      shop[msg.sender] = newshop;
+      shop[msg.sender].lat = lat;
+      shop[msg.sender].lng = lng;
+      shop[msg.sender].name = name;
+      shop[msg.sender].description = description;
+      shop[msg.sender].opening = opening;
+      shop[msg.sender].countryId = countryId;
+      shop[msg.sender].postalCode = postalCode;
+      shop[msg.sender].generalIndex = shopIndex.push(msg.sender) - 1;
+      shop[msg.sender].zoneIndex = shopInZone[countryId][postalCode].push(msg.sender) - 1;
+
       RegisterShop(msg.sender);
   }
 
@@ -82,7 +82,7 @@ contract DetherCore is DetherSetup, DthRegistry {
     bytes16 cat,
     bytes16 name,
     bytes32 description,
-    bytes32 opening
+    bytes16 opening
     ) {
       Shop storage theShop = shop[_shop];
       lat = theShop.lat;
