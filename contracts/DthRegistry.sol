@@ -2,32 +2,62 @@ pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
-import './dth/DetherToken.sol';
+import './dth/tokenfoundry/ERC223Basic.sol';
 /// @title Contract that will store the Dth from user
-contract DthRegistry is Ownable, ERC223ReceivingContract {
+contract DthRegistry is ERC223ReceivingContract {
 
-    mapping(address => uint) public registry;
-    DetherToken public dth;
-    event receiveDthreg(address indexed _from, uint _amount, bytes _bytes);
+    mapping(address => uint) public registryTeller;
+    mapping(address => uint) public registryShop;
+    ERC223Basic public dth;
+    bool public isInit = false;
+    event ReceiveDthShop(address indexed _from, uint _amount, bytes _bytes);
+    event ReceiveDthTeller(address indexed _from, uint _amount, bytes _bytes);
 
-    function withdraw(address _to) onlyOwner {
-      uint tosend = registry[_to];
-      registry[_to] = 0;
-      dth.transfer(_to, tosend);
+    modifier tellerHasStaked(uint amount) {
+      require(getStakedTeller(msg.sender) >= amount);
+      _;
     }
 
-    function DthRegistry (address _dth) {
-      dth = DetherToken(_dth);
+    modifier shopHasStaked(uint amount) {
+      require(getStakedShop(msg.sender) >= amount);
+      _;
     }
 
-    function getStaked(address _user) public view returns (uint) {
-      return registry[_user];
+    function withdrawTeller() internal {
+      require(registryTeller[msg.sender] > 0);
+      uint tosend = registryTeller[msg.sender];
+      registryTeller[msg.sender] = 0;
+      dth.transfer(msg.sender, tosend);
     }
 
-    function addToken(address _from, uint _value) public onlyOwner {
-      registry[_from] += _value;
+    function _withdrawShop() internal {
+      require(registryShop[msg.sender] > 0);
+      uint tosend = registryShop[msg.sender];
+      registryShop[msg.sender] = 0;
+      dth.transfer(msg.sender, tosend);
     }
 
+    function setDth (address _dth) {
+      require(!isInit);
+      dth = ERC223Basic(_dth);
+      isInit = true;
+    }
+
+    function getStakedTeller(address _user) public view returns (uint) {
+      return registryTeller[_user];
+    }
+
+    function getStakedShop(address _user) public view returns (uint) {
+      return registryShop[_user];
+    }
+
+    function addTokenTeller(address _from, uint _value) public {
+      registryTeller[_from] += _value;
+    }
+
+    function addTokenShop(address _from, uint _value) public {
+      registryShop[_from] += _value;
+    }
 
     /// @dev Standard ERC223 function that will handle incoming token transfers.
     /// @param _from  Token sender address.
@@ -35,11 +65,8 @@ contract DthRegistry is Ownable, ERC223ReceivingContract {
     /// @param _data  Transaction metadata.
     function tokenFallback(address _from, uint _value, bytes _data) {
 
-      /* receiveDthreg(_from, _value, _data); */
-
-      /* require(_from == owner);
-      address from = bytesToAddress(_data);
-      registry[from] += _value; */
+      addTokenShop(_from,_value);
+      ReceiveDthShop(_from, _value, _data);
 
       /* tkn variable is analogue of msg variable of Ether transaction
       *  tkn.sender is person who initiated this token transaction   (analogue of msg.sender)

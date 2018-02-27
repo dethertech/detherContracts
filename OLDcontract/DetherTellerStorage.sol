@@ -227,7 +227,6 @@ contract DetherTellerStorage is Ownable {
      tellerIndex.length--;
    }
 
-
   // Misc
   function isTeller(address _teller) public view returns (bool isIndeed){
     if(tellerIndex.length == 0) return false;

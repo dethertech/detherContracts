@@ -5,24 +5,24 @@ import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import 'zeppelin-solidity/contracts/lifecycle/Pausable.sol';
 import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import 'zeppelin-solidity/contracts/ReentrancyGuard.sol';
-import './DetherTellerStorage.sol';
 import './dth/DetherToken.sol';
 import './certifier/SmsCertifier.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './DthRegistry.sol';
 
 // TODO
-// NEED DTH TO DEPOSIT AND TRADE
 // MINT LOYALTY WHEN TRADE
 // limitation
 
-contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223ReceivingContract {
+contract DetherInterface is Ownable, Pausable,  ERC223ReceivingContract, DthRegistry {
   using SafeMath for uint256;
   bool public run;
   DetherTellerStorage public tellerStorage;
+  DetherShopStorage public shopStorage;
   SmsCertifier public smsCertifier;
   DetherToken public dth;
-  DthRegistry public dthRegistry;
+  DthRegistry public dthTellerRegistry;
+
   uint public limit = 2 ether;
   uint public licencePrice = 10;
   mapping (bytes2 => bool) authorisedTellerCountry;
@@ -41,8 +41,8 @@ contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223Receiving
     _;
   }
 
-  modifier hasStaked(uint amount) {
-    require(dthRegistry.getStaked(msg.sender) >= amount);
+  modifier tellerHasStaked(uint amount) {
+    require(dthTellerRegistry.getStaked(msg.sender) >= amount);
     _;
   }
 
@@ -68,10 +68,11 @@ contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223Receiving
     authorisedShopCountry[country] = false;
   }
 
-  function DetherInterface(address _tellerStorageAddress, address _smsCertifier, address _dthRegistry) public {
+  function DetherInterface(address _tellerStorageAddress, address _smsCertifier, address _dthTellerRegistry, address _shopStorage) public {
     tellerStorage = DetherTellerStorage(_tellerStorageAddress);
+    shopStorage = DetherShopStorage(_shopStorage);
     smsCertifier = SmsCertifier(_smsCertifier);
-    dthRegistry = DthRegistry(_dthRegistry);
+    dthTellerRegistry = DthRegistry(_dthTellerRegistry);
   }
 
   function addDth(address _dth) public onlyOwner {
@@ -95,7 +96,7 @@ contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223Receiving
     string _messagingAddress,
     string _messagingAddress2,
     int16 _rates
-    ) public payable whenNotPaused isSmsWhitelisted(msg.sender) hasStaked(licencePrice) {
+    ) public payable whenNotPaused isSmsWhitelisted(msg.sender) tellerHasStaked(licencePrice) {
       // Conditions
       require(tellerStorage.isOnline(msg.sender) != true);
       uint bal = tellerStorage.getTellerBalance(msg.sender);
@@ -145,11 +146,11 @@ contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223Receiving
     UpdateTeller(msg.sender);
   }
 
-  // Maybe remove the modifier
-  function deleteMyProfile() hasStaked(licencePrice) whenNotPaused  {
+  // Maybe remove the modifier?
+  function deleteMyProfile() tellerHasStaked(licencePrice) whenNotPaused  {
     tellerStorage.deleteTeller(msg.sender);
     // unstack token
-    dthRegistry.withdraw(msg.sender);
+    dthTellerRegistry.withdraw(msg.sender);
     DeleteTeller(msg.sender);
   }
 
@@ -165,7 +166,7 @@ contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223Receiving
   }
 
   function changeDthRegistryOwnership(address newOwner) public whenPaused onlyOwner {
-    dthRegistry.transferOwnership(newOwner);
+    dthTellerRegistry.transferOwnership(newOwner);
   }
 
     /*function importTellers(
@@ -186,45 +187,10 @@ contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223Receiving
       tellerStorage.setTellerBalance(msg.sender, _balance);
     }*/
 
-    /* function addressToBytes(address i)  returns (bytes by) {
-      by = new bytes(20);
-      assembly {
-        let count := 0
-        let byptr := add(by, 32)
-        loop:
-            jumpi(end, eq(count, 20))
-            mstore8(byptr, byte(add(count,12), i))
-            byptr := add(byptr, 1)
-            count := add(count, 1)
-            jump(loop)
-        end:
-      }
-      return by;
-    }
+/*
+ * shop
+ */
 
-    function toBytes(address x) returns (bytes b) {
-        b = new bytes(20);
-        for (uint i = 0; i < 20; i++)
-            b[i] = byte(uint8(uint(x) / (2**(8*(19 - i)))));
-    }
-
-    function bytes32ToString (bytes32 data) returns (string) {
-        bytes memory bytesString = new bytes(32);
-        for (uint j=0; j<32; j++) {
-          byte char = byte(bytes32(uint(data) * 2 ** (8 * j)));
-          if (char != 0) {
-            bytesString[j] = char;
-          }
-        }
-
-        return string(bytesString);
-      }
-
-       function My_integ(bytes32 myInteger) returns (string){
-
-            string memory myString= bytes32ToString( myInteger );
-    return myString;
-    } */
 
 
 
@@ -236,11 +202,11 @@ contract DetherInterface is Ownable, Pausable, ReentrancyGuard,  ERC223Receiving
 
       // with tokenfallback (consume more gas)
       /* bytes memory addr = addressToBytes(_from);
-      dth.transfer(address(dthRegistry), _value, addr); */
+      dth.transfer(address(dthTellerRegistry), _value, addr); */
 
       // with a secondary function
-      dth.transfer(address(dthRegistry), _value);
-      dthRegistry.addToken(_from ,_value);
+      dth.transfer(address(dthTellerRegistry), _value);
+      dthTellerRegistry.addToken(_from ,_value);
 
       /* tkn variable is analogue of msg variable of Ether transaction
       *  tkn.sender is person who initiated this token transaction   (analogue of msg.sender)

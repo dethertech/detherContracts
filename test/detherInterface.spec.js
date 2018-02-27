@@ -90,7 +90,6 @@ contract('Dether Interface', async () => {
     await web3.eth.sendTransaction({from: teller2address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
     await web3.eth.sendTransaction({from: teller3address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
 
-
   })
 
   contract('Registration --', async () =>  {
@@ -118,7 +117,6 @@ console.log(tsx);
       // assert.equal(profile2[2].toNumber(), 0, 'verif volume buy');
       // assert.equal(profile2[3].toNumber(), 0, 'verif nbr trade');
       // assert.equal(profile2[4].toNumber(), web3.toWei(1, 'ether'), 'verif balance');
-      //
       //
       // tsx = await dether.registerTeller(...Object.values(teller2), {from: teller2address, gas:4000000, value: web3.toWei(1, 'ether')});
       // pos1 = await detherStorage.getTellerPositionRaw(teller2address);
