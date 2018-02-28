@@ -1,4 +1,4 @@
-/* global contract it artifacts web3 assert */
+
 const {expectThrow, waitForMined} = require('./utils');
 const {shop1, shop2, shop3} = require('./mock.json');
 const DetherCore = artifacts.require('./DetherCore.sol');
@@ -43,8 +43,8 @@ const
     , shop1address
     , shop2address
     , shop3address
-    , user1
-    , user2
+    , moderator
+    , cmo
     , certifier
   ] = web3.eth.accounts;
 
@@ -63,6 +63,8 @@ contract('Dether Dth', async () => {
     await dether.setLicenceShopPrice(10);
     await dether.setCertifier(smsCertifier.address);
     await dether.setDth(dthToken.address);
+    await dether.setCMO(cmo);
+    await dether.setModerator(moderator);
 
     await smsCertifier.addDelegate(certifier, 'test', {gas: 4000000, from: owner});
     await smsCertifier.certify(shop1address, {gas: 4000000, from: certifier});
@@ -87,14 +89,12 @@ contract('Dether Dth', async () => {
     await web3.eth.sendTransaction({from: shop2address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
     await web3.eth.sendTransaction({from: shop3address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
 
+    await dether.openZoneShop(web3.toHex(shop1.countryId),{from: cmo});
   })
 
   contract('Add shop --', async () =>  {
     it('should register a shop and be on the map', async () => {
       // let tsx = await dether.addShop(...Object.values(shop1), {from: shop1address, gas:4000000});
-      console.log('has staked', await dether.getStakedShop(shop1address))
-      console.log('is whitelisted ', await smsCertifier.isCertified(shop1address))
-      console.log('is shop ', await dether.isShop(shop1address));
       let tsx = await dether.addShop(
         shop1.lat
         , shop1.lng
@@ -106,22 +106,8 @@ contract('Dether Dth', async () => {
         , web3.toHex(shop1.opening)
         , {from: shop1address, gas:4000000}
       );
-
-      // let tsx = await dether.addShop(
-      //   123456
-      //   , 234516
-      //   , shop1.countryId
-      //   , shop1.postalCode
-      //   , shop1.cat
-      //   , web3.toHex(shop1.name)
-      //   , shop1.description
-      //   , shop1.opening
-      //   , {from: shop1address, gas:4000000}
-      // );
-
-      console.log(tsx);
+      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
       let shop1value = await dether.getShop(shop1address);
-      console.log('shop1value => ',shop1value);
       assert.equal(shop1value[0].toNumber(), shop1.lat, 'verif lat');
       assert.equal(shop1value[1].toNumber(), shop1.lng, 'verif lng');
       assert.equal(shop1value[2], web3.toHex(shop1.countryId), 'verif country id');
@@ -130,10 +116,31 @@ contract('Dether Dth', async () => {
       // assert.equal(shop1value[5], web3.toHex(shop1.name), 'verif lng');
       // assert.equal(shop1value[6], web3.toHex(shop1.description), 'verif country id');
       // assert.equal(shop1value[7], web3.toHex(shop1.opening), 'verif postal code');
-//       const contributionEvent = dether.RegisterShop({}, { fromBlock: 0, toBlock: 'latest' });
-// contributionEvent.get((error, logs) => {
-//   console.log(logs);
-// })
+
+    })
+
+    it('should not be possible to add shop in unopened zone', async () => {
+      // let tsx = await dether.addShop(...Object.values(shop1), {from: shop1address, gas:4000000});
+      await dether.closeZoneShop(web3.toHex(shop3.countryId),{from: cmo});
+      try {
+        await dether.addShop(
+          shop3.lat
+          , shop3.lng
+          , web3.toHex(shop3.countryId)
+          , web3.toHex(shop3.postalCode)
+          , web3.toHex(shop3.cat)
+          , web3.toHex(shop3.name)
+          , web3.toHex(shop3.description)
+          , web3.toHex(shop3.opening)
+          , {from: shop3address, gas:4000000}
+        )
+      } catch (err) {
+
+      }
+      let shop3value = await dether.getShop(shop3address);
+      assert.notEqual(shop3value[0].toNumber(), shop3.lat, 'verif lat');
+      assert.notEqual(shop3value[1].toNumber(), shop3.lng, 'verif lng');
+      assert.notEqual(shop3value[2], web3.toHex(shop3.countryId), 'verif country id');
 
     })
 
@@ -163,7 +170,7 @@ contract('Dether Dth', async () => {
         , web3.toHex(shop2.opening)
         , {from: shop2address, gas:4000000}
       );
-
+      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
       zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
       assert.deepEqual(zone, [shop1address, shop2address], 'incorrect zone');
 
@@ -194,15 +201,14 @@ contract('Dether Dth', async () => {
         , web3.toHex(shop2.opening)
         , {from: shop2address, gas:4000000}
       );
-      await dether.deleteShop({from: shop2address, gas:4000000});
+      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
+      let tsx = await dether.deleteShop({from: shop2address, gas:4000000});
       await dether.deleteShop({from: shop1address, gas:4000000});
       zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
       assert.equal(zone, '', 'verif empty zone');
-
     })
 
     it('should have token back after delete', async () => {
-
       const baltoken = await dthToken.balanceOf(shop1address);
       const balstaked = await dether.getStakedShop(shop1address);
       await dether.addShop(
@@ -216,13 +222,51 @@ contract('Dether Dth', async () => {
         , web3.toHex(shop1.opening)
         , {from: shop1address, gas:4000000}
       );
-
+      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
       await dether.deleteShop({from: shop1address, gas:4000000});
       const newbaltoken = await dthToken.balanceOf(shop1address);
       const newbalstaked = await dether.getStakedShop(shop1address);
       assert.equal(newbaltoken.toNumber(), baltoken.add(balstaked).toNumber(), 'verif balance token');
       assert.equal(newbalstaked.toNumber(), 0, 'verif balance token');
+    })
 
+    it('should be able to delete a random shop as a moderator', async () => {
+      await dether.addShop(
+        shop1.lat
+        , shop1.lng
+        , web3.toHex(shop1.countryId)
+        , web3.toHex(shop1.postalCode)
+        , web3.toHex(shop1.cat)
+        , web3.toHex(shop1.name)
+        , web3.toHex(shop1.description)
+        , web3.toHex(shop1.opening)
+        , {from: shop1address, gas:4000000}
+      );
+      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
+      await dether.deleteShopMods(shop1address, {from: moderator, gas:4000000});
+      assert.equal(await dether.isShop(shop1address), false, 'assert is shop');
+    })
+
+    it('should not be be able to delete a random shop if not moderator', async () => {
+      assert.equal(await dether.isShop(shop1address), false, 'assert is shop pref delete');
+      await dether.addShop(
+        shop1.lat
+        , shop1.lng
+        , web3.toHex(shop1.countryId)
+        , web3.toHex(shop1.postalCode)
+        , web3.toHex(shop1.cat)
+        , web3.toHex(shop1.name)
+        , web3.toHex(shop1.description)
+        , web3.toHex(shop1.opening)
+        , {from: shop1address, gas:4000000}
+      );
+      assert.equal(await dether.isShop(shop1address), true, 'assert is shop now online');
+      try {
+          await dether.deleteShopMods(shop1address, {from: cmo, gas:4000000});
+      } catch(err) {
+
+      }
+      assert.equal(await dether.isShop(shop1address), true, 'assert is shop still online');
     })
 
   })

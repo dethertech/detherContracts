@@ -30,11 +30,11 @@ contract DthRegistry is ERC223ReceivingContract {
       dth.transfer(msg.sender, tosend);
     }
 
-    function _withdrawShop() internal {
-      require(registryShop[msg.sender] > 0);
-      uint tosend = registryShop[msg.sender];
-      registryShop[msg.sender] = 0;
-      dth.transfer(msg.sender, tosend);
+    function _withdrawShop(address _receiver) internal {
+      require(registryShop[_receiver] > 0);
+      uint tosend = registryShop[_receiver];
+      registryShop[_receiver] = 0;
+      dth.transfer(_receiver, tosend);
     }
 
     function setDth (address _dth) {

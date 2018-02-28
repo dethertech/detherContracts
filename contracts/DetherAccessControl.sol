@@ -2,7 +2,7 @@ pragma solidity ^0.4.18;
 
 /// @title A facet of Dether that manages special access privileges.
 /// @author Axiom Zen (https://www.axiomzen.co) && dether.io
-/// Thanks to the Cryptokitties for the inspirations
+/// Thanks to the Cryptokitties
 
 contract DetherAccessControl {
     // This facet controls access control for CryptoKitties. There are four roles managed here:
@@ -10,9 +10,7 @@ contract DetherAccessControl {
     //     - The CEO: The CEO can reassign other roles and change the addresses of our dependent smart
     //         contracts. It is also the only role that can unpause the smart contract.
     //
-    //     - The CFO: The CFO can withdraw funds from KittyCore and its auction contracts.
-    //
-    //     - The COO: The COO can manage zone.
+    //     - The CMO: The CMO is in charge to open or close activity in zone
     //
     // It should be noted that these roles are distinct without overlap in their access abilities, the
     // abilities listed for each role above are exhaustive. In particular, while the CEO can assign any
@@ -25,9 +23,10 @@ contract DetherAccessControl {
     event ContractUpgrade(address newContract);
 
     // The addresses of the accounts (or contracts) that can execute actions within each roles.
+
     address public ceoAddress;
-    address public cfoAddress;
-    address public cooAddress;
+    address public cmoAddress;
+	  mapping (address => bool) public moderators;   // centralised moderator, would become decentralised
 
     // @dev Keeps track whether the contract is paused. When that is true, most actions are blocked
     bool public paused = false;
@@ -39,25 +38,24 @@ contract DetherAccessControl {
     }
 
     /// @dev Access modifier for CFO-only functionality
-    modifier onlyCFO() {
-        require(msg.sender == cfoAddress);
-        _;
-    }
-
-    /// @dev Access modifier for COO-only functionality
-    modifier onlyCOO() {
-        require(msg.sender == cooAddress);
+    modifier onlyCMO() {
+        require(msg.sender == cmoAddress);
         _;
     }
 
     modifier onlyCLevel() {
         require(
-            msg.sender == cooAddress ||
-            msg.sender == ceoAddress ||
-            msg.sender == cfoAddress
+            msg.sender == cmoAddress ||
+            msg.sender == ceoAddress
         );
         _;
     }
+
+    modifier onlyModerator() {
+      require(moderators[msg.sender] == true);
+      _;
+    }
+
 
     /// @dev Assigns a new address to act as the CEO. Only available to the current CEO.
     /// @param _newCEO The address of the new CEO
@@ -68,19 +66,20 @@ contract DetherAccessControl {
     }
 
     /// @dev Assigns a new address to act as the CFO. Only available to the current CEO.
-    /// @param _newCFO The address of the new CFO
-    function setCFO(address _newCFO) external onlyCEO {
-        require(_newCFO != address(0));
+    /// @param _newCMO The address of the new CFO
+    function setCMO(address _newCMO) external onlyCEO {
+        require(_newCMO != address(0));
 
-        cfoAddress = _newCFO;
+        cmoAddress = _newCMO;
     }
 
-    /// @dev Assigns a new address to act as the COO. Only available to the current CEO.
-    /// @param _newCOO The address of the new COO
-    function setCOO(address _newCOO) external onlyCEO {
-        require(_newCOO != address(0));
+    function setModerator(address _moderator) external onlyCEO {
+      require(_moderator != address(0));
+      moderators[_moderator] = true;
+    }
 
-        cooAddress = _newCOO;
+    function removeModerator(address _moderator) external onlyCEO {
+      moderators[_moderator] = false;
     }
 
     /*** Pausable functionality adapted from OpenZeppelin ***/
@@ -104,7 +103,7 @@ contract DetherAccessControl {
     }
 
     /// @dev Unpauses the smart contract. Can only be called by the CEO, since
-    ///  one reason we may pause the contract is when CFO or COO accounts are
+    ///  one reason we may pause the contract is when CMO account are
     ///  compromised.
     /// @notice This is public rather than external so it can be called by
     ///  derived contracts.

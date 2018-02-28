@@ -12,8 +12,9 @@ contract DetherCore is DetherSetup, DthRegistry {
   /*
    * EVENT
    */
-   event RegisterShop(address indexed shopAddress);
-   event DeleteShop(address indexed shopAddress);
+   event RegisterShop(address shopAddress);
+   event DeleteShop(address shopAddress);
+   event DeleteShopModerator(address indexed moderator, address shopAddress);
    address public newContractAddress;
 
   struct Shop {
@@ -59,7 +60,7 @@ contract DetherCore is DetherSetup, DthRegistry {
     bytes16 name,
     bytes32 description,
     bytes16 opening
-    )  public isSmsWhitelisted(msg.sender) shopHasStaked(licenceShop) {
+    )  public isSmsWhitelisted(msg.sender) shopHasStaked(licenceShop) isZoneShopOpen(countryId) {
       require(!isShop(msg.sender));
       shop[msg.sender].lat = lat;
       shop[msg.sender].lng = lng;
@@ -71,6 +72,17 @@ contract DetherCore is DetherSetup, DthRegistry {
       shop[msg.sender].generalIndex = shopIndex.push(msg.sender) - 1;
       shop[msg.sender].zoneIndex = shopInZone[countryId][postalCode].push(msg.sender) - 1;
 
+      /* Shop memory theShop;
+      theShop.lat = lat;
+      theShop.lng = lng;
+      theShop.name = name;
+      theShop.description = description;
+      theShop.opening = opening;
+      theShop.countryId = countryId;
+      theShop.postalCode = postalCode;
+      theShop.generalIndex = shopIndex.push(msg.sender) - 1;
+      theShop.zoneIndex = shopInZone[countryId][postalCode].push(msg.sender) - 1;
+      shop[msg.sender] = theShop; */
       RegisterShop(msg.sender);
   }
 
@@ -109,15 +121,34 @@ contract DetherCore is DetherSetup, DthRegistry {
       shop[keyToMove2].generalIndex = rowToDelete2;
       shopIndex.length--;
       delete shop[msg.sender];
-      _withdrawShop();
+      _withdrawShop(msg.sender);
       DeleteShop(msg.sender);
+    }
+
+    // gas used 67841
+    function deleteShopMods(address _toDelete) public onlyModerator {
+      uint rowToDelete1 = shop[_toDelete].zoneIndex;
+      address keyToMove1 = shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode][shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode].length - 1];
+      shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode][rowToDelete1] = keyToMove1;
+      shop[keyToMove1].zoneIndex = rowToDelete1;
+      shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode].length--;
+
+      uint rowToDelete2 = shop[_toDelete].generalIndex;
+      address keyToMove2 = shopIndex[shopIndex.length - 1];
+      shopIndex[rowToDelete2] = keyToMove2;
+      shop[keyToMove2].generalIndex = rowToDelete2;
+      shopIndex.length--;
+      delete shop[_toDelete];
+      _withdrawShop(_toDelete);
+      DeleteShopModerator(msg.sender, _toDelete);
     }
 
     function getZone(bytes2 _country, bytes16 _postalcode) public view returns (address[]) {
         return shopInZone[_country][_postalcode];
     }
 
-    function isShop(address _shop) public view returns (bool isIndeed){
-      return (shop[msg.sender].countryId != bytes2(0x0));
+    function isShop(address _shop) public view returns (bool ){
+      return (shop[_shop].countryId != bytes2(0x0));
     }
+
 }
