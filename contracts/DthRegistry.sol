@@ -3,15 +3,19 @@ pragma solidity ^0.4.18;
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
+import 'bytes/BytesLib.sol';
 /// @title Contract that will store the Dth from user
 contract DthRegistry is ERC223ReceivingContract {
-
+    using BytesLib for bytes;
     mapping(address => uint) public registryTeller;
     mapping(address => uint) public registryShop;
     ERC223Basic public dth;
     bool public isInit = false;
     event ReceiveDthShop(address indexed _from, uint _amount, bytes _bytes);
     event ReceiveDthTeller(address indexed _from, uint _amount, bytes _bytes);
+    event LogBytes(string logs, bytes data);
+    event LogBytes1(string logs, bytes1 data);
+
 
     modifier tellerHasStaked(uint amount) {
       require(getStakedTeller(msg.sender) >= amount);
@@ -65,6 +69,25 @@ contract DthRegistry is ERC223ReceivingContract {
     /// @param _data  Transaction metadata.
     function tokenFallback(address _from, uint _value, bytes _data) {
 
+      bytes memory _lat = _data.slice(0,16);
+      bytes memory _lng = _data.slice(16,16);
+      bytes memory _countryId = _data.slice(32,2);
+      bytes memory _postalCode = _data.slice(34,16);
+      bytes memory _cat = _data.slice(50,16);
+      bytes memory _name = _data.slice(66,16);
+      bytes memory _description = _data.slice(82,32);
+      bytes memory _opening = _data.slice(114,16);
+      bytes memory _func = _data.slice(130,1);
+
+      LogBytes('lat ', _lat);
+      LogBytes('lng ', _lng);
+      LogBytes('countryId', _countryId);
+      LogBytes('postal', _postalCode);
+      LogBytes('cat', _cat);
+      LogBytes('name', _name);
+      LogBytes('description', _description);
+      LogBytes('opening', _opening);
+      LogBytes('func ', _func);
       addTokenShop(_from,_value);
       ReceiveDthShop(_from, _value, _data);
 

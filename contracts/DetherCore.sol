@@ -18,8 +18,8 @@ contract DetherCore is DetherSetup, DthRegistry {
    address public newContractAddress;
 
   struct Shop {
-    uint lat;
-    uint lng;
+    bytes16 lat;
+    bytes16 lng;
     bytes2 countryId;
     bytes16 postalCode;
     bytes16 cat;
@@ -50,10 +50,10 @@ contract DetherCore is DetherSetup, DthRegistry {
       ContractUpgrade(_v2Address);
   }
 
-  // gas used 244000
+  // gas used 227000
   function addShop(
-    uint lat,
-    uint lng,
+    bytes16 lat,
+    bytes16 lng,
     bytes2 countryId,
     bytes16 postalCode,
     bytes16 cat,
@@ -87,8 +87,8 @@ contract DetherCore is DetherSetup, DthRegistry {
   }
 
   function getShop(address _shop) public view returns (
-    uint lat,
-    uint lng,
+    bytes16 lat,
+    bytes16 lng,
     bytes2 countryId,
     bytes16 postalCode,
     bytes16 cat,
