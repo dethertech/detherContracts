@@ -14,8 +14,10 @@ contract DthRegistry is ERC223ReceivingContract {
     event ReceiveDthShop(address indexed _from, uint _amount, bytes _bytes);
     event ReceiveDthTeller(address indexed _from, uint _amount, bytes _bytes);
     event LogBytes(string logs, bytes data);
+    event LogBytes16(string logs, bytes16 data);
+    event LogBytes32(string logs, bytes32 data);
+    event LogBytes2(string logs, bytes2 data);
     event LogBytes1(string logs, bytes1 data);
-
 
     modifier tellerHasStaked(uint amount) {
       require(getStakedTeller(msg.sender) >= amount);
@@ -61,40 +63,5 @@ contract DthRegistry is ERC223ReceivingContract {
 
     function addTokenShop(address _from, uint _value) public {
       registryShop[_from] += _value;
-    }
-
-    /// @dev Standard ERC223 function that will handle incoming token transfers.
-    /// @param _from  Token sender address.
-    /// @param _value Amount of tokens.
-    /// @param _data  Transaction metadata.
-    function tokenFallback(address _from, uint _value, bytes _data) {
-
-      bytes memory _lat = _data.slice(0,16);
-      bytes memory _lng = _data.slice(16,16);
-      bytes memory _countryId = _data.slice(32,2);
-      bytes memory _postalCode = _data.slice(34,16);
-      bytes memory _cat = _data.slice(50,16);
-      bytes memory _name = _data.slice(66,16);
-      bytes memory _description = _data.slice(82,32);
-      bytes memory _opening = _data.slice(114,16);
-      bytes memory _func = _data.slice(130,1);
-
-      LogBytes('lat ', _lat);
-      LogBytes('lng ', _lng);
-      LogBytes('countryId', _countryId);
-      LogBytes('postal', _postalCode);
-      LogBytes('cat', _cat);
-      LogBytes('name', _name);
-      LogBytes('description', _description);
-      LogBytes('opening', _opening);
-      LogBytes('func ', _func);
-      addTokenShop(_from,_value);
-      ReceiveDthShop(_from, _value, _data);
-
-      /* tkn variable is analogue of msg variable of Ether transaction
-      *  tkn.sender is person who initiated this token transaction   (analogue of msg.sender)
-      *  tkn.value the number of tokens that were sent   (analogue of msg.value)
-      *  tkn.data is data of token transaction   (analogue of msg.data)
-      */
     }
 }

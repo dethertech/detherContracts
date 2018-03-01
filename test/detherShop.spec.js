@@ -37,6 +37,17 @@ const overloadedTransferAbi = {
 
 let dether, smsCertifier, dthToken ;
 
+String.prototype.hexEncode = function(){
+    var hex, i;
+
+    var result = "";
+    for (i=0; i<this.length; i++) {
+        hex = this.charCodeAt(i).toString(16);
+        result += (""+hex).slice(-4);
+    }
+    return '0x' + result
+}
+
 const
   [
       owner
@@ -77,164 +88,160 @@ contract('Dether Dth', async () => {
     await dthToken.mint(shop3address, 1000);
     await dthToken.finishMinting();
 
-    const registerString = "12345600000000009876540000000000FR7500900000000000restaurant000000shop100000000000Shop1 is an amazing shop.Shop1 i12346756757523991";
-
-    const transferMethodTransactionData = web3Abi.encodeFunctionCall(
-        overloadedTransferAbi,
-        [
-            dether.address,
-            20,
-            web3.toHex(registerString)
-            // web3.toHex("test")
-        ]
-    );
-    await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-    await web3.eth.sendTransaction({from: shop2address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-    await web3.eth.sendTransaction({from: shop3address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-
+    // const tsx = await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+    // await web3.eth.sendTransaction({from: shop2address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+    // await web3.eth.sendTransaction({from: shop3address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
     await dether.openZoneShop(web3.toHex(shop1.countryId),{from: cmo});
+    await dether.openZoneShop(web3.toHex(shop2.countryId),{from: cmo});
+    await dether.openZoneShop(web3.toHex(shop3.countryId),{from: cmo});
   })
 
   contract('Add shop --', async () =>  {
 
-    it('should parse data and register', async () => {
-      const bytesEvent = dether.LogBytes({}, { fromBlock: 0, toBlock: 'latest' });
-      bytesEvent.get((error, logs) => {
-        logs.forEach(log => {
-          console.log(log.args.logs, web3.toAscii(log.args.data))
-        })
-      });
-    })
+    it('should parse data and register and be on the map', async () => {
 
-    it.skip('should register a shop and be on the map', async () => {
-      // let tsx = await dether.addShop(...Object.values(shop1), {from: shop1address, gas:4000000});
-      let tsx = await dether.addShop(
-        web3.toHex(shop1.lat)
-        , web3.toHex(shop1.lng)
-        , web3.toHex(shop1.countryId)
-        , web3.toHex(shop1.postalCode)
-        , web3.toHex(shop1.cat)
-        , web3.toHex(shop1.name)
-        , web3.toHex(shop1.description)
-        , web3.toHex(shop1.opening)
-        , {from: shop1address, gas:4000000}
+      const reg = shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening + "1";
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg)
+              // web3.toHex("test")
+          ]
       );
-      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
-      let shop1value = await dether.getShop(shop1address);
-      // assert.equal(shop1value[0].toNumber(), web3.toHex(shop1.lat), 'verif lat');
-      // assert.equal(shop1value[1].toNumber(), web3.toHex(shop1.lng), 'verif lng');
-      assert.equal(shop1value[2], web3.toHex(shop1.countryId), 'verif country id');
-      // assert.equal(web3.toAscii(shop1value[3]), shop1.postalCode, 'verif postal code');
-      // assert.equal(shop1value[4], web3.toHex(shop1.cat), 'verif lat');
-      // assert.equal(shop1value[5], web3.toHex(shop1.name), 'verif lng');
-      // assert.equal(shop1value[6], web3.toHex(shop1.description), 'verif country id');
-      // assert.equal(shop1value[7], web3.toHex(shop1.opening), 'verif postal code');
+      const tsx = await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+      console.log('tsx gas cost', (await web3.eth.getTransactionReceipt(tsx)).gasUsed);
+      // const bytesEvent = dether.LogBytes({}, { fromBlock: 0, toBlock: 'latest' });
+      // bytesEvent.get((error, logs) => {
+      //   logs.forEach(log => {
+      //     console.log(log.args.logs, web3.toAscii(log.args.data))
+      //   })
+      // });
 
+      let shop1value = await dether.getShop(shop1address);
+      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
+      assert.equal(web3.toAscii(shop1value[0]), shop1.lat, 'verif lat');
+      assert.equal(web3.toAscii(shop1value[1]), shop1.lng, 'verif lng');
+      assert.equal(web3.toAscii(shop1value[2]), shop1.countryId, 'verif country id');
+      assert.equal(web3.toAscii(shop1value[3]), shop1.postalCode, 'verif postal code');
+      assert.equal(web3.toAscii(shop1value[4]), shop1.cat, 'verif lat');
+      assert.equal(web3.toAscii(shop1value[5]), shop1.name, 'verif lng');
+      assert.equal(web3.toAscii(shop1value[6]), shop1.description, 'verif country id');
+      assert.equal(web3.toAscii(shop1value[7]), shop1.opening, 'verif postal code');
     })
 
-    it.skip('should not be possible to add shop in unopened zone', async () => {
-      // let tsx = await dether.addShop(...Object.values(shop1), {from: shop1address, gas:4000000});
+    it('should not be possible to add shop in unopened zone', async () => {
       await dether.closeZoneShop(web3.toHex(shop3.countryId),{from: cmo});
+
+      const reg = shop3.lat + shop3.lng + shop3.countryId + shop3.postalCode + shop3.cat + shop3.name + shop3.description + shop3.opening + "1";
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg)
+              // web3.toHex("test")
+          ]
+      );
       try {
-        await dether.addShop(
-          web3.toHex(shop3.lat)
-          , web3.toHex(shop3.lng)
-          , web3.toHex(shop3.countryId)
-          , web3.toHex(shop3.postalCode)
-          , web3.toHex(shop3.cat)
-          , web3.toHex(shop3.name)
-          , web3.toHex(shop3.description)
-          , web3.toHex(shop3.opening)
-          , {from: shop3address, gas:4000000}
-        )
+        const tsx = await web3.eth.sendTransaction({from: shop3address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
       } catch (err) {
 
       }
+
       let shop3value = await dether.getShop(shop3address);
+      assert.equal(await dether.isShop(shop3address), false, 'assert shop is now online');
       // assert.notEqual(shop3value[0].toNumber(), web3.toHex(shop3.lat), 'verif lat');
       // assert.notEqual(shop3value[1].toNumber(), web3.toHex(shop3.lng), 'verif lng');
-      assert.notEqual(shop3value[2], web3.toHex(shop3.countryId), 'verif country id');
 
     })
 
-    it.skip('should get all tellers in a zone', async () => {
+    it('should get all shop in a zone', async () => {
 
-      let zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
+      zone = await dether.getZone(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
       assert.equal(zone, '', 'verif empty zone')
-      await dether.addShop(
-        web3.toHex(shop1.lat)
-        , web3.toHex(shop1.lng)
-        , web3.toHex(shop1.countryId)
-        , web3.toHex(shop1.postalCode)
-        , web3.toHex(shop1.cat)
-        , web3.toHex(shop1.name)
-        , web3.toHex(shop1.description)
-        , web3.toHex(shop1.opening)
-        , {from: shop1address, gas:4000000}
+
+      let reg = shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening + "1";
+      let transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg)
+              // web3.toHex("test")
+          ]
       );
-      await dether.addShop(
-        web3.toHex(shop2.lat)
-        , web3.toHex(shop2.lng)
-        , web3.toHex(shop2.countryId)
-        , web3.toHex(shop2.postalCode)
-        , web3.toHex(shop2.cat)
-        , web3.toHex(shop2.name)
-        , web3.toHex(shop2.description)
-        , web3.toHex(shop2.opening)
-        , {from: shop2address, gas:4000000}
+      await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+
+      let reg2 = shop2.lat + shop2.lng + shop2.countryId + shop2.postalCode + shop2.cat + shop2.name + shop2.description + shop2.opening + "1";
+      let transferMethodTransactionData2 = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg2)
+              // web3.toHex("test")
+          ]
       );
-      assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
-      zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
+      await web3.eth.sendTransaction({from: shop2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});
+
+      zone = await dether.getZone(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
       assert.deepEqual(zone, [shop1address, shop2address], 'incorrect zone');
-
     })
 
-    it.skip('should have empty zone after delete', async () => {
+    it('should have empty zone after delete', async () => {
       let zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
       assert.equal(zone, '', 'verif empty zone')
-      await dether.addShop(
-        web3.toHex(shop1.lat)
-        , web3.toHex(shop1.lng)
-        , web3.toHex(shop1.countryId)
-        , web3.toHex(shop1.postalCode)
-        , web3.toHex(shop1.cat)
-        , web3.toHex(shop1.name)
-        , web3.toHex(shop1.description)
-        , web3.toHex(shop1.opening)
-        , {from: shop1address, gas:4000000}
+
+      let reg = shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening + "1";
+      let transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg)
+              // web3.toHex("test")
+          ]
       );
-      await dether.addShop(
-        shop2.lat
-        , shop2.lng
-        , web3.toHex(shop2.countryId)
-        , web3.toHex(shop2.postalCode)
-        , web3.toHex(shop2.cat)
-        , web3.toHex(shop2.name)
-        , web3.toHex(shop2.description)
-        , web3.toHex(shop2.opening)
-        , {from: shop2address, gas:4000000}
+      await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+
+      let reg2 = shop2.lat + shop2.lng + shop2.countryId + shop2.postalCode + shop2.cat + shop2.name + shop2.description + shop2.opening + "1";
+      let transferMethodTransactionData2 = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg2)
+              // web3.toHex("test")
+          ]
       );
+      await web3.eth.sendTransaction({from: shop2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});
       assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
       let tsx = await dether.deleteShop({from: shop2address, gas:4000000});
       await dether.deleteShop({from: shop1address, gas:4000000});
-      zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
+      zone = await dether.getZone(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
       assert.equal(zone, '', 'verif empty zone');
     })
 
-    it.skip('should have token back after delete', async () => {
+    it('should have token back after delete', async () => {
       const baltoken = await dthToken.balanceOf(shop1address);
       const balstaked = await dether.getStakedShop(shop1address);
-      await dether.addShop(
-        web3.toHex(shop1.lat)
-        , web3.toHex(shop1.lng)
-        , web3.toHex(shop1.countryId)
-        , web3.toHex(shop1.postalCode)
-        , web3.toHex(shop1.cat)
-        , web3.toHex(shop1.name)
-        , web3.toHex(shop1.description)
-        , web3.toHex(shop1.opening)
-        , {from: shop1address, gas:4000000}
+      let zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
+      assert.equal(zone, '', 'verif empty zone')
+
+      let reg = shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening + "1";
+      let transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg)
+              // web3.toHex("test")
+          ]
       );
+      await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+
       assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
       await dether.deleteShop({from: shop1address, gas:4000000});
       const newbaltoken = await dthToken.balanceOf(shop1address);
@@ -243,36 +250,38 @@ contract('Dether Dth', async () => {
       assert.equal(newbalstaked.toNumber(), 0, 'verif balance token');
     })
 
-    it.skip('should be able to delete a random shop as a moderator', async () => {
-      await dether.addShop(
-        web3.toHex(shop1.lat)
-        , web3.toHex(shop1.lng)
-        , web3.toHex(shop1.countryId)
-        , web3.toHex(shop1.postalCode)
-        , web3.toHex(shop1.cat)
-        , web3.toHex(shop1.name)
-        , web3.toHex(shop1.description)
-        , web3.toHex(shop1.opening)
-        , {from: shop1address, gas:4000000}
+    it('should be able to delete a random shop as a moderator', async () => {
+      let reg = shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening + "1";
+      let transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg)
+              // web3.toHex("test")
+          ]
       );
+      await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+
       assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
       await dether.deleteShopMods(shop1address, {from: moderator, gas:4000000});
       assert.equal(await dether.isShop(shop1address), false, 'assert is shop');
     })
 
-    it.skip('should not be be able to delete a random shop if not moderator', async () => {
+    it('should not be be able to delete a random shop if not moderator', async () => {
       assert.equal(await dether.isShop(shop1address), false, 'assert is shop pref delete');
-      await dether.addShop(
-        web3.toHex(shop1.lat)
-        , web3.toHex(shop1.lng)
-        , web3.toHex(shop1.countryId)
-        , web3.toHex(shop1.postalCode)
-        , web3.toHex(shop1.cat)
-        , web3.toHex(shop1.name)
-        , web3.toHex(shop1.description)
-        , web3.toHex(shop1.opening)
-        , {from: shop1address, gas:4000000}
+      let reg = shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening + "1";
+      let transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              web3.toHex(reg)
+              // web3.toHex("test")
+          ]
       );
+      await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+
       assert.equal(await dether.isShop(shop1address), true, 'assert is shop now online');
       try {
           await dether.deleteShopMods(shop1address, {from: cmo, gas:4000000});

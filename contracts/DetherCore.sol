@@ -1,4 +1,3 @@
-
 pragma solidity ^0.4.18;
 
 import './dth/DetherToken.sol';
@@ -15,6 +14,7 @@ contract DetherCore is DetherSetup, DthRegistry {
    event RegisterShop(address shopAddress);
    event DeleteShop(address shopAddress);
    event DeleteShopModerator(address indexed moderator, address shopAddress);
+   event LogTemp(string str, address _addr);
    address public newContractAddress;
 
   struct Shop {
@@ -24,7 +24,7 @@ contract DetherCore is DetherSetup, DthRegistry {
     bytes16 postalCode;
     bytes16 cat;
     bytes16 name;
-    bytes32 description; // max length 100 char
+    bytes32 description;
     bytes16 opening;
     uint zoneIndex;
     uint generalIndex;
@@ -51,7 +51,7 @@ contract DetherCore is DetherSetup, DthRegistry {
   }
 
   // gas used 227000
-  function addShop(
+  /* function addShop(
     bytes16 lat,
     bytes16 lng,
     bytes2 countryId,
@@ -62,17 +62,8 @@ contract DetherCore is DetherSetup, DthRegistry {
     bytes16 opening
     )  public isSmsWhitelisted(msg.sender) shopHasStaked(licenceShop) isZoneShopOpen(countryId) {
       require(!isShop(msg.sender));
-      shop[msg.sender].lat = lat;
-      shop[msg.sender].lng = lng;
-      shop[msg.sender].name = name;
-      shop[msg.sender].description = description;
-      shop[msg.sender].opening = opening;
-      shop[msg.sender].countryId = countryId;
-      shop[msg.sender].postalCode = postalCode;
-      shop[msg.sender].generalIndex = shopIndex.push(msg.sender) - 1;
-      shop[msg.sender].zoneIndex = shopInZone[countryId][postalCode].push(msg.sender) - 1;
 
-      /* Shop memory theShop;
+      Shop memory theShop;
       theShop.lat = lat;
       theShop.lng = lng;
       theShop.name = name;
@@ -82,9 +73,9 @@ contract DetherCore is DetherSetup, DthRegistry {
       theShop.postalCode = postalCode;
       theShop.generalIndex = shopIndex.push(msg.sender) - 1;
       theShop.zoneIndex = shopInZone[countryId][postalCode].push(msg.sender) - 1;
-      shop[msg.sender] = theShop; */
+      shop[msg.sender] = theShop;
       RegisterShop(msg.sender);
-  }
+  } */
 
   function getShop(address _shop) public view returns (
     bytes16 lat,
@@ -149,6 +140,72 @@ contract DetherCore is DetherSetup, DthRegistry {
 
     function isShop(address _shop) public view returns (bool ){
       return (shop[_shop].countryId != bytes2(0x0));
+    }
+
+    /// @dev Standard ERC223 function that will handle incoming token transfers.
+    /// @param _from  Token sender address.
+    /// @param _value Amount of tokens.
+    /// @param _data  Transaction metadata.
+    function tokenFallback(address _from, uint _value, bytes _data) isSmsWhitelisted(_from) {
+
+      // require staked greater than licence price
+      require(_value >= licenceShop);
+      // require is not already shop
+      require(!isShop(_from));
+      // require zone is open
+      require(openedCountryShop[_data.toBytes2(32)]);
+      // require than the token fallback is triggered from the dth token contract
+      require(msg.sender == address(dth));
+
+      /* bytes16 _lat = _data.toBytes16(0);
+      bytes16 _lng = _data.toBytes16(16);
+      bytes2 _countryId = _data.toBytes2(32);
+      bytes16 _postalCode = _data.toBytes16(34);
+      bytes16 _cat = _data.toBytes16(50);
+      bytes16 _name = _data.toBytes16(66);
+      bytes32 _description = _data.toBytes32(82);
+      bytes16 _opening = _data.toBytes16(114); */
+      bytes1 _func = _data.toBytes1(130);
+
+      /* LogBytes16('lat ', _lat);
+      LogBytes16('lng ', _lng);
+      LogBytes2('countryId', _countryId);
+      LogBytes16('postal', _postalCode);
+      LogBytes16('cat', _cat);
+      LogBytes16('name', _name);
+      LogBytes32('description', _description);
+      LogBytes16('opening', _opening); */
+
+      /* LogTemp('pre reg', shopInZone[_data.toBytes2(32)][_data.toBytes16(34)][0]); */
+      LogTemp('register addr', _from);
+      // 1 / 0x31 = shop // 2 / 0x32 = teller
+      if (_func == bytes1(0x31)) {
+        /* Shop memory theShop = shop[_from];
+        theShop.lat = _data.toBytes16(0);
+        theShop.lng = _data.toBytes16(16);
+        theShop.name = _data.toBytes16(66);
+        theShop.description = _data.toBytes32(82);
+        theShop.opening = _data.toBytes16(114);
+        theShop.countryId = _data.toBytes2(32);
+        theShop.postalCode = _data.toBytes16(34);
+        theShop.generalIndex = shopIndex.push(_from) - 1;
+        theShop.zoneIndex = shopInZone[theShop.countryId][theShop.postalCode].push(_from) - 1; */
+        shop[_from].lat = _data.toBytes16(0);
+        shop[_from].lng = _data.toBytes16(16);
+        shop[_from].name = _data.toBytes16(66);
+        shop[_from].cat = _data.toBytes16(50);
+        shop[_from].description = _data.toBytes32(82);
+        shop[_from].opening = _data.toBytes16(114);
+        shop[_from].countryId = _data.toBytes2(32);
+        shop[_from].postalCode = _data.toBytes16(34);
+        LogBytes2('id', shop[_from].countryId);
+        LogBytes16('postalcode', shop[_from].postalCode);
+        shop[_from].generalIndex = shopIndex.push(_from) - 1;
+        shop[_from].zoneIndex = shopInZone[shop[_from].countryId][shop[_from].postalCode].push(_from) - 1;
+        RegisterShop(_from);
+        addTokenShop(_from,_value);
+        /* ReceiveDthShop(_from, _value, _data); */
+      }
     }
 
 }
