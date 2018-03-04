@@ -11,8 +11,8 @@ var SmsCertifier = artifacts.require("./certifier/SmsCertifier.sol");
 
 module.exports = function(deployer, network) {
 
-  deployer.deploy(DetherCore, {gas: 6500000})
-  .then(() => deployer.deploy(DetherToken, {gas: 5500000}))
-  .then(() => deployer.deploy(SmsCertifier, {gas: 4500000}))
+  deployer.deploy(DetherCore, {gas: 4700000})
+  .then(() => deployer.deploy(DetherToken, {gas: 4700000}))
+  .then(() => deployer.deploy(SmsCertifier, {gas: 4700000}))
 
 };

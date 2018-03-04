@@ -1,15 +1,11 @@
 pragma solidity ^0.4.18;
 
-import './dth/DetherToken.sol';
 import './certifier/SmsCertifier.sol';
-import './DthRegistry.sol';
 import './DetherAccessControl.sol';
 
 /*
  * This contract aim to manage the generals value fo the contracts
  */
-
-// add zone management
 
 contract DetherSetup is DetherAccessControl  {
 
@@ -26,7 +22,6 @@ contract DetherSetup is DetherAccessControl  {
     require(openedCountryShop[_country]);
     _;
   }
-
   function setCertifier (address _smsCertifier) onlyCEO {
     require(!run);
     smsCertifier = SmsCertifier(_smsCertifier);
@@ -41,6 +36,4 @@ contract DetherSetup is DetherAccessControl  {
   function closeZoneShop(bytes2 _country) onlyCMO {
     openedCountryShop[_country] = false;
   }
-
-
 }

@@ -37,19 +37,19 @@ contract DetherAccessControl {
         _;
     }
 
-    /// @dev Access modifier for CFO-only functionality
+    /// @dev Access modifier for CMO-only functionality
     modifier onlyCMO() {
         require(msg.sender == cmoAddress);
         _;
     }
 
-    modifier onlyCLevel() {
+    /* modifier onlyCLevel() {
         require(
             msg.sender == cmoAddress ||
             msg.sender == ceoAddress
         );
         _;
-    }
+    } */
 
     modifier onlyModerator() {
       require(moderators[msg.sender] == true);
@@ -98,7 +98,7 @@ contract DetherAccessControl {
 
     /// @dev Called by any "C-level" role to pause the contract. Used only when
     ///  a bug or exploit is detected and we need to limit damage.
-    function pause() external onlyCLevel whenNotPaused {
+    function pause() external onlyCEO whenNotPaused {
         paused = true;
     }
 

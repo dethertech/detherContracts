@@ -1,6 +1,5 @@
 pragma solidity ^0.4.18;
 
-import './dth/DetherToken.sol';
 import './certifier/SmsCertifier.sol';
 import './DthRegistry.sol';
 import './DetherSetup.sol';
@@ -14,8 +13,7 @@ contract DetherCore is DetherSetup, DthRegistry {
    event RegisterShop(address shopAddress);
    event DeleteShop(address shopAddress);
    event DeleteShopModerator(address indexed moderator, address shopAddress);
-   event LogTemp(string str, address _addr);
-   address public newContractAddress;
+   /* address public newContractAddress; */
 
   struct Shop {
     bytes16 lat;
@@ -38,7 +36,7 @@ contract DetherCore is DetherSetup, DthRegistry {
     ceoAddress = msg.sender;
   }
 
-  /// @dev Used to mark the smart contract as upgraded, in case there is a serious
+  /* /// @dev Used to mark the smart contract as upgraded, in case there is a serious
   ///  breaking bug. This method does nothing but keep track of the new contract and
   ///  emit a message indicating that the new address is set. It's up to clients of this
   ///  contract to update to the new contract address in that case. (This contract will
@@ -48,7 +46,7 @@ contract DetherCore is DetherSetup, DthRegistry {
       // See README.md for updgrade plan
       newContractAddress = _v2Address;
       ContractUpgrade(_v2Address);
-  }
+  } */
 
   // gas used 227000
   /* function addShop(
@@ -138,6 +136,10 @@ contract DetherCore is DetherSetup, DthRegistry {
         return shopInZone[_country][_postalcode];
     }
 
+    function getAllShops() public view returns (address[]) {
+      return shopIndex;
+    }
+
     function isShop(address _shop) public view returns (bool ){
       return (shop[_shop].countryId != bytes2(0x0));
     }
@@ -157,27 +159,7 @@ contract DetherCore is DetherSetup, DthRegistry {
       // require than the token fallback is triggered from the dth token contract
       require(msg.sender == address(dth));
 
-      /* bytes16 _lat = _data.toBytes16(0);
-      bytes16 _lng = _data.toBytes16(16);
-      bytes2 _countryId = _data.toBytes2(32);
-      bytes16 _postalCode = _data.toBytes16(34);
-      bytes16 _cat = _data.toBytes16(50);
-      bytes16 _name = _data.toBytes16(66);
-      bytes32 _description = _data.toBytes32(82);
-      bytes16 _opening = _data.toBytes16(114); */
       bytes1 _func = _data.toBytes1(130);
-
-      /* LogBytes16('lat ', _lat);
-      LogBytes16('lng ', _lng);
-      LogBytes2('countryId', _countryId);
-      LogBytes16('postal', _postalCode);
-      LogBytes16('cat', _cat);
-      LogBytes16('name', _name);
-      LogBytes32('description', _description);
-      LogBytes16('opening', _opening); */
-
-      /* LogTemp('pre reg', shopInZone[_data.toBytes2(32)][_data.toBytes16(34)][0]); */
-      LogTemp('register addr', _from);
       // 1 / 0x31 = shop // 2 / 0x32 = teller
       if (_func == bytes1(0x31)) {
         /* Shop memory theShop = shop[_from];
@@ -198,8 +180,6 @@ contract DetherCore is DetherSetup, DthRegistry {
         shop[_from].opening = _data.toBytes16(114);
         shop[_from].countryId = _data.toBytes2(32);
         shop[_from].postalCode = _data.toBytes16(34);
-        LogBytes2('id', shop[_from].countryId);
-        LogBytes16('postalcode', shop[_from].postalCode);
         shop[_from].generalIndex = shopIndex.push(_from) - 1;
         shop[_from].zoneIndex = shopInZone[shop[_from].countryId][shop[_from].postalCode].push(_from) - 1;
         RegisterShop(_from);
@@ -207,5 +187,4 @@ contract DetherCore is DetherSetup, DthRegistry {
         /* ReceiveDthShop(_from, _value, _data); */
       }
     }
-
 }
