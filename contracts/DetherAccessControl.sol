@@ -26,7 +26,8 @@ contract DetherAccessControl {
 
     address public ceoAddress;
     address public cmoAddress;
-	  mapping (address => bool) public moderators;   // centralised moderator, would become decentralised
+	  mapping (address => bool) public shopModerators;   // centralised moderator, would become decentralised
+    mapping (address => bool) public tellerModerators;   // centralised moderator, would become decentralised
 
     // @dev Keeps track whether the contract is paused. When that is true, most actions are blocked
     bool public paused = false;
@@ -51,37 +52,46 @@ contract DetherAccessControl {
         _;
     } */
 
-    modifier onlyModerator() {
-      require(moderators[msg.sender] == true);
+    modifier isShopModerator(address _user) {
+      require(shopModerators[_user]);
       _;
     }
-
+    modifier isTellerModerator(address _user) {
+      require(tellerModerators[_user]);
+      _;
+    }
 
     /// @dev Assigns a new address to act as the CEO. Only available to the current CEO.
     /// @param _newCEO The address of the new CEO
     function setCEO(address _newCEO) external onlyCEO {
         require(_newCEO != address(0));
-
         ceoAddress = _newCEO;
     }
 
-    /// @dev Assigns a new address to act as the CFO. Only available to the current CEO.
-    /// @param _newCMO The address of the new CFO
+    /// @dev Assigns a new address to act as the CMO. Only available to the current CEO.
+    /// @param _newCMO The address of the new CMO
     function setCMO(address _newCMO) external onlyCEO {
         require(_newCMO != address(0));
-
         cmoAddress = _newCMO;
     }
 
-    function setModerator(address _moderator) external onlyCEO {
+    function setShopModerator(address _moderator) external onlyCEO {
       require(_moderator != address(0));
-      moderators[_moderator] = true;
+      shopModerators[_moderator] = true;
     }
 
-    function removeModerator(address _moderator) external onlyCEO {
-      moderators[_moderator] = false;
+    function removeShopModerator(address _moderator) external onlyCEO {
+      shopModerators[_moderator] = false;
     }
 
+    function setTellerModerator(address _moderator) external onlyCEO {
+      require(_moderator != address(0));
+      tellerModerators[_moderator] = true;
+    }
+
+    function removeTellerModerator(address _moderator) external onlyCEO {
+      tellerModerators[_moderator] = false;
+    }
     /*** Pausable functionality adapted from OpenZeppelin ***/
 
     /// @dev Modifier to allow actions only when the contract IS NOT paused

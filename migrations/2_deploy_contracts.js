@@ -8,11 +8,13 @@
 var DetherCore = artifacts.require("./DetherCore.sol");
 var DetherToken = artifacts.require("./dth/DetherToken.sol");
 var SmsCertifier = artifacts.require("./certifier/SmsCertifier.sol");
+var DetherBank = artifacts.require("./DetherBank.sol");
 
 module.exports = function(deployer, network) {
 
   deployer.deploy(DetherCore, {gas: 4700000})
   .then(() => deployer.deploy(DetherToken, {gas: 4700000}))
+  .then(() => deployer.deploy(DetherBank, {gas: 4700000}))
   .then(() => deployer.deploy(SmsCertifier, {gas: 4700000}))
 
 };

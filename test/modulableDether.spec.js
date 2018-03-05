@@ -2,6 +2,7 @@
 const {expectThrow, waitForMined} = require('./utils');
 const {shop1, shop2, shop3} = require('./mock.json');
 const DetherCore = artifacts.require('./DetherCore.sol');
+const DetherBank = artifacts.require('./DetherBank.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
 const Dth = artifacts.require('./token/DetherToken.sol');
 
@@ -35,7 +36,7 @@ const overloadedTransferAbi = {
     "type": "function"
 };
 
-let dether, smsCertifier, dthToken ;
+let dether, smsCertifier, dthToken, detherBank ;
 
 String.prototype.hexEncode = function(){
     var hex, i;
@@ -70,12 +71,14 @@ contract('Dether Dth', async () => {
     dthToken = await Dth.new({gas: 4000000, from: owner});
     dether = await DetherCore.new({gas: 4000000, from: owner});
     smsCertifier = await SmsCertifier.new({gas: 4000000, from: owner});
+    detherBank = await DetherBank.new({gas: 4000000, from: owner});
 
-    await dether.setLicenceShopPrice(10);
-    await dether.setCertifier(smsCertifier.address);
-    await dether.setDth(dthToken.address);
+    await dether.setLicenceShopPrice(web3.toHex(shop1.countryId) ,10);
+    await dether.setSmsCertifier(smsCertifier.address);
+    await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCMO(cmo);
-    await dether.setModerator(moderator);
+    await dether.setShopModerator(moderator);
+    await detherBank.setDth(dthToken.address);
 
     await smsCertifier.addDelegate(certifier, 'test', {gas: 4000000, from: owner});
     await smsCertifier.certify(shop1address, {gas: 4000000, from: certifier});
@@ -88,9 +91,6 @@ contract('Dether Dth', async () => {
     await dthToken.mint(shop3address, 1000);
     await dthToken.finishMinting();
 
-    // const tsx = await web3.eth.sendTransaction({from: shop1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-    // await web3.eth.sendTransaction({from: shop2address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-    // await web3.eth.sendTransaction({from: shop3address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
     await dether.openZoneShop(web3.toHex(shop1.countryId),{from: cmo});
     await dether.openZoneShop(web3.toHex(shop2.countryId),{from: cmo});
     await dether.openZoneShop(web3.toHex(shop3.countryId),{from: cmo});
@@ -159,7 +159,7 @@ contract('Dether Dth', async () => {
 
     it('should get all shop in a zone', async () => {
 
-      zone = await dether.getZone(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
+      zone = await dether.getZoneShop(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
       assert.equal(zone, '', 'verif empty zone')
 
       const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
@@ -188,12 +188,12 @@ contract('Dether Dth', async () => {
       );
       await web3.eth.sendTransaction({from: shop2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});
 
-      zone = await dether.getZone(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
+      zone = await dether.getZoneShop(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
       assert.deepEqual(zone, [shop1address, shop2address], 'incorrect zone');
     })
 
     it('should have empty zone after delete', async () => {
-      let zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
+      let zone = await dether.getZoneShop(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
       assert.equal(zone, '', 'verif empty zone');
 
       const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
@@ -222,14 +222,14 @@ contract('Dether Dth', async () => {
       assert.equal(await dether.isShop(shop1address), true, 'assert shop is now online');
       let tsx = await dether.deleteShop({from: shop2address, gas:4000000});
       await dether.deleteShop({from: shop1address, gas:4000000});
-      zone = await dether.getZone(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
+      zone = await dether.getZoneShop(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
       assert.equal(zone, '', 'verif empty zone');
     })
 
     it('should have token back after delete', async () => {
       const baltoken = await dthToken.balanceOf(shop1address);
       const balstaked = await dether.getStakedShop(shop1address);
-      let zone = await dether.getZone(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
+      let zone = await dether.getZoneShop(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
       assert.equal(zone, '', 'verif empty zone')
 
       const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
