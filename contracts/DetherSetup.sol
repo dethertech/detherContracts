@@ -63,9 +63,9 @@ contract DetherSetup is DetherAccessControl  {
     openedCountryShop[_country] = false;
   }
   function openZoneTeller(bytes2 _country) onlyCMO {
-    openedCountryShop[_country] = true;
+    openedCountryTeller[_country] = true;
   }
   function closeZoneTeller(bytes2 _country) onlyCMO {
-    openedCountryShop[_country] = false;
+    openedCountryTeller[_country] = false;
   }
 }

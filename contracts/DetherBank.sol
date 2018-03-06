@@ -1,11 +1,15 @@
 pragma solidity ^0.4.18;
 
+import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import 'bytes/BytesLib.sol';
 /// @title Contract that will store the Dth from user
 contract DetherBank is ERC223ReceivingContract {
     using BytesLib for bytes;
+    using SafeMath for uint256;
+
 
     /*
      * Event
@@ -14,6 +18,8 @@ contract DetherBank is ERC223ReceivingContract {
     event receiveEth(address _from, uint amount);
     event sendDth(address _from, uint amount);
     event sendEth(address _from, uint amount);
+
+    event TempLog(address _from, uint amount1, uint amount2);
 
     mapping(address => uint) public dthShopBalance;
     mapping(address => uint) public dthTellerBalance;
@@ -63,17 +69,22 @@ contract DetherBank is ERC223ReceivingContract {
       dthTellerBalance[_from] += _value;
     }
 
-    function addEthShop(address _from, uint _value) public {
-      ethShopBalance[_from] += _value;
-    }
-    function addEthTeller(address _from, uint _value) public {
+    function addEthTeller(address _from, uint _value) public payable {
+      TempLog(_from, _value, msg.value);
       ethTellerBalance[_from] += _value;
     }
-    function withdrawEth(address _to) public {
-      uint toSend = ethTellerBalance[_to];
-      ethTellerBalance[_to] = 0;
+    function withdrawEth(address _from, address _to, uint _amount) public {
+      require(ethTellerBalance[_from] >= _amount);
+      ethTellerBalance[_from] -= _amount;
+      _to.transfer(_amount);
+    }
 
-      /* _to.transfer(_to, _value); */
+    function refundEth(address _from) public {
+      uint toSend = ethTellerBalance[_from];
+      if (toSend > 0) {
+        ethTellerBalance[_from] = 0;
+        _from.transfer(toSend);
+      }
     }
 
     function getDthTeller(address _user) public view returns (uint) {
@@ -83,7 +94,9 @@ contract DetherBank is ERC223ReceivingContract {
       return dthShopBalance[_user];
     }
 
-
+    function getEthBalTeller(address _user) public view returns (uint) {
+      return ethTellerBalance[_user];
+    }
     /// @dev Standard ERC223 function that will handle incoming token transfers.
     /// @param _from  Token sender address.
     /// @param _value Amount of tokens.

@@ -20,10 +20,13 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     event RegisterShop(address shopAddress);
     event DeleteShop(address shopAddress);
     event DeleteShopModerator(address indexed moderator, address shopAddress);
+    event DeleteTellerModerator(address indexed moderator, address tellerAddress);
+
+    // temp
+    event TempLog(string _logs, bytes _data);
   /**
    * Modifier
    */
-
     modifier tellerHasStaked(uint amount) {
       require(bank.getDthTeller(msg.sender) >= amount);
       _;
@@ -46,16 +49,15 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     bytes2 countryId;
     bytes16 postalCode;
 
-    bytes3 currencyId;
+    bytes2 currencyId;
     bytes16 messenger;
     bytes2 avatarId;
-    bytes4 rates;
+    bytes16 rates;
 
     uint zoneIndex;
     uint generalIndex;
     bool online;
 
-    uint balance;
     bytes[] comment;
     mapping (address => bool) rightsTo;
   }
@@ -113,6 +115,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
   /// @param _value Amount of tokens.
   /// @param _data  Transaction metadata.
   function tokenFallback(address _from, uint _value, bytes _data) {
+    // check if its coming from DTH contract
     require(msg.sender == address(dth));
 
     bytes1 _func = _data.toBytes1(0);
@@ -140,6 +143,27 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       dth.transfer(address(bank), _value);
     } else if (_func == bytes1(0x32)) { // teller registration
       // teller registration
+
+      // require staked greater than licence price
+      require(_value >= licenceTeller[_data.toBytes2(33)]);
+      // require is not already a teller
+      require(!isTeller(_from));
+      // require zone is open
+      require(openedCountryTeller[_data.toBytes2(33)]);
+
+      teller[_from].lat = _data.toBytes16(1);
+      teller[_from].lng = _data.toBytes16(17);
+      teller[_from].countryId = _data.toBytes2(33);
+      teller[_from].postalCode = _data.toBytes16(35);
+      teller[_from].avatarId = _data.toBytes2(51);
+      teller[_from].currencyId = _data.toBytes2(53);
+      teller[_from].messenger = _data.toBytes16(55);
+      teller[_from].rates = _data.toBytes16(71);
+      teller[_from].generalIndex = tellerIndex.push(_from) - 1;
+      teller[_from].zoneIndex = tellerInZone[teller[_from].countryId][teller[_from].postalCode].push(_from) - 1;
+      RegisterTeller(_from);
+      bank.addTokenTeller(_from, _value);
+      dth.transfer(address(bank), _value);
     }
 
   }
@@ -230,17 +254,28 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     * Teller ---------------------------------
     */
 
-  /* function sellEth() {
+  function sellEth(address _to, uint _amount) {
+    require(_to != msg.sender);
+    bank.withdrawEth(msg.sender, _to, _amount);
+
+    // increase reput
 
   }
 
-  function addComment() {
+
+  function addFunds() payable {
+    require(isTeller(msg.sender));
+    bank.addEthTeller.value(msg.value)(msg.sender, msg.value);
 
   }
 
-  function addFunds() {
-
+  function getTellerBalance(address _teller) public view returns (uint) {
+    return bank.getEthBalTeller(_teller);
   }
+/*
+function addComment() {
+
+}
 
   function withdrawFunds() {
 
@@ -248,6 +283,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
 
     // gas used 67841
     function deleteTeller() public {
+      require(isTeller(msg.sender));
       uint rowToDelete1 = teller[msg.sender].zoneIndex;
       address keyToMove1 = tellerInZone[teller[msg.sender].countryId][teller[msg.sender].postalCode][tellerInZone[teller[msg.sender].countryId][teller[msg.sender].postalCode].length - 1];
       tellerInZone[teller[msg.sender].countryId][teller[msg.sender].postalCode][rowToDelete1] = keyToMove1;
@@ -261,7 +297,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       tellerIndex.length--;
       delete teller[msg.sender];
       bank.withdrawDthTeller(msg.sender);
-      DeleteShop(msg.sender);
+      bank.refundEth(msg.sender);
+      DeleteTeller(msg.sender);
     }
 
     // gas used 67841
@@ -280,8 +317,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       delete teller[_toDelete];
       bank.withdrawDthTeller(_toDelete);
       // refund teller ETH
-      bank.withdrawEth(_toDelete);
-      DeleteShopModerator(msg.sender, _toDelete);
+      bank.refundEth(_toDelete);
+      DeleteTellerModerator(msg.sender, _toDelete);
     }
 
      /* function getReput(address _teller) public view returns (
@@ -298,10 +335,10 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       bytes16 lng,
       bytes2 countryId,
       bytes16 postalCode,
-      bytes3 currencyId,
+      bytes2 currencyId,
       bytes16 messenger,
       bytes2 avatarId,
-      bytes4 rates,
+      bytes16 rates,
       uint balance
       ) {
         Teller storage theTeller = teller[_teller];
@@ -309,11 +346,11 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
         lng = theTeller.lng;
         countryId = theTeller.countryId;
         postalCode = theTeller.postalCode;
-        messenger = theTeller.currencyId;
+        currencyId = theTeller.currencyId;
         messenger = theTeller.messenger;
         avatarId = theTeller.avatarId;
         rates = theTeller.rates;
-        balance = theTeller.balance;
+        balance = bank.getDthTeller(_teller);
       }
 
     function isTeller(address _teller) public view returns (bool ){
@@ -327,4 +364,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
        return bank.getDthShop(_shop);
      }
 
+     function getStakedTeller(address _teller) public view returns (uint) {
+       return bank.getDthTeller(_teller);
+     }
 }
