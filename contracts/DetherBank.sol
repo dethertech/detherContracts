@@ -6,7 +6,7 @@ import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import 'bytes/BytesLib.sol';
 /// @title Contract that will store the Dth from user
-contract DetherBank is ERC223ReceivingContract {
+contract DetherBank is ERC223ReceivingContract, Ownable {
     using BytesLib for bytes;
     using SafeMath for uint256;
 
@@ -29,57 +29,43 @@ contract DetherBank is ERC223ReceivingContract {
     ERC223Basic public dth;
     bool public isInit = false;
 
-    /* modifier tellerHasStaked(uint amount) {
-      require(getStakedTeller(msg.sender) >= amount);
-      _;
-    } */
-
-    /* modifier shopHasStaked(uint amount) {
-      require(getDthShop(msg.sender) >= amount);
-      _;
-    }
-    modifier tellerHasStaked(uint amount) {
-      require(getDthTeller(msg.sender) >= amount);
-      _;
-    } */
-
 
     function setDth (address _dth) {
       require(!isInit);
       dth = ERC223Basic(_dth);
       isInit = true;
     }
-    function withdrawDthTeller(address _receiver) {
+    function withdrawDthTeller(address _receiver) onlyOwner {
       require(dthTellerBalance[_receiver] > 0);
       uint tosend = dthTellerBalance[_receiver];
       dthTellerBalance[_receiver] = 0;
       dth.transfer(_receiver, tosend);
     }
-    function withdrawDthShop(address _receiver)  {
+    function withdrawDthShop(address _receiver) onlyOwner  {
       require(dthShopBalance[_receiver] > 0);
       uint tosend = dthShopBalance[_receiver];
       dthShopBalance[_receiver] = 0;
       dth.transfer(_receiver, tosend);
     }
 
-    function addTokenShop(address _from, uint _value) public {
+    function addTokenShop(address _from, uint _value) public onlyOwner {
       dthShopBalance[_from] += _value;
     }
-    function addTokenTeller(address _from, uint _value) public {
+    function addTokenTeller(address _from, uint _value) public onlyOwner{
       dthTellerBalance[_from] += _value;
     }
 
-    function addEthTeller(address _from, uint _value) public payable {
+    function addEthTeller(address _from, uint _value) public payable onlyOwner {
       TempLog(_from, _value, msg.value);
       ethTellerBalance[_from] += _value;
     }
-    function withdrawEth(address _from, address _to, uint _amount) public {
+    function withdrawEth(address _from, address _to, uint _amount) public onlyOwner {
       require(ethTellerBalance[_from] >= _amount);
       ethTellerBalance[_from] -= _amount;
       _to.transfer(_amount);
     }
 
-    function refundEth(address _from) public {
+    function refundEth(address _from) public onlyOwner {
       uint toSend = ethTellerBalance[_from];
       if (toSend > 0) {
         ethTellerBalance[_from] = 0;

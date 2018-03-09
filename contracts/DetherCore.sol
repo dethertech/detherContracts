@@ -137,7 +137,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       shop[_from].countryId = _data.toBytes2(33);
       shop[_from].postalCode = _data.toBytes16(35);
       shop[_from].generalIndex = shopIndex.push(_from) - 1;
-      shop[_from].zoneIndex = shopInZone[shop[_from].countryId][shop[_from].postalCode].push(_from) - 1;
+      shop[_from].zoneIndex = shopInZone[_data.toBytes2(33)][_data.toBytes16(35)].push(_from) - 1;
       RegisterShop(_from);
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
@@ -160,7 +160,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       teller[_from].messenger = _data.toBytes16(55);
       teller[_from].rates = _data.toBytes16(71);
       teller[_from].generalIndex = tellerIndex.push(_from) - 1;
-      teller[_from].zoneIndex = tellerInZone[teller[_from].countryId][teller[_from].postalCode].push(_from) - 1;
+      teller[_from].zoneIndex = tellerInZone[_data.toBytes2(33)][_data.toBytes16(35)].push(_from) - 1;
       RegisterTeller(_from);
       bank.addTokenTeller(_from, _value);
       dth.transfer(address(bank), _value);
@@ -276,11 +276,11 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
 function addComment() {
 
 }
+*/
 
-  function withdrawFunds() {
-
-  } */
-
+  function transferBankOwnership(address _newbankowner) {
+    bank.transferOwnership(_newbankowner);
+  }
     // gas used 67841
     function deleteTeller() public {
       require(isTeller(msg.sender));
@@ -350,7 +350,7 @@ function addComment() {
         messenger = theTeller.messenger;
         avatarId = theTeller.avatarId;
         rates = theTeller.rates;
-        balance = bank.getDthTeller(_teller);
+        balance = bank.getEthBalTeller(_teller);
       }
 
     function isTeller(address _teller) public view returns (bool ){

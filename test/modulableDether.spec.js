@@ -1,6 +1,6 @@
 
 const {expectThrow, waitForMined} = require('./utils');
-const {teller1, teller2, teller3, shop1, shop2, shop3} = require('./mock.json');
+const {teller1, teller2, teller3, shop1, shop2, shop3, shop7} = require('./mock.json');
 const DetherCore = artifacts.require('./DetherCore.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
@@ -103,6 +103,7 @@ contract('Dether Dth', async () => {
     await dether.setShopModerator(moderator);
     await dether.setTellerModerator(moderator);
     await detherBank.setDth(dthToken.address);
+    await detherBank.transferOwnership(dether.address);
 
     await smsCertifier.addDelegate(certifier, 'test', {gas: 4000000, from: owner});
     await smsCertifier.certify(user1address, {gas: 4000000, from: certifier});
@@ -124,6 +125,8 @@ contract('Dether Dth', async () => {
   })
 
   contract('Add shop --', async () =>  {
+
+
 
     it('should parse data and register and be on the map', async () => {
 
@@ -206,7 +209,7 @@ contract('Dether Dth', async () => {
           [
               dether.address,
               20,
-              shopToContract(shop2)
+              shopToContract(shop7)
               // web3.toHex("test")
           ]
       );
@@ -324,7 +327,6 @@ contract('Dether Dth', async () => {
     contract('Add Teller --', async () =>  {
 
       it('should parse data and register and be on the map', async () => {
-        console.log('teller1', teller1, tellerToContract(teller1));
         const transferMethodTransactionData = web3Abi.encodeFunctionCall(
             overloadedTransferAbi,
             [
@@ -378,7 +380,7 @@ contract('Dether Dth', async () => {
 
       })
 
-      it('should get all shop in a zone', async () => {
+      it('should get all teller in a zone', async () => {
 
         zone = await dether.getZoneTeller(teller1.countryId.hexEncode(), teller1.postalCode.hexEncode());
         assert.equal(zone, '', 'verif empty zone')
@@ -388,7 +390,7 @@ contract('Dether Dth', async () => {
             [
                 dether.address,
                 20,
-                tellerToContract(teller1)
+                tellerToContract(teller3)
                 // web3.toHex("test")
             ]
         );
@@ -405,7 +407,7 @@ contract('Dether Dth', async () => {
         );
         await web3.eth.sendTransaction({from: user2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});
 
-        zone = await dether.getZoneTeller(teller1.countryId.hexEncode(), teller1.postalCode.hexEncode());
+        zone = await dether.getZoneTeller(teller2.countryId.hexEncode(), teller2.postalCode.hexEncode());
         assert.deepEqual(zone, [user1address, user2address], 'incorrect zone');
       })
 
