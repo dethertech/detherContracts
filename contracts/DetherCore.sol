@@ -21,6 +21,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     event DeleteShop(address shopAddress);
     event DeleteShopModerator(address indexed moderator, address shopAddress);
     event DeleteTellerModerator(address indexed moderator, address tellerAddress);
+    event Log(string str, bytes data, uint256 uintified);
 
     // temp
     event TempLog(string _logs, bytes _data);
@@ -107,6 +108,50 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
      bank = DetherBank(_bank);
    }
 
+   function convert(uint256 n) public pure returns (bytes32) {
+       return bytes32(n);
+   }
+
+   function coordinateToIdentifier(uint256 x, uint256 y) public pure returns(uint256) {
+    require(validCoordinate(x, y));
+
+    return (y << 16) + x;
+    }
+
+    /// @dev Turn a single uint representation of a coordinate into its x and y parts.
+    /// @param identifier The uint representation of a coordinate.
+    function identifierToCoordinate(uint256 identifier) public pure returns(uint256 x, uint256 y) {
+        require(validIdentifier(identifier));
+
+        y = identifier >> 16;
+        x = identifier - (y << 16);
+    }
+
+    /// @dev Test whether the coordinate is valid.
+    /// @param x The x-part of the coordinate to test.
+    /// @param y The y-part of the coordinate to test.
+    function validCoordinate(uint256 x, uint256 y) public pure returns(bool) {
+        return x < 65536 && y < 65536; // 2^16
+    }
+
+    /// @dev Test whether an identifier is valid.
+    /// @param identifier The identifier to test.
+    function validIdentifier(uint256 identifier) public pure returns(bool) {
+        return identifier < 4294967296; // 2^16 * 2^16
+    }
+
+    uint public tempInt;
+
+    /* function dataToInt2(uint _data) public  {
+      bytes32 temp = bytes32(_data);
+      tempInt = BytesLib.toUintFromB32(temp, 0);
+      Log('data ', temp, tempInt);
+    } */
+
+    function dataToInt(bytes _data) public  {
+      tempInt = _data.toUint( 0);
+      Log('data ', _data, tempInt);
+    }
    /*
     * Core function
     */

@@ -89,6 +89,38 @@ const convertTypes = x => {
   else return x
 }
 
+// use it to convert to int8 or int16 as well
+function toBytesInt32 (num) {
+    arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
+    view = new DataView(arr);
+    view.setUint32(0, num, false); // byteOffset = 0; litteEndian = false
+    return arr;
+}
+
+function toBytesInt32_2 (num) {
+    arr = new Uint8Array([
+         (num & 0xff000000) >> 24,
+         (num & 0x00ff0000) >> 16,
+         (num & 0x0000ff00) >> 8,
+         (num & 0x000000ff)
+    ]);
+    return arr.buffer;
+}
+
+function buf2hex(buffer) { // buffer is an ArrayBuffer
+  return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+}
+
+function hex_to_ascii(str1)
+ {
+	var hex  = str1.toString();
+	var str = '';
+	for (var n = 0; n < hex.length; n += 2) {
+		str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+	}
+	return str;
+ }
+
 contract('Dether Dth', async () => {
   beforeEach( async () => {
     dthToken = await Dth.new({gas: 4000000, from: owner});
@@ -126,7 +158,23 @@ contract('Dether Dth', async () => {
 
   contract('Add shop --', async () =>  {
 
-
+    it.only('shoudl test temp', async () => {
+      console.log('tsx', await dether.dataToInt('0x0000000000000000000000000000000000000000000000000000000000003039'));
+      console.log('int', (await dether.tempInt.call()).toNumber());
+      const bufvalue = toBytesInt32(18000000);
+      // console.log('value', value[0]);
+      const hexvalue = buf2hex(bufvalue);
+      // const buffer = new Uint8Array([ 4, 8, 12, 16 ]).buffer;
+      console.log('typeof ',typeof bufvalue, typeof hexvalue); // = 04080c10
+      console.log('vall => ',hex_to_ascii(buf2hex(bufvalue)));
+      // const bytesEvent = dether.Log({}, { fromBlock: 0, toBlock: 'latest' });
+      // bytesEvent.get((error, logs) => {
+      //   logs.forEach(log => {
+      //     console.log('event => ', log.args);
+      //     // console.log(log.args.logs, web3.toAscii(log.args.data))
+      //   })
+      // });
+    })
 
     it('should parse data and register and be on the map', async () => {
 
