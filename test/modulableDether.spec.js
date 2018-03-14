@@ -57,20 +57,7 @@ const toNBytes = (str, n) => {
   return buffer;
 };
 
-const shopToContract = (rawshop) => {
-  const hexshopGeo = `0x31${toNBytes(rawshop.lat, 16)}${toNBytes(rawshop.lng, 16)}`;
-  const hexShopAddr = `${toNBytes(rawshop.countryId, 2)}${toNBytes(rawshop.postalCode, 16)}`;
-  const hexShopId = `${toNBytes(rawshop.cat, 16)}${toNBytes(rawshop.name, 16)}`;
-  const hexShopDesc = `${toNBytes(rawshop.description, 32)}${toNBytes(rawshop.opening, 16)}31`;
 
-  const hexShop = `${hexshopGeo}${hexShopAddr}${hexShopId}${hexShopDesc}`;
-  return hexShop;
-};
-
-const tellerToContract = (rawteller) => {
-  hexteller = `0x32${toNBytes(rawteller.lat, 16)}${toNBytes(rawteller.lng, 16)}${toNBytes(rawteller.countryId, 2)}${toNBytes(rawteller.postalCode, 16)}${toNBytes(rawteller.avatarId, 2)}${toNBytes(rawteller.currencyId, 2)}${toNBytes(rawteller.messengerAddr, 16)}${toNBytes(rawteller.rate, 16)}`
-  return hexteller;
-}
 
 const
   [
@@ -90,36 +77,172 @@ const convertTypes = x => {
 }
 
 // use it to convert to int8 or int16 as well
-function toBytesInt32 (num) {
-    arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
-    view = new DataView(arr);
-    view.setUint32(0, num, false); // byteOffset = 0; litteEndian = false
-    return arr;
+// function toBytesInt32 (num) {
+//     arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
+//     view = new DataView(arr);
+//     view.setUint32(0, num, false); // byteOffset = 0; litteEndian = false
+//     return arr;
+// }
+//
+// function toBytesInt16 (num) {
+//     arr = new ArrayBuffer(2); // an Int32 takes 4 bytes
+//     view = new DataView(arr);
+//     view.setUint16(0, num, false); // byteOffset = 0; litteEndian = false
+//     return arr;
+// }
+//
+// function toBytesInt8 (num) {
+//     arr = new ArrayBuffer(1); // an Int32 takes 4 bytes
+//     view = new DataView(arr);
+//     view.setUint8(0, num, false); // byteOffset = 0; litteEndian = false
+//     return arr;
+// }
+//
+// var intToByteArray = function ( n ) {
+// 	var result = [ ];
+// 	var mask = 255; // 1111 1111 binary
+// 	while ( n > 0 ) {
+// 		var byte = n & mask;
+// 		result.push( byte );
+// 		n >>= 8; // shift 8x from left to right
+// 	}
+// 	return result;
+// }
+
+// function toBytesInt32_2 (num) {
+//     arr = new Uint8Array([
+//          (num & 0xff000000) >> 24,
+//          (num & 0x00ff0000) >> 16,
+//          (num & 0x0000ff00) >> 8,
+//          (num & 0x000000ff)
+//     ]);
+//     return arr.buffer;
+// }
+
+// function buf2hex(buffer) { // buffer is an ArrayBuffer
+//   return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+// }
+//
+// function hex_to_ascii(str1)
+//  {
+// 	var hex  = str1.toString();
+// 	var str = '';
+// 	for (var n = 0; n < hex.length; n += 2) {
+// 		str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
+// 	}
+// 	return str;
+//  }
+//
+//  function toHexString(byteArray) {
+//    return Array.from(byteArray, function(byte) {
+//      return ('0' + (byte & 0xFF).toString(16)).slice(-2);
+//    }).join('')
+//  }
+
+///
+const convertBase = function () {
+    function convertBase(baseFrom, baseTo) {
+        return function (num) {
+            return parseInt(num, baseFrom).toString(baseTo);
+        };
+    }
+    // binary to decimal
+    convertBase.bin2dec = convertBase(2, 10);
+    // binary to hexadecimal
+    convertBase.bin2hex = convertBase(2, 16);
+    // decimal to binary
+    convertBase.dec2bin = convertBase(10, 2);
+    // decimal to hexadecimal
+    convertBase.dec2hex = convertBase(10, 16);
+    // hexadecimal to binary
+    convertBase.hex2bin = convertBase(16, 2);
+    // hexadecimal to decimal
+    convertBase.hex2dec = convertBase(16, 10);
+    return convertBase;
+}();
+///
+
+const intTo4bytes = function (intvalue) {
+  hexvalue = convertBase.dec2hex(intvalue);
+  let result = hexvalue;
+  for (i = 0; i + hexvalue.length< 8; i++) {
+    result = '0' + result
+  }
+  return result;
 }
 
-function toBytesInt32_2 (num) {
-    arr = new Uint8Array([
-         (num & 0xff000000) >> 24,
-         (num & 0x00ff0000) >> 16,
-         (num & 0x0000ff00) >> 8,
-         (num & 0x000000ff)
-    ]);
-    return arr.buffer;
+const intTo2bytes = function (intvalue) {
+  hexvalue = convertBase.dec2hex(intvalue);
+  let result = hexvalue;
+  for (i = 0; i + hexvalue.length< 4; i++) {
+    result = '0' + result
+  }
+  return result;
 }
 
-function buf2hex(buffer) { // buffer is an ArrayBuffer
-  return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+const intTobytes = function (intvalue) {
+  hexvalue = convertBase.dec2hex(intvalue);
+  let result = hexvalue;
+  for (i = 0; i + hexvalue.length< 2; i++) {
+    result = '0' + result
+  }
+  return result;
 }
 
-function hex_to_ascii(str1)
- {
-	var hex  = str1.toString();
-	var str = '';
-	for (var n = 0; n < hex.length; n += 2) {
-		str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
-	}
-	return str;
- }
+const shopToContract = (rawshop) => {
+  const lat = intTo4bytes(parseFloat(rawshop.lat) * 100000);
+  const lng = intTo4bytes(parseFloat(rawshop.lng) * 100000);
+
+  const hexshopGeo = `0x31${lat}${lng}`;
+  const hexShopAddr = `${toNBytes(rawshop.countryId, 2)}${toNBytes(rawshop.postalCode, 16)}`;
+  const hexShopId = `${toNBytes(rawshop.cat, 16)}${toNBytes(rawshop.name, 16)}`;
+  const hexShopDesc = `${toNBytes(rawshop.description, 32)}${toNBytes(rawshop.opening, 16)}31`;
+
+  const hexShop = `${hexshopGeo}${hexShopAddr}${hexShopId}${hexShopDesc}`;
+  return hexShop;
+};
+
+const tellerToContract = (rawteller) => {
+  const lat = intTo4bytes(parseFloat(rawteller.lat) * 100000);
+  const lng = intTo4bytes(parseFloat(rawteller.lng) * 100000);
+  const currency = intTobytes(parseInt(rawteller.currencyId));
+  const avatar = intTobytes(parseInt(rawteller.avatarId));
+  const rates = intTo2bytes(parseFloat(rawteller.rates) * 10);
+  const hexteller = `0x32${lat}${lng}${toNBytes(rawteller.countryId, 2)}${toNBytes(rawteller.postalCode, 16)}${avatar}${currency}${toNBytes(rawteller.messenger, 16)}${rates}`
+  return hexteller;
+}
+
+const shopFromContract = (rawshop) => {
+  return {
+    lat: rawshop[0] / 100000,
+    lng: rawshop[1] / 100000,
+    countryId: web3.toAscii(rawshop[2]).replace(/\0/g,''),
+    postalCode: web3.toAscii(rawshop[3]).replace(/\0/g,''),
+    cat: web3.toAscii(rawshop[4]).replace(/\0/g,''),
+    name: web3.toAscii(rawshop[5]).replace(/\0/g,''),
+    description: web3.toAscii(rawshop[6]).replace(/\0/g,''),
+    opening: web3.toAscii(rawshop[7]).replace(/\0/g,''),
+  }
+}
+
+const tellerFromContract = (rawTeller) => {
+  console.log('teller from contract', rawTeller);
+  const data = {
+      lat: rawTeller[0] / 100000,
+      lng: rawTeller[1] / 100000,
+      countryId: web3.toAscii(rawTeller[2]).replace(/\0/g,''),
+      postalCode: web3.toAscii(rawTeller[3]).replace(/\0/g,''),
+    currencyId: rawTeller[4].toNumber(),
+    messenger: web3.toAscii(rawTeller[5]).replace(/\0/g,''),
+    avatarId: rawTeller[6].toNumber(),
+    rates: rawTeller[7].toNumber() / 10,
+    balance: web3.fromWei(rawTeller[8].toNumber(), 'ether'),
+    online: rawTeller[9],
+    // amount: ,
+  }
+  return data;
+
+}
 
 contract('Dether Dth', async () => {
   beforeEach( async () => {
@@ -158,27 +281,8 @@ contract('Dether Dth', async () => {
 
   contract('Add shop --', async () =>  {
 
-    it.only('shoudl test temp', async () => {
-      console.log('tsx', await dether.dataToInt('0x0000000000000000000000000000000000000000000000000000000000003039'));
-      console.log('int', (await dether.tempInt.call()).toNumber());
-      const bufvalue = toBytesInt32(18000000);
-      // console.log('value', value[0]);
-      const hexvalue = buf2hex(bufvalue);
-      // const buffer = new Uint8Array([ 4, 8, 12, 16 ]).buffer;
-      console.log('typeof ',typeof bufvalue, typeof hexvalue); // = 04080c10
-      console.log('vall => ',hex_to_ascii(buf2hex(bufvalue)));
-      // const bytesEvent = dether.Log({}, { fromBlock: 0, toBlock: 'latest' });
-      // bytesEvent.get((error, logs) => {
-      //   logs.forEach(log => {
-      //     console.log('event => ', log.args);
-      //     // console.log(log.args.logs, web3.toAscii(log.args.data))
-      //   })
-      // });
-    })
-
     it('should parse data and register and be on the map', async () => {
 
-      const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
@@ -190,29 +294,25 @@ contract('Dether Dth', async () => {
           ]
       );
       const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-      // const bytesEvent = dether.LogBytes({}, { fromBlock: 0, toBlock: 'latest' });
-      // bytesEvent.get((error, logs) => {
-      //   logs.forEach(log => {
-      //     console.log(log.args.logs, web3.toAscii(log.args.data))
-      //   })
-      // });
 
       let shop1value = await dether.getShop(user1address);
       assert.equal(await dether.isShop(user1address), true, 'assert shop is now online');
-      // assert.equal(web3.toAscii(shop1value[0]), shop1.lat, 'verif lat');
-      // assert.equal(web3.toAscii(shop1value[1]), shop1.lng, 'verif lng');
-      // assert.equal(web3.toAscii(shop1value[2]), shop1.countryId, 'verif country id');
-      // assert.equal(web3.toAscii(shop1value[3]), shop1.postalCode, 'verif postal code');
-      // assert.equal(web3.toAscii(shop1value[4]), shop1.cat, 'verif lat');
-      // assert.equal(web3.toAscii(shop1value[5]), shop1.name, 'verif lng');
-      // assert.equal(web3.toAscii(shop1value[6]), shop1.description, 'verif country id');
-      // assert.equal(web3.toAscii(shop1value[7]), shop1.opening, 'verif postal code');
+      const formatedValue = shopFromContract(shop1value);
+      assert.equal(formatedValue.lat, shop1.lat, 'verif lat');
+      assert.equal(formatedValue.lng, shop1.lng, 'verif lng');
+      assert.equal(formatedValue.countryId, shop1.countryId, 'verif country id');
+      assert.equal(formatedValue.postalCode, shop1.postalCode, 'verif postal code');
+      assert.equal(formatedValue.cat, shop1.cat, 'verif cat');
+      assert.equal(formatedValue.name, shop1.name, 'verif name');
+      assert.equal(formatedValue.description, shop1.description, 'verif  description');
+      assert.equal(formatedValue.opening, shop1.opening, 'verif opening');
+
+      const zone = await dether.getZoneShop(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
     })
 
     it('should not be possible to add shop in unopened zone', async () => {
       await dether.closeZoneShop(web3.toHex(shop3.countryId),{from: cmo});
 
-      const reg = "1" + shop3.lat + shop3.lng + shop3.countryId + shop3.postalCode + shop3.cat + shop3.name + shop3.description + shop3.opening;
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
@@ -228,19 +328,15 @@ contract('Dether Dth', async () => {
 
       }
 
-      let shop3value = await dether.getShop(user3address);
       assert.equal(await dether.isShop(user3address), false, 'assert shop is now online');
-      // assert.notEqual(shop3value[0].toNumber(), web3.toHex(shop3.lat), 'verif lat');
-      // assert.notEqual(shop3value[1].toNumber(), web3.toHex(shop3.lng), 'verif lng');
 
     })
 
     it('should get all shop in a zone', async () => {
 
-      zone = await dether.getZoneShop(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
+      zone = await dether.getZoneShop(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
       assert.equal(zone, '', 'verif empty zone')
 
-      const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
@@ -305,7 +401,6 @@ contract('Dether Dth', async () => {
       let zone = await dether.getZoneShop(web3.toHex(shop1.countryId), web3.toHex(shop1.postalCode));
       assert.equal(zone, '', 'verif empty zone')
 
-      const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
       let transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
@@ -326,7 +421,6 @@ contract('Dether Dth', async () => {
     })
 
     it('should be able to delete a random shop as a moderator', async () => {
-      const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
       let transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
@@ -345,7 +439,6 @@ contract('Dether Dth', async () => {
 
     it('should not be be able to delete a random shop if not moderator', async () => {
       assert.equal(await dether.isShop(user1address), false, 'assert is shop pref delete');
-      const reg = "1" + shop1.lat + shop1.lng + shop1.countryId + shop1.postalCode + shop1.cat + shop1.name + shop1.description + shop1.opening;
       let transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
@@ -384,25 +477,20 @@ contract('Dether Dth', async () => {
             ]
         );
         const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-        // const bytesEvent = dether.LogBytes({}, { fromBlock: 0, toBlock: 'latest' });
-        // bytesEvent.get((error, logs) => {
-        //   logs.forEach(log => {
-        //     console.log(log.args.logs, web3.toAscii(log.args.data))
-        //   })
-        // });
-
-
+        console.log('teller ', tellerToContract(teller1));
         let teller1value = await dether.getTeller(user1address);
         console.log('teller1value', teller1value);
+        const valueFromContract = tellerFromContract(teller1value);
         assert.equal(await dether.isTeller(user1address), true, 'assert shop is now online');
-        assert.equal(web3.toAscii(teller1value[0]).replace(/\0/g,''), teller1.lat, 'verif lat');
-        assert.equal(web3.toAscii(teller1value[1]).replace(/\0/g,''), teller1.lng, 'verif lng');
-        assert.equal(web3.toAscii(teller1value[2]).replace(/\0/g,''), teller1.countryId, 'verif country id');
-        assert.equal(web3.toAscii(teller1value[3]).replace(/\0/g,''), teller1.postalCode, 'verif postal code');
-        assert.equal(web3.toAscii(teller1value[4]).replace(/\0/g,''), teller1.currencyId, 'verif currency');
-        assert.equal(web3.toAscii(teller1value[5]).replace(/\0/g,''), teller1.messengerAddr, 'verif messenger');
-        assert.equal(web3.toAscii(teller1value[6]).replace(/\0/g,''), teller1.avatarId, 'verif avatar');
-        assert.equal(web3.toAscii(teller1value[7]).replace(/\0/g,''), teller1.rate, 'verif rate');
+        assert.equal(valueFromContract.lat, teller1.lat, 'verif lat');
+        assert.equal(valueFromContract.lng, teller1.lng, 'verif lng');
+        assert.equal(valueFromContract.countryId, teller1.countryId, 'verif country id');
+        assert.equal(valueFromContract.postalCode, teller1.postalCode, 'verif postal code');
+        assert.equal(valueFromContract.currencyId, teller1.currencyId, 'verif currency');
+        assert.equal(valueFromContract.messenger, teller1.messenger, 'verif messenger');
+        assert.equal(valueFromContract.avatarId, teller1.avatarId, 'verif avatar');
+        assert.equal(valueFromContract.rates, teller1.rates, 'verif rate');
+        assert.equal(valueFromContract.online,true, 'verif status')
       })
 
       it('should not be possible to add shop in unopened zone', async () => {
@@ -423,8 +511,6 @@ contract('Dether Dth', async () => {
         }
 
         assert.equal(await dether.isTeller(user3address), false, 'assert shop is now online');
-        // assert.notEqual(shop3value[0].toNumber(), web3.toHex(shop3.lat), 'verif lat');
-        // assert.notEqual(shop3value[1].toNumber(), web3.toHex(shop3.lng), 'verif lng');
 
       })
 
@@ -485,8 +571,10 @@ contract('Dether Dth', async () => {
         assert.equal(await dether.isTeller(user1address), true, 'assert shop is now online');
         let tsx = await dether.deleteTeller({from: user1address, gas:4000000});
         await dether.deleteTeller({from: user2address, gas:4000000});
-        zone = await dether.getZoneTeller(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
-        assert.equal(zone, '', 'verif empty zone');
+        zone = await dether.getZoneTeller(teller1.countryId.hexEncode(), teller1.postalCode.hexEncode());
+        assert.equal(zone, '', 'verif empty zone 1');
+        zone = await dether.getZoneTeller(teller2.countryId.hexEncode(), teller2.postalCode.hexEncode());
+        assert.equal(zone, '', 'verif empty zone 2');
       })
 
       it('should have token back after delete', async () => {
@@ -617,6 +705,35 @@ contract('Dether Dth', async () => {
 
         assert.equal(balancetellerpostrefund.toNumber(), 0, 'verif balance post delete');
         assert.isAbove(balancepostdelete.toNumber(), balancepredelete.toNumber(), 'balance is greater after refund');
+      })
+
+      it('should update teller', async () => {
+        const balancereceiverpre = await web3.eth.getBalance(user1address);
+        // register as shop
+        let transferMethodTransactionData = web3Abi.encodeFunctionCall(
+            overloadedTransferAbi,
+            [
+                dether.address,
+                20,
+                tellerToContract(teller1)
+                // web3.toHex("test")
+            ]
+        );
+        await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+        assert.equal(await dether.isTeller(user1address), true, 'assert is teller now online');
+        const tsxupdate = await dether.updateTeller(9, web3.toHex('mehdi_dether'),7,289, false,{from: user1address});
+        let teller1value = await dether.getTeller(user1address);
+        const valueFromContract = tellerFromContract(teller1value);
+        assert.equal(await dether.isTeller(user1address), true, 'assert shop is now online');
+        assert.equal(valueFromContract.lat, teller1.lat, 'verif lat');
+        assert.equal(valueFromContract.lng, teller1.lng, 'verif lng');
+        assert.equal(valueFromContract.countryId, teller1.countryId, 'verif country id');
+        assert.equal(valueFromContract.postalCode, teller1.postalCode, 'verif postal code');
+        assert.equal(valueFromContract.currencyId, 9, 'verif currency');
+        assert.equal(valueFromContract.messenger, 'mehdi_dether', 'verif messenger');
+        assert.equal(valueFromContract.avatarId, 7, 'verif avatar');
+        assert.equal(valueFromContract.rates, 28.9, 'verif rate');
+        assert.equal(valueFromContract.online, false, 'verif status');
       })
 
     })

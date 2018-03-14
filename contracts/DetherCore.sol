@@ -45,15 +45,15 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
 
 // teller
   struct Teller {
-    bytes16 lat;
-    bytes16 lng;
+    int32 lat;
+    int32 lng;
     bytes2 countryId;
     bytes16 postalCode;
 
-    bytes2 currencyId;
+    int8 currencyId;
     bytes16 messenger;
-    bytes2 avatarId;
-    bytes16 rates;
+    int8 avatarId;
+    int16 rates;
 
     uint zoneIndex;
     uint generalIndex;
@@ -74,8 +74,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
 
 // shop
   struct Shop {
-    bytes16 lat;
-    bytes16 lng;
+    int32 lat;
+    int32 lng;
     bytes2 countryId;
     bytes16 postalCode;
     bytes16 cat;
@@ -84,6 +84,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     bytes16 opening;
     uint zoneIndex;
     uint generalIndex;
+    bool online;
   }
 
   mapping(address => Shop) shop;
@@ -108,50 +109,6 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
      bank = DetherBank(_bank);
    }
 
-   function convert(uint256 n) public pure returns (bytes32) {
-       return bytes32(n);
-   }
-
-   function coordinateToIdentifier(uint256 x, uint256 y) public pure returns(uint256) {
-    require(validCoordinate(x, y));
-
-    return (y << 16) + x;
-    }
-
-    /// @dev Turn a single uint representation of a coordinate into its x and y parts.
-    /// @param identifier The uint representation of a coordinate.
-    function identifierToCoordinate(uint256 identifier) public pure returns(uint256 x, uint256 y) {
-        require(validIdentifier(identifier));
-
-        y = identifier >> 16;
-        x = identifier - (y << 16);
-    }
-
-    /// @dev Test whether the coordinate is valid.
-    /// @param x The x-part of the coordinate to test.
-    /// @param y The y-part of the coordinate to test.
-    function validCoordinate(uint256 x, uint256 y) public pure returns(bool) {
-        return x < 65536 && y < 65536; // 2^16
-    }
-
-    /// @dev Test whether an identifier is valid.
-    /// @param identifier The identifier to test.
-    function validIdentifier(uint256 identifier) public pure returns(bool) {
-        return identifier < 4294967296; // 2^16 * 2^16
-    }
-
-    uint public tempInt;
-
-    /* function dataToInt2(uint _data) public  {
-      bytes32 temp = bytes32(_data);
-      tempInt = BytesLib.toUintFromB32(temp, 0);
-      Log('data ', temp, tempInt);
-    } */
-
-    function dataToInt(bytes _data) public  {
-      tempInt = _data.toUint( 0);
-      Log('data ', _data, tempInt);
-    }
    /*
     * Core function
     */
@@ -167,45 +124,44 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     // 1 / 0x31 = shop // 2 / 0x32 = teller
     if (_func == bytes1(0x31)) { // shop registration
       // require staked greater than licence price
-      require(_value >= licenceShop[_data.toBytes2(33)]);
+      require(_value >= licenceShop[_data.toBytes2(9)]);
       // require is not already shop
       require(!isShop(_from));
       // require zone is open
-      require(openedCountryShop[_data.toBytes2(33)]);
+      require(openedCountryShop[_data.toBytes2(9)]);
       // require than the token fallback is triggered from the dth token contract
-      shop[_from].lat = _data.toBytes16(1);
-      shop[_from].lng = _data.toBytes16(17);
-      shop[_from].name = _data.toBytes16(67);
-      shop[_from].cat = _data.toBytes16(51);
-      shop[_from].description = _data.toBytes32(83);
-      shop[_from].opening = _data.toBytes16(115);
-      shop[_from].countryId = _data.toBytes2(33);
-      shop[_from].postalCode = _data.toBytes16(35);
+      shop[_from].lat = int32(_data.toBytes4(1));
+      shop[_from].lng = int32(_data.toBytes4(5));
+      shop[_from].countryId = _data.toBytes2(9);
+      shop[_from].postalCode = _data.toBytes16(11);
+      shop[_from].cat = _data.toBytes16(27);
+      shop[_from].name = _data.toBytes16(43);
+      shop[_from].description = _data.toBytes32(59);
+      shop[_from].opening = _data.toBytes16(91);
       shop[_from].generalIndex = shopIndex.push(_from) - 1;
-      shop[_from].zoneIndex = shopInZone[_data.toBytes2(33)][_data.toBytes16(35)].push(_from) - 1;
+      shop[_from].zoneIndex = shopInZone[_data.toBytes2(9)][_data.toBytes16(11)].push(_from) - 1;
       RegisterShop(_from);
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
     } else if (_func == bytes1(0x32)) { // teller registration
-      // teller registration
 
       // require staked greater than licence price
-      require(_value >= licenceTeller[_data.toBytes2(33)]);
+      require(_value >= licenceTeller[_data.toBytes2(9)]);
       // require is not already a teller
       require(!isTeller(_from));
       // require zone is open
-      require(openedCountryTeller[_data.toBytes2(33)]);
-
-      teller[_from].lat = _data.toBytes16(1);
-      teller[_from].lng = _data.toBytes16(17);
-      teller[_from].countryId = _data.toBytes2(33);
-      teller[_from].postalCode = _data.toBytes16(35);
-      teller[_from].avatarId = _data.toBytes2(51);
-      teller[_from].currencyId = _data.toBytes2(53);
-      teller[_from].messenger = _data.toBytes16(55);
-      teller[_from].rates = _data.toBytes16(71);
+      require(openedCountryTeller[_data.toBytes2(9)]);
+      teller[_from].lat = int32(_data.toBytes4(1));
+      teller[_from].lng = int32(_data.toBytes4(5));
+      teller[_from].countryId = _data.toBytes2(9);
+      teller[_from].postalCode = _data.toBytes16(11);
+      teller[_from].avatarId = int8(_data.toBytes1(27));
+      teller[_from].currencyId = int8(_data.toBytes1(28));
+      teller[_from].messenger = _data.toBytes16(29);
+      teller[_from].rates = int16(_data.toBytes2(45));
       teller[_from].generalIndex = tellerIndex.push(_from) - 1;
-      teller[_from].zoneIndex = tellerInZone[_data.toBytes2(33)][_data.toBytes16(35)].push(_from) - 1;
+      teller[_from].zoneIndex = tellerInZone[_data.toBytes2(9)][_data.toBytes16(11)].push(_from) - 1;
+      teller[_from].online = true;
       RegisterTeller(_from);
       bank.addTokenTeller(_from, _value);
       dth.transfer(address(bank), _value);
@@ -218,8 +174,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
    */
 
    function getShop(address _shop) public view returns (
-     bytes16 lat,
-     bytes16 lng,
+     int32 lat,
+     int32 lng,
      bytes2 countryId,
      bytes16 postalCode,
      bytes16 cat,
@@ -294,6 +250,26 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
        return tellerIndex;
      }
 
+     function updateTeller(
+       int8 currencyId,
+       bytes16 messenger,
+       int8 avatarId,
+       int16 rates,
+       bool online
+       ) public {
+         require(isTeller(msg.sender));
+          if (currencyId != teller[msg.sender].currencyId)
+          teller[msg.sender].currencyId = currencyId;
+          if (teller[msg.sender].messenger != messenger)
+           teller[msg.sender].messenger = messenger;
+          if (teller[msg.sender].avatarId != avatarId)
+           teller[msg.sender].avatarId = avatarId;
+          if (teller[msg.sender].rates != rates)
+           teller[msg.sender].rates = rates;
+           if (teller[msg.sender].online != online)
+            teller[msg.sender].online = online;
+     }
+
 
    /*
     * Teller ---------------------------------
@@ -307,6 +283,10 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
 
   }
 
+  function switchStatus(bool _status) public {
+    if (teller[msg.sender].online != _status)
+     teller[msg.sender].online = _status;
+  }
 
   function addFunds() payable {
     require(isTeller(msg.sender));
@@ -376,15 +356,16 @@ function addComment() {
        } */
 
     function getTeller(address _teller) public view returns (
-      bytes16 lat,
-      bytes16 lng,
+      int32 lat,
+      int32 lng,
       bytes2 countryId,
       bytes16 postalCode,
-      bytes2 currencyId,
+      int8 currencyId,
       bytes16 messenger,
-      bytes2 avatarId,
-      bytes16 rates,
-      uint balance
+      int8 avatarId,
+      int16 rates,
+      uint balance,
+      bool online
       ) {
         Teller storage theTeller = teller[_teller];
         lat = theTeller.lat;
@@ -395,6 +376,7 @@ function addComment() {
         messenger = theTeller.messenger;
         avatarId = theTeller.avatarId;
         rates = theTeller.rates;
+        online = theTeller.online;
         balance = bank.getEthBalTeller(_teller);
       }
 

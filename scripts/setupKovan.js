@@ -5,8 +5,8 @@ const Dth = artifacts.require('./dth/DetherToken.sol');
 const Bank = artifacts.require('./DetherBank.sol');
 
 const ceoDether = "0xC5F8a06ed1CfB17d0366eF03FEDF37568B0ce246";
-const ownerCertifier = "0xB06c40B9c72231502949B33bC8b2543701C863Ef";
-const cmoDether = "0x32BedF6609f002A591f871009C8e66D84F98d48E";
+const ownerCertifier = "0xC5F8a06ed1CfB17d0366eF03FEDF37568B0ce246";
+const cmoDether = "0xC5F8a06ed1CfB17d0366eF03FEDF37568B0ce246";
 
 const ownerdeploy = "0x6AAb2B0913B70270E840B14c2b23B716C0a43522"
 // dether Core need:
@@ -66,9 +66,9 @@ module.exports = async (callback) => {
   await dether.setCEO(ceoDether);
   console.log('ceo should be => ',ceoDether, await dether.ceoAddress.call());
 
-  await dth.mint(ceoDether, web3.toWei(10000000,'ether'));
-  await dth.finishMinting();
-  console.log('balance should be 10000000 => ', await dth.balanceOf.call(ceoDether));
+  // await dth.mint(ceoDether, web3.toWei(10000000,'ether'));
+  // await dth.finishMinting();
+  // console.log('balance should be 10000000 => ', await dth.balanceOf.call(ceoDether));
 
   console.log('Address detherCore => ', dether.address);
   console.log('Address detherbank => ', bank.address);
