@@ -59,14 +59,13 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     uint generalIndex;
     bool online;
 
-    bytes[] comment;
     mapping (address => bool) rightsTo;
   }
 
   mapping(address => uint) volumeBuy;
   mapping(address => uint) volumeSell;
-  mapping(address => uint) loyaltyPoint;
-  mapping(address => bytes32) comment;
+  mapping(address => uint) nbTrade;
+  mapping(address => bytes[]) comments;
 
   mapping(address => Teller) teller;
   mapping(bytes2 => mapping(bytes16 => address[])) tellerInZone;
@@ -116,13 +115,15 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
   /// @param _from  Token sender address.
   /// @param _value Amount of tokens.
   /// @param _data  Transaction metadata.
-  function tokenFallback(address _from, uint _value, bytes _data) {
+  function tokenFallback(address _from, uint _value, bytes _data) tier1(_from) {
     // check if its coming from DTH contract
     require(msg.sender == address(dth));
 
     bytes1 _func = _data.toBytes1(0);
     // 1 / 0x31 = shop // 2 / 0x32 = teller
     if (_func == bytes1(0x31)) { // shop registration
+      // require is whitelisted
+
       // require staked greater than licence price
       require(_value >= licenceShop[_data.toBytes2(9)]);
       // require is not already shop
@@ -144,6 +145,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
     } else if (_func == bytes1(0x32)) { // teller registration
+      // require is whitelisted
 
       // require staked greater than licence price
       require(_value >= licenceTeller[_data.toBytes2(9)]);
@@ -275,12 +277,16 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     * Teller ---------------------------------
     */
 
-  function sellEth(address _to, uint _amount) {
+  function sellEth(address _to, uint _amount) public {
+    require(isTeller(msg.sender));
     require(_to != msg.sender);
     bank.withdrawEth(msg.sender, _to, _amount);
-
     // increase reput
-
+    teller[_to].rightsTo[msg.sender] = true;
+    teller[msg.sender].rightsTo[_to] = true;
+    volumeBuy[_to] += _amount;
+    volumeSell[msg.sender] += _amount;
+    nbTrade[msg.sender] ++;
   }
 
   function switchStatus(bool _status) public {
@@ -341,19 +347,19 @@ function addComment() {
       tellerIndex.length--;
       delete teller[_toDelete];
       bank.withdrawDthTeller(_toDelete);
-      // refund teller ETH
       bank.refundEth(_toDelete);
       DeleteTellerModerator(msg.sender, _toDelete);
     }
 
-     /* function getReput(address _teller) public view returns (
+     function getReput(address _teller) public view returns (
         uint buyVolume,
         uint sellVolume,
-        uint loyaltyPoint,
-        bytes32[] comment
+        uint numTrade
        ) {
-
-       } */
+          buyVolume = volumeBuy[_teller];
+          sellVolume = volumeSell[_teller];
+          numTrade = nbTrade[_teller];
+       }
 
     function getTeller(address _teller) public view returns (
       int32 lat,
@@ -365,7 +371,9 @@ function addComment() {
       int8 avatarId,
       int16 rates,
       uint balance,
-      bool online
+      bool online,
+      uint sellVolume,
+      uint numTrade
       ) {
         Teller storage theTeller = teller[_teller];
         lat = theTeller.lat;
@@ -377,6 +385,8 @@ function addComment() {
         avatarId = theTeller.avatarId;
         rates = theTeller.rates;
         online = theTeller.online;
+        sellVolume = volumeSell[_teller];
+        numTrade = nbTrade[_teller];
         balance = bank.getEthBalTeller(_teller);
       }
 

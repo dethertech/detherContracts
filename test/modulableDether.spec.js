@@ -76,69 +76,6 @@ const convertTypes = x => {
   else return x
 }
 
-// use it to convert to int8 or int16 as well
-// function toBytesInt32 (num) {
-//     arr = new ArrayBuffer(4); // an Int32 takes 4 bytes
-//     view = new DataView(arr);
-//     view.setUint32(0, num, false); // byteOffset = 0; litteEndian = false
-//     return arr;
-// }
-//
-// function toBytesInt16 (num) {
-//     arr = new ArrayBuffer(2); // an Int32 takes 4 bytes
-//     view = new DataView(arr);
-//     view.setUint16(0, num, false); // byteOffset = 0; litteEndian = false
-//     return arr;
-// }
-//
-// function toBytesInt8 (num) {
-//     arr = new ArrayBuffer(1); // an Int32 takes 4 bytes
-//     view = new DataView(arr);
-//     view.setUint8(0, num, false); // byteOffset = 0; litteEndian = false
-//     return arr;
-// }
-//
-// var intToByteArray = function ( n ) {
-// 	var result = [ ];
-// 	var mask = 255; // 1111 1111 binary
-// 	while ( n > 0 ) {
-// 		var byte = n & mask;
-// 		result.push( byte );
-// 		n >>= 8; // shift 8x from left to right
-// 	}
-// 	return result;
-// }
-
-// function toBytesInt32_2 (num) {
-//     arr = new Uint8Array([
-//          (num & 0xff000000) >> 24,
-//          (num & 0x00ff0000) >> 16,
-//          (num & 0x0000ff00) >> 8,
-//          (num & 0x000000ff)
-//     ]);
-//     return arr.buffer;
-// }
-
-// function buf2hex(buffer) { // buffer is an ArrayBuffer
-//   return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
-// }
-//
-// function hex_to_ascii(str1)
-//  {
-// 	var hex  = str1.toString();
-// 	var str = '';
-// 	for (var n = 0; n < hex.length; n += 2) {
-// 		str += String.fromCharCode(parseInt(hex.substr(n, 2), 16));
-// 	}
-// 	return str;
-//  }
-//
-//  function toHexString(byteArray) {
-//    return Array.from(byteArray, function(byte) {
-//      return ('0' + (byte & 0xFF).toString(16)).slice(-2);
-//    }).join('')
-//  }
-
 ///
 const convertBase = function () {
     function convertBase(baseFrom, baseTo) {
@@ -734,6 +671,39 @@ contract('Dether Dth', async () => {
         assert.equal(valueFromContract.avatarId, 7, 'verif avatar');
         assert.equal(valueFromContract.rates, 28.9, 'verif rate');
         assert.equal(valueFromContract.online, false, 'verif status');
+      })
+
+      it('should have his reput upgrade when sell', async () => {
+        const balancereceiverpre = await web3.eth.getBalance(moderator);
+        // register as shop
+        let transferMethodTransactionData = web3Abi.encodeFunctionCall(
+            overloadedTransferAbi,
+            [
+                dether.address,
+                20,
+                tellerToContract(teller1)
+                // web3.toHex("test")
+            ]
+        );
+        await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+        assert.equal(await dether.isTeller(user1address), true, 'assert is teller now online');
+        // Add fund
+        await dether.addFunds({from: user1address, value: web3.toWei(1, "ether")});
+        assert.equal(web3.fromWei(await dether.getTellerBalance(user1address), 'ether'), 1, 'verif balance pre sell teller1');
+
+        //sell ETH
+        let tsx = await dether.sellEth(moderator, web3.toWei(1, 'ether'), {from: user1address});
+        // console.log('tsx ', tsx);
+        let balance = await dether.getTellerBalance(user1address);
+
+        assert.equal(balance.toNumber() , 0, 'verif balance post sell teller1');
+        let newbal = await web3.eth.getBalance(moderator);
+        assert.equal(web3.fromWei(newbal).toNumber(), web3.fromWei(balancereceiverpre).toNumber() + 1, 'verif moderator has good receive his ETH');
+        const profilePostSell = await dether.getTeller(user1address);
+        console.log('profile ', profilePostSell);
+        assert(web3.fromWei(profilePostSell[10].toNumber()), 1, 'verif sell volume')
+        const profileTeller = await dether.getReput(user1address);
+        console.log('getProfile ', profileTeller);
       })
 
     })

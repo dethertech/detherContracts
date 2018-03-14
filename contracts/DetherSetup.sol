@@ -36,10 +36,6 @@ contract DetherSetup is DetherAccessControl  {
     _;
   }
 
-  /*
-   * getter
-   */
-
   function setSmsCertifier (address _smsCertifier) onlyCEO {
     require(!run);
     smsCertifier = Certifier(_smsCertifier);
@@ -68,4 +64,9 @@ contract DetherSetup is DetherAccessControl  {
   function closeZoneTeller(bytes2 _country) onlyCMO {
     openedCountryTeller[_country] = false;
   }
+
+  /*
+   * getter
+   */
+
 }
