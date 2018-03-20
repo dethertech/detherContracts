@@ -5,7 +5,7 @@ pragma solidity ^0.4.18;
 /// Thanks to the Cryptokitties
 
 contract DetherAccessControl {
-    // This facet controls access control for CryptoKitties. There are four roles managed here:
+    // This facet controls access control for Dether. There are four roles managed here:
     //
     //     - The CEO: The CEO can reassign other roles and change the addresses of our dependent smart
     //         contracts. It is also the only role that can unpause the smart contract.
@@ -23,7 +23,6 @@ contract DetherAccessControl {
     event ContractUpgrade(address newContract);
 
     // The addresses of the accounts (or contracts) that can execute actions within each roles.
-
     address public ceoAddress;
     address public cmoAddress;
 	  mapping (address => bool) public shopModerators;   // centralised moderator, would become decentralised
@@ -43,14 +42,6 @@ contract DetherAccessControl {
         require(msg.sender == cmoAddress);
         _;
     }
-
-    /* modifier onlyCLevel() {
-        require(
-            msg.sender == cmoAddress ||
-            msg.sender == ceoAddress
-        );
-        _;
-    } */
 
     modifier isShopModerator(address _user) {
       require(shopModerators[_user]);

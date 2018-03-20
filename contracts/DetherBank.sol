@@ -7,88 +7,96 @@ import './dth/tokenfoundry/ERC223Basic.sol';
 import 'bytes/BytesLib.sol';
 /// @title Contract that will store the Dth from user
 contract DetherBank is ERC223ReceivingContract, Ownable {
-    using BytesLib for bytes;
-    using SafeMath for uint256;
+  using BytesLib for bytes;
+  using SafeMath for uint256;
 
+  /*
+   * Event
+   */
+  event receiveDth(address _from, uint amount);
+  event receiveEth(address _from, uint amount);
+  event sendDth(address _from, uint amount);
+  event sendEth(address _from, uint amount);
 
-    /*
-     * Event
-     */
-    event receiveDth(address _from, uint amount);
-    event receiveEth(address _from, uint amount);
-    event sendDth(address _from, uint amount);
-    event sendEth(address _from, uint amount);
+  mapping(address => uint) public dthShopBalance;
+  mapping(address => uint) public dthTellerBalance;
+  mapping(address => uint) public ethShopBalance;
+  mapping(address => uint) public ethTellerBalance;
 
-    event TempLog(address _from, uint amount1, uint amount2);
+  ERC223Basic public dth;
+  bool public isInit = false;
 
-    mapping(address => uint) public dthShopBalance;
-    mapping(address => uint) public dthTellerBalance;
-    mapping(address => uint) public ethShopBalance;
-    mapping(address => uint) public ethTellerBalance;
+  /**
+   * INIT
+   */
+  function setDth (address _dth) {
+    require(!isInit);
+    dth = ERC223Basic(_dth);
+    isInit = true;
+  }
 
-    ERC223Basic public dth;
-    bool public isInit = false;
-
-
-    function setDth (address _dth) {
-      require(!isInit);
-      dth = ERC223Basic(_dth);
-      isInit = true;
+  /**
+   * Core fonction
+   */
+  // withdraw DTH when teller delete
+  function withdrawDthTeller(address _receiver) onlyOwner {
+    require(dthTellerBalance[_receiver] > 0);
+    uint tosend = dthTellerBalance[_receiver];
+    dthTellerBalance[_receiver] = 0;
+    dth.transfer(_receiver, tosend);
+  }
+  // withdraw DTH when shop delete
+  function withdrawDthShop(address _receiver) onlyOwner  {
+    require(dthShopBalance[_receiver] > 0);
+    uint tosend = dthShopBalance[_receiver];
+    dthShopBalance[_receiver] = 0;
+    dth.transfer(_receiver, tosend);
+  }
+  // add DTH when shop register
+  function addTokenShop(address _from, uint _value) public onlyOwner {
+    dthShopBalance[_from] += _value;
+  }
+  // add DTH when token register
+  function addTokenTeller(address _from, uint _value) public onlyOwner{
+    dthTellerBalance[_from] += _value;
+  }
+  // add ETH for escrow teller
+  function addEthTeller(address _from, uint _value) public payable onlyOwner {
+    ethTellerBalance[_from] += _value;
+  }
+  // withdraw ETH for teller escrow
+  function withdrawEth(address _from, address _to, uint _amount) public onlyOwner {
+    require(ethTellerBalance[_from] >= _amount);
+    ethTellerBalance[_from] -= _amount;
+    _to.transfer(_amount);
+  }
+  // refund all ETH from teller contract
+  function refundEth(address _from) public onlyOwner {
+    uint toSend = ethTellerBalance[_from];
+    if (toSend > 0) {
+      ethTellerBalance[_from] = 0;
+      _from.transfer(toSend);
     }
-    function withdrawDthTeller(address _receiver) onlyOwner {
-      require(dthTellerBalance[_receiver] > 0);
-      uint tosend = dthTellerBalance[_receiver];
-      dthTellerBalance[_receiver] = 0;
-      dth.transfer(_receiver, tosend);
-    }
-    function withdrawDthShop(address _receiver) onlyOwner  {
-      require(dthShopBalance[_receiver] > 0);
-      uint tosend = dthShopBalance[_receiver];
-      dthShopBalance[_receiver] = 0;
-      dth.transfer(_receiver, tosend);
-    }
+  }
 
-    function addTokenShop(address _from, uint _value) public onlyOwner {
-      dthShopBalance[_from] += _value;
-    }
-    function addTokenTeller(address _from, uint _value) public onlyOwner{
-      dthTellerBalance[_from] += _value;
-    }
+  /**
+   * GETTER
+   */
+  function getDthTeller(address _user) public view returns (uint) {
+    return dthTellerBalance[_user];
+  }
+  function getDthShop(address _user) public view returns (uint) {
+    return dthShopBalance[_user];
+  }
 
-    function addEthTeller(address _from, uint _value) public payable onlyOwner {
-      TempLog(_from, _value, msg.value);
-      ethTellerBalance[_from] += _value;
-    }
-    function withdrawEth(address _from, address _to, uint _amount) public onlyOwner {
-      require(ethTellerBalance[_from] >= _amount);
-      ethTellerBalance[_from] -= _amount;
-      _to.transfer(_amount);
-    }
+  function getEthBalTeller(address _user) public view returns (uint) {
+    return ethTellerBalance[_user];
+  }
+  /// @dev Standard ERC223 function that will handle incoming token transfers.
+  // DO NOTHING but allow to receive token when addToken* function are called
+  // by the dethercore contract
+  function tokenFallback(address _from, uint _value, bytes _data) {
 
-    function refundEth(address _from) public onlyOwner {
-      uint toSend = ethTellerBalance[_from];
-      if (toSend > 0) {
-        ethTellerBalance[_from] = 0;
-        _from.transfer(toSend);
-      }
-    }
-
-    function getDthTeller(address _user) public view returns (uint) {
-      return dthTellerBalance[_user];
-    }
-    function getDthShop(address _user) public view returns (uint) {
-      return dthShopBalance[_user];
-    }
-
-    function getEthBalTeller(address _user) public view returns (uint) {
-      return ethTellerBalance[_user];
-    }
-    /// @dev Standard ERC223 function that will handle incoming token transfers.
-    /// @param _from  Token sender address.
-    /// @param _value Amount of tokens.
-    /// @param _data  Transaction metadata.
-    function tokenFallback(address _from, uint _value, bytes _data) {
-
-    }
+  }
 
 }

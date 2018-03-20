@@ -25,8 +25,12 @@ module.exports = async (callback) => {
   const dth = await Dth.deployed();
   const bank = await Bank.deployed();
 
+  await sms.addDelegate(ownerdeploy,'0x4652');
+  await sms.addDelegate('0x32BedF6609f002A591f871009C8e66D84F98d48E','0x4652'); // cert KYC
+  await sms.addDelegate('0x391edA1b8D31f891d1653B131779751BdeDA24D3','0x4652'); // cert detherJs
   await sms.transferOwnership(ownerCertifier);
   console.log('owner sms should be => ', ownerCertifier, await sms.owner.call());
+
 
   await dether.setCMO(ownerdeploy);
   console.log('cmo should be => ', ownerdeploy, await dether.cmoAddress.call());
@@ -44,10 +48,10 @@ module.exports = async (callback) => {
   await dether.setSmsCertifier(sms.address);
   console.log('certifier should be => ',sms.address, await dether.smsCertifier.call());
 
-  await dether.setLicenceTellerPrice(web3.toHex('FR') ,web3.toWei(10));
+  await dether.setLicenceTellerPrice(web3.toHex('FR') ,100);
   console.log('licenceteller should be => ', '10', web3.fromWei(await dether.licenceTeller.call(web3.toHex('FR'))));
 
-  await dether.setLicenceShopPrice(web3.toHex('FR') ,web3.toWei(10));
+  await dether.setLicenceShopPrice(web3.toHex('FR') ,100);
   console.log('licenceshop should be => ', '10', web3.fromWei(await dether.licenceShop.call(web3.toHex('FR'))));
 
   await dether.initContract(dth.address, bank.address);

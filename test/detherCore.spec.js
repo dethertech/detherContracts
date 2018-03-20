@@ -57,8 +57,6 @@ const toNBytes = (str, n) => {
   return buffer;
 };
 
-
-
 const
   [
       owner
@@ -219,15 +217,13 @@ contract('Dether Dth', async () => {
   contract('Add shop --', async () =>  {
 
     it('should parse data and register and be on the map', async () => {
-
+      console.log('shop to contract', shopToContract(shop1));
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
               dether.address,
               20,
-              // web3.toHex(reg)
               shopToContract(shop1)
-              // web3.toHex("test")
           ]
       );
       const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -280,7 +276,6 @@ contract('Dether Dth', async () => {
               dether.address,
               20,
               shopToContract(shop1)
-              // web3.toHex("test")
           ]
       );
       const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -291,7 +286,6 @@ contract('Dether Dth', async () => {
               dether.address,
               20,
               shopToContract(shop7)
-              // web3.toHex("test")
           ]
       );
       await web3.eth.sendTransaction({from: user2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});
@@ -310,7 +304,6 @@ contract('Dether Dth', async () => {
               dether.address,
               20,
               shopToContract(shop1)
-              // web3.toHex("test")
           ]
       );
       await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -321,7 +314,6 @@ contract('Dether Dth', async () => {
               dether.address,
               20,
               shopToContract(shop2)
-              // web3.toHex("test")
           ]
       );
       await web3.eth.sendTransaction({from: user2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});
@@ -344,7 +336,6 @@ contract('Dether Dth', async () => {
               dether.address,
               20,
               shopToContract(shop1)
-              // web3.toHex("test")
           ]
       );
       await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -364,7 +355,6 @@ contract('Dether Dth', async () => {
               dether.address,
               20,
               shopToContract(shop1)
-              // web3.toHex("test")
           ]
       );
       await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -382,7 +372,6 @@ contract('Dether Dth', async () => {
               dether.address,
               20,
               shopToContract(shop1)
-              // web3.toHex("test")
           ]
       );
       await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -446,9 +435,7 @@ contract('Dether Dth', async () => {
         } catch (err) {
 
         }
-
         assert.equal(await dether.isTeller(user3address), false, 'assert shop is now online');
-
       })
 
       it('should get all teller in a zone', async () => {
@@ -462,7 +449,6 @@ contract('Dether Dth', async () => {
                 dether.address,
                 20,
                 tellerToContract(teller3)
-                // web3.toHex("test")
             ]
         );
         const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -473,7 +459,6 @@ contract('Dether Dth', async () => {
                 dether.address,
                 20,
                 tellerToContract(teller2)
-                // web3.toHex("test")
             ]
         );
         await web3.eth.sendTransaction({from: user2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});
@@ -532,16 +517,10 @@ contract('Dether Dth', async () => {
         await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
         baltoken = await dthToken.balanceOf(user1address);
         balstaked = await dether.getStakedTeller(user1address);
-
-
-
         assert.equal(await dether.isTeller(user1address), true, 'assert shop is now online');
         await dether.deleteTeller({from: user1address, gas:4000000});
-
         baltoken = await dthToken.balanceOf(user1address);
         balstaked = await dether.getStakedTeller(user1address);
-
-
         const newbaltoken = await dthToken.balanceOf(user1address);
         const newbalstaked = await dether.getStakedTeller(user1address);
         assert.equal(newbaltoken.toNumber(), baltoken.add(balstaked).toNumber(), 'verif balance token 1 ');
@@ -555,11 +534,9 @@ contract('Dether Dth', async () => {
                 dether.address,
                 20,
                 tellerToContract(teller1)
-                // web3.toHex("test")
             ]
         );
         await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-
         assert.equal(await dether.isTeller(user1address), true, 'assert shop is now online');
         await dether.deleteTellerMods(user1address, {from: moderator, gas:4000000});
         assert.equal(await dether.isTeller(user1address), false, 'assert is shop');
@@ -573,11 +550,9 @@ contract('Dether Dth', async () => {
                 dether.address,
                 20,
                 tellerToContract(teller1)
-                // web3.toHex("test")
             ]
         );
         await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-
         assert.equal(await dether.isTeller(user1address), true, 'assert is teller now online');
         try {
             await dether.deleteTellerMods(user1address, {from: cmo, gas:4000000});
@@ -589,14 +564,12 @@ contract('Dether Dth', async () => {
 
       it('should be able to send coin from contract', async () => {
         const balancereceiverpre = await web3.eth.getBalance(moderator);
-        // register as shop
         let transferMethodTransactionData = web3Abi.encodeFunctionCall(
             overloadedTransferAbi,
             [
                 dether.address,
                 20,
                 tellerToContract(teller1)
-                // web3.toHex("test")
             ]
         );
         await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -604,16 +577,12 @@ contract('Dether Dth', async () => {
         // Add fund
         await dether.addFunds({from: user1address, value: web3.toWei(1, "ether")});
         assert.equal(web3.fromWei(await dether.getTellerBalance(user1address), 'ether'), 1, 'verif balance pre sell teller1');
-
         //sell ETH
         let tsx = await dether.sellEth(moderator, web3.toWei(1, 'ether'), {from: user1address});
-        // console.log('tsx ', tsx);
         let balance = await dether.getTellerBalance(user1address);
-
         assert.equal(balance.toNumber() , 0, 'verif balance post sell teller1');
         let newbal = await web3.eth.getBalance(moderator);
         assert.equal(web3.fromWei(newbal).toNumber(), web3.fromWei(balancereceiverpre).toNumber() + 1, 'verif moderator has good receive his ETH');
-
       })
 
       it('should get his ETH back when delete shop', async () => {
@@ -625,7 +594,6 @@ contract('Dether Dth', async () => {
                 dether.address,
                 20,
                 tellerToContract(teller1)
-                // web3.toHex("test")
             ]
         );
         await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -633,13 +601,10 @@ contract('Dether Dth', async () => {
         // Add fund
         await dether.addFunds({from: user1address, value: web3.toWei(1, "ether")});
         assert.equal(web3.fromWei(await dether.getTellerBalance(user1address), 'ether'), 1, 'verif balance pre delete');
-
         let balancepredelete = await web3.eth.getBalance(user1address);
         await dether.deleteTeller({from: user1address, gas:3000000});
-
         let balancepostdelete = await web3.eth.getBalance(user1address);
         let balancetellerpostrefund = await dether.getTellerBalance(user1address);
-
         assert.equal(balancetellerpostrefund.toNumber(), 0, 'verif balance post delete');
         assert.isAbove(balancepostdelete.toNumber(), balancepredelete.toNumber(), 'balance is greater after refund');
       })
@@ -653,7 +618,6 @@ contract('Dether Dth', async () => {
                 dether.address,
                 20,
                 tellerToContract(teller1)
-                // web3.toHex("test")
             ]
         );
         await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
@@ -682,20 +646,14 @@ contract('Dether Dth', async () => {
                 dether.address,
                 20,
                 tellerToContract(teller1)
-                // web3.toHex("test")
             ]
         );
         await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
         assert.equal(await dether.isTeller(user1address), true, 'assert is teller now online');
-        // Add fund
         await dether.addFunds({from: user1address, value: web3.toWei(1, "ether")});
         assert.equal(web3.fromWei(await dether.getTellerBalance(user1address), 'ether'), 1, 'verif balance pre sell teller1');
-
-        //sell ETH
         let tsx = await dether.sellEth(moderator, web3.toWei(1, 'ether'), {from: user1address});
-        // console.log('tsx ', tsx);
         let balance = await dether.getTellerBalance(user1address);
-
         assert.equal(balance.toNumber() , 0, 'verif balance post sell teller1');
         let newbal = await web3.eth.getBalance(moderator);
         assert.equal(web3.fromWei(newbal).toNumber(), web3.fromWei(balancereceiverpre).toNumber() + 1, 'verif moderator has good receive his ETH');
@@ -705,9 +663,5 @@ contract('Dether Dth', async () => {
         const profileTeller = await dether.getReput(user1address);
         console.log('getProfile ', profileTeller);
       })
-
     })
-
-
-
 });

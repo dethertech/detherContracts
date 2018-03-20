@@ -9,13 +9,22 @@ import './DetherAccessControl.sol';
 
 contract DetherSetup is DetherAccessControl  {
 
-  bool public run = false;
-  /* uint public licenceShop = 1;
-  uint public licenceTeller = 1; */
+  bool public run1 = false;
+  bool public run2 = false;
+  // -Need to be whitelisted to be able to register in the contract as a shop or
+  // teller, there is two level of identification.
+  // -This identification method are now centralised and processed by dether, but
+  // will be decentralised soon
   Certifier public smsCertifier;
   Certifier public kycCertifier;
+  // Zone need to be open by the CMO before accepting registration
+  // The bytes2 parameter wait for a country ID (ex: FR (0X4652 in hex) for france cf:README)
   mapping(bytes2 => bool) public openedCountryShop;
   mapping(bytes2 => bool) public openedCountryTeller;
+  // For registering in a zone you need to stake DTH
+  // The price can differ by country
+  // Uts now a fixed price by the CMO but the price will adjusted automatically
+  // regarding different factor in the futur smart contract
   mapping(bytes2 => uint) public licenceShop;
   mapping(bytes2 => uint) public licenceTeller;
 
@@ -36,15 +45,21 @@ contract DetherSetup is DetherAccessControl  {
     _;
   }
 
+  /**
+   * INIT
+   */
   function setSmsCertifier (address _smsCertifier) onlyCEO {
-    require(!run);
+    require(!run1);
     smsCertifier = Certifier(_smsCertifier);
-    run = true;
+    run1 = true;
   }
+  /**
+   * CORE FUNCTION
+   */
   function setKycCertifier (address _kycCertifier) onlyCEO {
-    require(!run);
+    require(!run2);
     kycCertifier = Certifier(_kycCertifier);
-    run = true;
+    run2 = true;
   }
   function setLicenceShopPrice(bytes2 country, uint price) onlyCEO {
     licenceShop[country] = price;
@@ -64,9 +79,4 @@ contract DetherSetup is DetherAccessControl  {
   function closeZoneTeller(bytes2 _country) onlyCMO {
     openedCountryTeller[_country] = false;
   }
-
-  /*
-   * getter
-   */
-
 }
