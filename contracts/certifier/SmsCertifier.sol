@@ -56,7 +56,7 @@ contract SmsCertifier is Ownable {
 	}
 
 	function isDelegate(address _who) public view returns (bool) { return delegate[_who].active; }
-	function isCertified(address _who) public  view returns (bool) { return certs[_who].active; }
+	function certified(address _who) public  view returns (bool) { return certs[_who].active; }
 	function get(address _who, string _field) public view returns (bytes32) { return certs[_who].meta[_field]; }
 	function getAddress(address _who, string _field) public view returns (address) { return address(certs[_who].meta[_field]); }
 	function getUint(address _who, string _field) public view returns (uint) { return uint(certs[_who].meta[_field]); }
