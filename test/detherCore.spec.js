@@ -161,7 +161,6 @@ const shopFromContract = (rawshop) => {
 }
 
 const tellerFromContract = (rawTeller) => {
-  console.log('teller from contract', rawTeller);
   const data = {
       lat: rawTeller[0] / 100000,
       lng: rawTeller[1] / 100000,
@@ -217,7 +216,7 @@ contract('Dether Dth', async () => {
   contract('Add shop --', async () =>  {
 
     it('should parse data and register and be on the map', async () => {
-      console.log('shop to contract', shopToContract(shop1));
+
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
@@ -227,7 +226,6 @@ contract('Dether Dth', async () => {
           ]
       );
       const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-
       let shop1value = await dether.getShop(user1address);
       assert.equal(await dether.isShop(user1address), true, 'assert shop is now online');
       const formatedValue = shopFromContract(shop1value);
@@ -403,9 +401,7 @@ contract('Dether Dth', async () => {
             ]
         );
         const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-        console.log('teller ', tellerToContract(teller1));
         let teller1value = await dether.getTeller(user1address);
-        console.log('teller1value', teller1value);
         const valueFromContract = tellerFromContract(teller1value);
         assert.equal(await dether.isTeller(user1address), true, 'assert shop is now online');
         assert.equal(valueFromContract.lat, teller1.lat, 'verif lat');
@@ -658,10 +654,8 @@ contract('Dether Dth', async () => {
         let newbal = await web3.eth.getBalance(moderator);
         assert.equal(web3.fromWei(newbal).toNumber(), web3.fromWei(balancereceiverpre).toNumber() + 1, 'verif moderator has good receive his ETH');
         const profilePostSell = await dether.getTeller(user1address);
-        console.log('profile ', profilePostSell);
         assert(web3.fromWei(profilePostSell[10].toNumber()), 1, 'verif sell volume')
         const profileTeller = await dether.getReput(user1address);
-        console.log('getProfile ', profileTeller);
       })
     })
 });

@@ -3,11 +3,12 @@ pragma solidity ^0.4.18;
 import './DetherSetup.sol';
 import './DetherBank.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
+import 'zeppelin-solidity/contracts/math/SafeMath.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import './DetherAccessControl.sol';
 import 'bytes/BytesLib.sol';
 
-contract DetherCore is DetherSetup, ERC223ReceivingContract {
+contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   using BytesLib for bytes;
 
   /**
@@ -164,6 +165,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
       RegisterShop(_from);
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
+
     } else if (_func == bytes1(0x32)) { // teller registration
       // require staked greater than licence price
       require(_value >= licenceTeller[_data.toBytes2(9)]);
@@ -227,10 +229,13 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
     require(_to != msg.sender);
     // send eth to the receiver from the bank contract
     bank.withdrawEth(msg.sender, _to, _amount);
-    // increase reput
-    volumeBuy[_to] += _amount;
-    volumeSell[msg.sender] += _amount;
-    nbTrade[msg.sender] ++;
+    // increase reput for the buyer and the seller Only if the buyer is also whitelisted,
+    // It's a way to incentive user to trade on the system
+    if (smsCertifier.certified(_to)) {
+      volumeBuy[_to] = SafeMath.add(volumeBuy[_to], _amount);
+      volumeSell[msg.sender] = SafeMath.add(volumeSell[msg.sender], _amount);
+      nbTrade[msg.sender] += 1;
+    }
     Sent(msg.sender, _to, _amount);
   }
 
@@ -249,7 +254,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract {
    */
   function addFunds() payable {
     require(isTeller(msg.sender));
-    bank.addEthTeller.value(msg.value)(msg.sender, msg.value);
+    require(bank.addEthTeller.value(msg.value)(msg.sender, msg.value));
   }
 
   // gas used 67841
