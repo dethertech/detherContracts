@@ -1,5 +1,9 @@
 # Dether - Ethereum smart contracts
 
+[![Join the chat at https://gitter.im/dethertech/detherContracts](https://badges.gitter.im/dethertech/detherContracts.svg)](https://gitter.im/dethertech/detherContracts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+### Warning: Don't use on mainnet! This contracts has not been thoroughly audited, it will evolve and improve before launching on mainnet.
+
 Dether provides a decentralized peer-to-peer ether network that enables anyone on Earth to buy ether
 with cash and spend it at physical stores nearby. No bank account is needed, just a mobile phone with
 internet access. Our belief is that the beauty and power of the Ethereum technology should be easily
@@ -117,6 +121,7 @@ truffle migrate --network kovan
 ## Contributing
 
 Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct, and the process for submitting pull requests to us.
+
 
 ## Authors
 
