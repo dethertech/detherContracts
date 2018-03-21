@@ -6,9 +6,8 @@ import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import 'bytes/BytesLib.sol';
 /// @title Contract that will store the Dth from user
-contract DetherBank is ERC223ReceivingContract, Ownable {
+contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
   using BytesLib for bytes;
-  using SafeMath for uint256;
 
   /*
    * Event
@@ -43,31 +42,32 @@ contract DetherBank is ERC223ReceivingContract, Ownable {
     require(dthTellerBalance[_receiver] > 0);
     uint tosend = dthTellerBalance[_receiver];
     dthTellerBalance[_receiver] = 0;
-    dth.transfer(_receiver, tosend);
+    require(dth.transfer(_receiver, tosend));
   }
   // withdraw DTH when shop delete
   function withdrawDthShop(address _receiver) onlyOwner  {
     require(dthShopBalance[_receiver] > 0);
     uint tosend = dthShopBalance[_receiver];
     dthShopBalance[_receiver] = 0;
-    dth.transfer(_receiver, tosend);
+    require(dth.transfer(_receiver, tosend));
   }
   // add DTH when shop register
   function addTokenShop(address _from, uint _value) public onlyOwner {
-    dthShopBalance[_from] += _value;
+    dthShopBalance[_from] = SafeMath.add(dthShopBalance[_from], _value);
   }
   // add DTH when token register
   function addTokenTeller(address _from, uint _value) public onlyOwner{
-    dthTellerBalance[_from] += _value;
+    dthTellerBalance[_from] = SafeMath.add(dthTellerBalance[_from], _value);
   }
   // add ETH for escrow teller
-  function addEthTeller(address _from, uint _value) public payable onlyOwner {
-    ethTellerBalance[_from] += _value;
+  function addEthTeller(address _from, uint _value) public payable onlyOwner returns (bool) {
+    ethTellerBalance[_from] = SafeMath.add(ethTellerBalance[_from] ,_value);
+    return true;
   }
   // withdraw ETH for teller escrow
   function withdrawEth(address _from, address _to, uint _amount) public onlyOwner {
     require(ethTellerBalance[_from] >= _amount);
-    ethTellerBalance[_from] -= _amount;
+    ethTellerBalance[_from] = SafeMath.sub(ethTellerBalance[_from], _amount);
     _to.transfer(_amount);
   }
   // refund all ETH from teller contract
