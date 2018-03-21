@@ -1,20 +1,18 @@
-// var DetherInterface = artifacts.require("./DetherInterface.sol");
-// var DetherStorage = artifacts.require("./DetherTellerStorage.sol");
-// var SmsCertifier = artifacts.require("./certifier/SmsCertifier.sol");
-// var DetherToken = artifacts.require("./dth/DetherToken.sol");
-// var DthRegistry = artifacts.require("./DthRegistry.sol");
-// var DthShop = artifacts.require("./DetherShopStorage.sol");
-
-var DetherCore = artifacts.require("./DetherCore.sol");
-var DetherToken = artifacts.require("./dth/DetherToken.sol");
-var SmsCertifier = artifacts.require("./certifier/SmsCertifier.sol");
-var DetherBank = artifacts.require("./DetherBank.sol");
+var DetherStorage = artifacts.require("./DetherStorage.sol");
+var DetherInterface = artifacts.require("./DetherInterface.sol");
+var DetherStorageJson = require("../build/contracts/DetherStorage.json");
 
 module.exports = function(deployer, network) {
-
-  deployer.deploy(DetherCore, {gas: 4700000})
-  // .then(() => deployer.deploy(DetherToken, {gas: 4700000}))
-  .then(() => deployer.deploy(DetherBank, {gas: 4700000}))
-  .then(() => deployer.deploy(SmsCertifier, {gas: 4700000}))
-
+  console.log('Migration --', network);
+  if (network == 'kovan') {
+      console.log('=> kovan');
+      deployer.deploy(DetherStorage, {gas: 2000000})
+      .then(() => deployer.deploy(DetherInterface, DetherStorage.address, {gas: 2000000}))
+      .then(() => DetherStorage.at(DetherStorage.address).transferOwnership(DetherInterface.address, {gas: 300000} ))
+      .then(() => DetherInterface.at(DetherInterface.address).setInit({gas: 300000}))
+    } else {
+    console.log('=>Other')
+      deployer.deploy(DetherStorage, {gas: 1500000})
+      .then(() => deployer.deploy(DetherInterface, DetherStorage.address, {gas: 1500000}))
+  }
 };

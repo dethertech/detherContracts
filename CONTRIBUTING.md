@@ -6,7 +6,7 @@ If you haven't already, come find us in Slack ([Dether Slack](https://dether.sla
 
 Here are some important resources:
 
-  * [Dether Slack](https://slack.dether.io). We're usually there during business hours.
+  * [Dether Slack](https://dether.slack.com). We're usually there during business hours.
   * [SubReddit](https://www.reddit.com/r/Dether/)
   * [Telegram](http://t.me/Dether_io)
   * [Medium blog](https://medium.com/@DETHER) is where we explain our project and do announcements
@@ -24,36 +24,11 @@ We are testing the smart contracts with Javascript in async/await style, and the
 
 Please send a [GitHub Pull Request to Dether](https://github.com/dethertech/dethercontracts/pulls) with a clear list of what you've done (read more about [pull requests](http://help.github.com/pull-requests/)). When you send a pull request, we will love you forever if you include tests. We can always use more test coverage. Please follow our coding conventions (below) and make sure all of your commits are atomic (one feature per commit).
 
-
-### Commit guidelines
-
-```
-git checkout -b feature/...
-git checkout -b fix/...
-```
-
-```
-[ADD] new file/function/feature
-[UPD] update file/function/feature
-[UPG] upgrade dependency
-[ARC] refactor part of the project
-[DEL] remove file/function/feature
-[WIP] work in progress
-```
-
-```
-git checkout develop
-git merge origin feature/...
-git merge origin fix/...
-```
-
 Always write a clear log message for your commits. One-line messages are fine for small changes, but bigger changes should look like this:
 
-    $ git commit -m “[???] A brief summary of the commit
-    >
-    > A paragraph describing what changed and its impact.”
-
-
+    $ git commit -m "A brief summary of the commit
+    > 
+    > A paragraph describing what changed and its impact."
 
 ## Coding conventions
 

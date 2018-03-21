@@ -1,0 +1,574 @@
+{
+  "contract_name": "DetherStorage",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_zone",
+          "type": "uint256"
+        }
+      ],
+      "name": "getZone",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "clearMessagingAddress",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        },
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "tellerPerZone",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        },
+        {
+          "name": "_zoneId",
+          "type": "uint256"
+        }
+      ],
+      "name": "setTellerZone",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        },
+        {
+          "name": "lat",
+          "type": "int256"
+        },
+        {
+          "name": "lng",
+          "type": "int256"
+        },
+        {
+          "name": "zoneId",
+          "type": "uint256"
+        }
+      ],
+      "name": "setTellerPosition",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_receiver",
+          "type": "address"
+        },
+        {
+          "name": "_amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "releaseEth",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        },
+        {
+          "name": "_avatarId",
+          "type": "int8"
+        },
+        {
+          "name": "_currencyId",
+          "type": "int8"
+        },
+        {
+          "name": "_messagingAddr",
+          "type": "bytes32"
+        },
+        {
+          "name": "_name",
+          "type": "bytes32"
+        },
+        {
+          "name": "_rate",
+          "type": "int16"
+        }
+      ],
+      "name": "setTellerProfile",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_teller",
+          "type": "address"
+        }
+      ],
+      "name": "getTellerProfile",
+      "outputs": [
+        {
+          "name": "rate",
+          "type": "int16"
+        },
+        {
+          "name": "volumeTrade",
+          "type": "uint256"
+        },
+        {
+          "name": "nbTrade",
+          "type": "uint256"
+        },
+        {
+          "name": "name",
+          "type": "bytes32"
+        },
+        {
+          "name": "currencyId",
+          "type": "int8"
+        },
+        {
+          "name": "avatarId",
+          "type": "int8"
+        },
+        {
+          "name": "messagingAddr",
+          "type": "bytes32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getTellerCount",
+      "outputs": [
+        {
+          "name": "count",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getAllTellers",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_index",
+          "type": "uint256"
+        }
+      ],
+      "name": "getTellerAtIndex",
+      "outputs": [
+        {
+          "name": "teller",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "getTellerBalance",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "owner",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "tellerIndex",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "deleteTeller",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        },
+        {
+          "name": "_nbTrade",
+          "type": "uint256"
+        },
+        {
+          "name": "_volumeTrade",
+          "type": "uint256"
+        }
+      ],
+      "name": "setTellerReputation",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "setTellerIndex",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "getTellerReputation",
+      "outputs": [
+        {
+          "name": "nbTrade",
+          "type": "uint256"
+        },
+        {
+          "name": "volumeTrade",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_teller",
+          "type": "address"
+        }
+      ],
+      "name": "getTellerPosition",
+      "outputs": [
+        {
+          "name": "lat",
+          "type": "int256"
+        },
+        {
+          "name": "lng",
+          "type": "int256"
+        },
+        {
+          "name": "zoneId",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        },
+        {
+          "name": "_balance",
+          "type": "uint256"
+        }
+      ],
+      "name": "setTellerBalance",
+      "outputs": [],
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_address",
+          "type": "address"
+        }
+      ],
+      "name": "isTeller",
+      "outputs": [
+        {
+          "name": "isIndeed",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "tellerAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "rowToDelete",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogDeleteTeller",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "name": "keyToMove",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "name": "rowToDelete",
+          "type": "uint256"
+        }
+      ],
+      "name": "LogUpdateTeller",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    }
+  ],
+  "unlinked_binary": "0x60606040525b60008054600160a060020a03191633600160a060020a03161790555b5b610ec9806100316000396000f300606060405236156101255763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166311ee0ec5811461012a578063147470441461019457806316998b45146101c757806321f86475146101fc578063264db4c51461022057806334c696b11461024a578063403bfbad146102805780634d9054d4146102bb5780634e910d1a1461032b5780634f4cd65014610350578063571702f4146103b757806359b17b43146103e95780638da5cb5b1461041a57806395d43eea14610449578063a1cbad7e1461047b578063bc071a311461049c578063bde0ad94146104c3578063c427d20b146104e4578063db31ddd81461051b578063e37c41981461055e578063f2fde38b14610577578063fac8a80014610598575b600080fd5b341561013557600080fd5b6101406004356105cb565b60405160208082528190810183818151815260200191508051906020019060200280838360005b838110156101805780820151818401525b602001610167565b505050509050019250505060405180910390f35b341561019f57600080fd5b6101b3600160a060020a0360043516610647565b604051901515815260200160405180910390f35b34156101d257600080fd5b6101e060043560243561068c565b604051600160a060020a03909116815260200160405180910390f35b341561020757600080fd5b61021e600160a060020a03600435166024356106ce565b005b341561022b57600080fd5b61021e600160a060020a036004351660243560443560643561075d565b005b341561025557600080fd5b6101b3600160a060020a03600435166024356107cd565b604051901515815260200160405180910390f35b341561028b57600080fd5b61021e600160a060020a0360043516602435600090810b90604435900b60643560843560a43560010b610822565b005b34156102c657600080fd5b6102da600160a060020a03600435166108bd565b604051600197880b90970b875260208701959095526040808701949094526060860192909252600090810b810b608086015290810b900b60a084015260c083019190915260e0909101905180910390f35b341561033657600080fd5b61033e61091a565b60405190815260200160405180910390f35b341561035b57600080fd5b610140610921565b60405160208082528190810183818151815260200191508051906020019060200280838360005b838110156101805780820151818401525b602001610167565b505050509050019250505060405180910390f35b34156103c257600080fd5b6101e060043561098a565b604051600160a060020a03909116815260200160405180910390f35b34156103f457600080fd5b61033e600160a060020a03600435166109c3565b60405190815260200160405180910390f35b341561042557600080fd5b6101e06109e5565b604051600160a060020a03909116815260200160405180910390f35b341561045457600080fd5b6101e06004356109f4565b604051600160a060020a03909116815260200160405180910390f35b341561048657600080fd5b61021e600160a060020a0360043516610a26565b005b34156104a757600080fd5b61021e600160a060020a0360043516602435604435610ba2565b005b34156104ce57600080fd5b61021e600160a060020a0360043516610be9565b005b34156104ef57600080fd5b610503600160a060020a0360043516610c75565b60405191825260208201526040908101905180910390f35b341561052657600080fd5b61053a600160a060020a0360043516610c9e565b60405180848152602001838152602001828152602001935050505060405180910390f35b61021e600160a060020a0360043516602435610ccd565b005b341561058257600080fd5b61021e600160a060020a0360043516610d0c565b005b34156105a357600080fd5b6101b3600160a060020a0360043516610da5565b604051901515815260200160405180910390f35b6105d3610e16565b6002600083815260200190815260200160002080548060200260200160405190810160405280929190818152602001828054801561063a57602002820191906000526020600020905b8154600160a060020a0316815260019091019060200180831161061c575b505050505090505b919050565b6000805433600160a060020a0390811691161461066357600080fd5b50600160a060020a03811660009081526001602081905260408220600401919091555b5b919050565b6002602052816000526040600020818154811015156106a757fe5b906000526020600020900160005b915091509054906101000a9004600160a060020a031681565b60005433600160a060020a039081169116146106e957600080fd5b600160a060020a03821660009081526001602052604090206002015481146107575760008181526002602052604090208054600181016107298382610e28565b916000526020600020900160005b8154600160a060020a038087166101009390930a92830292021916179055505b5b5b5050565b60005433600160a060020a0390811691161461077857600080fd5b606060405190810160409081528482526020808301859052818301849052600160a060020a038716600090815260019091522081518155602082015181600101556040820151600290910155505b5b50505050565b6000805433600160a060020a039081169116146107e957600080fd5b600160a060020a03831682156108fc0283604051600060405180830381858888f19350505050151561081a57600080fd5b5b5b92915050565b60005433600160a060020a0390811691161461083d57600080fd5b600160a060020a0386166000908152600160208190526040822060038101805488850b60ff9081166101000261ff0019968c900b90911660ff199092169190911794909416939093179092556004820185905560058201849055600790910180549183900b61ffff1661ffff199092169190911790555b5b505050505050565b600160a060020a03811660009081526001602081905260408220600781015460088201546006830154600584015460038501546004909501549390950b959194909390926101008204830b929190910b905b919395979092949650565b6003545b90565b610929610e16565b600380548060200260200160405190810160405280929190818152602001828054801561097f57602002820191906000526020600020905b8154600160a060020a03168152600190910190602001808311610961575b505050505090505b90565b600060038281548110151561099b57fe5b906000526020600020900160005b9054906101000a9004600160a060020a031690505b919050565b600160a060020a0381166000908152600160205260409020600901545b919050565b600054600160a060020a031681565b6003805482908110610a0257fe5b906000526020600020900160005b915054906101000a9004600160a060020a031681565b60008054819033600160a060020a03908116911614610a4457600080fd5b610a4d83610da5565b1515610a5857600080fd5b600160a060020a0383166000908152600160205260409020600a015460038054919350906000198101908110610a8a57fe5b906000526020600020900160005b9054906101000a9004600160a060020a0316905080600383815481101515610abc57fe5b906000526020600020900160005b8154600160a060020a039384166101009290920a918202918402191617905581166000908152600160205260409020600a018290556003805490610b12906000198301610e28565b507f59930ebecf974f9a40b3f31d904183213516758ba08f3defd9ee35733baf9da08383604051600160a060020a03909216825260208201526040908101905180910390a17fa10dfca660ab06e8964a27f48b424c7370723157258130ad3e92b3ff548681538183604051600160a060020a03909216825260208201526040908101905180910390a15b5b505050565b60005433600160a060020a03908116911614610bbd57600080fd5b600160a060020a0383166000908152600160205260409020600681018390556008018190555b5b505050565b60005433600160a060020a03908116911614610c0457600080fd5b610c0d81610da5565b1515610c7057600160038054806001018281610c299190610e28565b916000526020600020900160005b8154600160a060020a038087166101009390930a838102910219909116179091556000908152600160205260409020919003600a909101555b5b5b50565b600160a060020a038116600090815260016020526040902060068101546008909101545b915091565b600160a060020a03811660009081526001602081905260409091208054918101546002909101545b9193909250565b60005433600160a060020a03908116911614610ce857600080fd5b600160a060020a03821660009081526001602052604090206009018190555b5b5050565b60005433600160a060020a03908116911614610d2757600080fd5b600160a060020a0381161515610d3c57600080fd5b600054600160a060020a0380831691167f8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e060405160405180910390a36000805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0383161790555b5b50565b6003546000901515610db957506000610642565b600160a060020a0382166000818152600160205260409020600a0154600380549091908110610de457fe5b906000526020600020900160005b9054906101000a9004600160a060020a0316600160a060020a03161490505b919050565b60206040519081016040526000815290565b815481835581811511610b9c57600083815260209020610b9c918101908301610e7c565b5b505050565b815481835581811511610b9c57600083815260209020610b9c918101908301610e7c565b5b505050565b61091e91905b80821115610e965760008155600101610e82565b5090565b905600a165627a7a72305820e27b55b52ed1874885704452933ce8af8208ebfb24a343adb5622a9058c9dd270029",
+  "networks": {
+    "42": {
+      "events": {
+        "0x59930ebecf974f9a40b3f31d904183213516758ba08f3defd9ee35733baf9da0": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "tellerAddress",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "rowToDelete",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogDeleteTeller",
+          "type": "event"
+        },
+        "0xa10dfca660ab06e8964a27f48b424c7370723157258130ad3e92b3ff54868153": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": false,
+              "name": "keyToMove",
+              "type": "address"
+            },
+            {
+              "indexed": false,
+              "name": "rowToDelete",
+              "type": "uint256"
+            }
+          ],
+          "name": "LogUpdateTeller",
+          "type": "event"
+        },
+        "0x8be0079c531659141344cd1fd0a4f28419497f9722a3daafe3b4186f6b6457e0": {
+          "anonymous": false,
+          "inputs": [
+            {
+              "indexed": true,
+              "name": "previousOwner",
+              "type": "address"
+            },
+            {
+              "indexed": true,
+              "name": "newOwner",
+              "type": "address"
+            }
+          ],
+          "name": "OwnershipTransferred",
+          "type": "event"
+        }
+      },
+      "links": {},
+      "address": "0x0f2cdcc32d7b9208190f7a3fdb2bfccb0e3543de",
+      "updated_at": 1506608153740
+    }
+  },
+  "schema_version": "0.0.5",
+  "updated_at": 1506608153740
+}

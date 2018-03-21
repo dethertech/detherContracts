@@ -101,7 +101,7 @@ var BN = require('bn.js')
 
 var parameterTypes = ['address'];
 // storage address
-var parameterValues = ['0xdbf01f25066c2a6c6d311f047917ebed72d8ca42'];
+var parameterValues = ['0x8556e066acb25cf148b665709f5c5a809fcdd0b3'];
 
 // ===========================================================================
 var encoded = abi.rawEncode(parameterTypes, parameterValues);
