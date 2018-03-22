@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
-import 'zeppelin-solidity/contracts/math/SafeMath.sol';
+import './zepellin/SafeMath.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import 'bytes/BytesLib.sol';

@@ -3,7 +3,7 @@ pragma solidity ^0.4.18;
 import './DetherSetup.sol';
 import './DetherBank.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
-import 'zeppelin-solidity/contracts/math/SafeMath.sol';
+import './zepellin/SafeMath.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import './DetherAccessControl.sol';
 import 'bytes/BytesLib.sol';
