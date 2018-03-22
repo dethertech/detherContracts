@@ -2,12 +2,72 @@
 
 [![Join the chat at https://gitter.im/dethertech/detherContracts](https://badges.gitter.im/dethertech/detherContracts.svg)](https://gitter.im/dethertech/detherContracts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Warning: Don't use on mainnet! This contracts has not been thoroughly audited, it will evolve and improve before launching on mainnet.
+### Warning: This contracts has not been thoroughly audited, it will evolve and improve before launching.
 
 Dether provides a decentralized peer-to-peer ether network that enables anyone on Earth to buy ether
 with cash and spend it at physical stores nearby. No bank account is needed, just a mobile phone with
 internet access. Our belief is that the beauty and power of the Ethereum technology should be easily
 accessible to all.
+
+### Version 0.1    
+This version is the MVP version, its not suppose to reflect our entire version describe in our white paper.    
+What this version is supposed to do:    
+Allow shop and teller to add geolocalised point, to be visible by user reading smart contract.      
+For teller to have the possibility to sell ETH.
+The map is cut in zone https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2    
+And we store address of shop and teller in a mapping country => postal Code:   
+`mapping(bytes2 => mapping(bytes16 => address[])) shopInZone;`    
+This way someone could easily get all the shop in his postalcode by just call the function:    
+```
+function getZoneShop(bytes2 _country, bytes16 _postalcode) public view returns (address[]) {
+   return shopInZone[_country][_postalcode];
+}
+```
+He could then loop on the function getShop with all the address he gets from this previous function:    
+```
+function getShop(address _shop) public view returns (
+ int32 lat,
+ int32 lng,
+ bytes2 countryId,
+ bytes16 postalCode,
+ bytes16 cat,
+ bytes16 name,
+ bytes32 description,
+ bytes16 opening
+ ) {
+  Shop storage theShop = shop[_shop];
+  lat = theShop.lat;
+  lng = theShop.lng;
+  countryId = theShop.countryId;
+  postalCode = theShop.postalCode;
+  cat = theShop.cat;
+  name = theShop.name;
+  description = theShop.description;
+  opening = theShop.opening;
+ }
+```   
+This smart contract is supposed to be used just like that by the most Dapps possible to show their user where they could spend their crypto or buy or sell cryptos.    
+We keep moderator roles contralised for now, but we will use decentralised arbitration court later to be able to delete illegal shop for example.    
+To be able to register a shop or a teller, the ethereum user need to be `certified` we keep this role centralised as well for now but we'll use decentralised KYC services like uport soon.    
+To be certified user will either need to register their phone, or pass KYC.    
+To operate on a zone a shop or a teller will need to stake DTH. The price will differ among zone and will be automatically calculated by the smart contract regarding different parameter like localisation, number of teller or shop already present. For now the price a user need to stake is set by a moderator in a centralised way.    
+Centralised moderator role in the V0.1:   
+-Set the licence price.
+-Delete fraudulent shop/teller.    
+-Open/close zone (country).    
+-Certify user to be able to register.    
+
+To be integrated on the futures versions:   
+-Loyalty program     
+-Affiliate/referal program   
+-Auction system on zone and category.  
+-Dynamic licence pricing    
+-Decentralised moderation.    
+-Decentralised KYC    
+
+Upgradable VS unpgradable    
+Those smart contracts are unupgradable, only the funds and certification are on a separate contract, but for the data structure and the logic, we are sure that we will have to change many things on the future, so we keep things simple and cheaper in gas by having logic and data in the smart contract.    
+If someone register a point on the contract and we deploy a new version, we will manually load all the active point on the new smart contract.
 
 ## Getting Started
 
