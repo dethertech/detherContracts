@@ -145,44 +145,45 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     // check first byte to know if its shop or teller registration
     // 1 / 0x31 = shop // 2 / 0x32 = teller
     bytes1 _func = _data.toBytes1(0);
+    int32 posLat = _data.toBytes1(1) == bytes1(0x01) ? int32(_data.toBytes4(2)) * -1 : int32(_data.toBytes4(2));
+    int32 posLng = _data.toBytes1(6) == bytes1(0x01) ? int32(_data.toBytes4(7)) * -1 : int32(_data.toBytes4(7));
     if (_func == bytes1(0x31)) { // shop registration
       // require staked greater than licence price
-      require(_value >= licenceShop[_data.toBytes2(9)]);
+      require(_value >= licenceShop[_data.toBytes2(11)]);
       // require its not already shop
       require(!isShop(_from));
       // require zone is open
-      require(openedCountryShop[_data.toBytes2(9)]);
-      shop[_from].lat = int32(_data.toBytes4(1));
-      shop[_from].lng = int32(_data.toBytes4(5));
-      shop[_from].countryId = _data.toBytes2(9);
-      shop[_from].postalCode = _data.toBytes16(11);
-      shop[_from].cat = _data.toBytes16(27);
-      shop[_from].name = _data.toBytes16(43);
-      shop[_from].description = _data.toBytes32(59);
-      shop[_from].opening = _data.toBytes16(91);
+      require(openedCountryShop[_data.toBytes2(11)]);
+      shop[_from].lat = posLat;
+      shop[_from].lng = posLng;
+      shop[_from].countryId = _data.toBytes2(11);
+      shop[_from].postalCode = _data.toBytes16(13);
+      shop[_from].cat = _data.toBytes16(29);
+      shop[_from].name = _data.toBytes16(45);
+      shop[_from].description = _data.toBytes32(61);
+      shop[_from].opening = _data.toBytes16(93);
       shop[_from].generalIndex = shopIndex.push(_from) - 1;
-      shop[_from].zoneIndex = shopInZone[_data.toBytes2(9)][_data.toBytes16(11)].push(_from) - 1;
+      shop[_from].zoneIndex = shopInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(_from) - 1;
       RegisterShop(_from);
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
-
     } else if (_func == bytes1(0x32)) { // teller registration
       // require staked greater than licence price
-      require(_value >= licenceTeller[_data.toBytes2(9)]);
+      require(_value >= licenceTeller[_data.toBytes2(11)]);
       // require is not already a teller
       require(!isTeller(_from));
       // require zone is open
-      require(openedCountryTeller[_data.toBytes2(9)]);
-      teller[_from].lat = int32(_data.toBytes4(1));
-      teller[_from].lng = int32(_data.toBytes4(5));
-      teller[_from].countryId = _data.toBytes2(9);
-      teller[_from].postalCode = _data.toBytes16(11);
-      teller[_from].avatarId = int8(_data.toBytes1(27));
-      teller[_from].currencyId = int8(_data.toBytes1(28));
-      teller[_from].messenger = _data.toBytes16(29);
-      teller[_from].rates = int16(_data.toBytes2(45));
+      require(openedCountryTeller[_data.toBytes2(11)]);
+      teller[_from].lat = posLat;
+      teller[_from].lng = posLng;
+      teller[_from].countryId = _data.toBytes2(11);
+      teller[_from].postalCode = _data.toBytes16(13);
+      teller[_from].avatarId = int8(_data.toBytes1(29));
+      teller[_from].currencyId = int8(_data.toBytes1(30));
+      teller[_from].messenger = _data.toBytes16(31);
+      teller[_from].rates = int16(_data.toBytes2(47));
       teller[_from].generalIndex = tellerIndex.push(_from) - 1;
-      teller[_from].zoneIndex = tellerInZone[_data.toBytes2(9)][_data.toBytes16(11)].push(_from) - 1;
+      teller[_from].zoneIndex = tellerInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(_from) - 1;
       teller[_from].online = true;
       RegisterTeller(_from);
       bank.addTokenTeller(_from, _value);

@@ -1,6 +1,6 @@
 
 const {expectThrow, waitForMined} = require('./utils');
-const {teller1, teller2, teller3, shop1, shop2, shop3, shop7} = require('./mock.json');
+const {teller1, teller2, teller3, shop1, shop2, shop3, shop8} = require('./mock.json');
 const DetherCore = artifacts.require('./DetherCore.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
@@ -97,11 +97,33 @@ const convertBase = function () {
 }();
 ///
 
-const intTo4bytes = function (intvalue) {
-  hexvalue = convertBase.dec2hex(intvalue);
-  let result = hexvalue;
-  for (i = 0; i + hexvalue.length< 8; i++) {
-    result = '0' + result
+// const intTo4bytes = function (intvalue) {
+//   hexvalue = convertBase.dec2hex(intvalue);
+//   let result = hexvalue;
+//   for (i = 0; i + hexvalue.length< 8; i++) {
+//     result = '0' + result
+//   }
+//   return result;
+// }
+
+const intTo5bytes = function (intvalue) {
+  let hexvalue;
+  let result;
+  if (intvalue < 0 ) {
+    intvalue *= -1;
+    hexvalue = convertBase.dec2hex(intvalue);
+    result = hexvalue;
+    for (let i = 0; i + hexvalue.length < 8; i += 1) {
+      result = `0${result}`;
+    }
+    result = `01${result}`;
+  } else {
+    hexvalue = convertBase.dec2hex(intvalue);
+    result = hexvalue;
+    for (let i = 0; i + hexvalue.length < 8; i += 1) {
+      result = `0${result}`;
+    }
+    result = `00${result}`;
   }
   return result;
 }
@@ -125,8 +147,8 @@ const intTobytes = function (intvalue) {
 }
 
 const shopToContract = (rawshop) => {
-  const lat = intTo4bytes(parseFloat(rawshop.lat) * 100000);
-  const lng = intTo4bytes(parseFloat(rawshop.lng) * 100000);
+  const lat = intTo5bytes(parseFloat(rawshop.lat) * 100000);
+  const lng = intTo5bytes(parseFloat(rawshop.lng) * 100000);
 
   const hexshopGeo = `0x31${lat}${lng}`;
   const hexShopAddr = `${toNBytes(rawshop.countryId, 2)}${toNBytes(rawshop.postalCode, 16)}`;
@@ -138,8 +160,8 @@ const shopToContract = (rawshop) => {
 };
 
 const tellerToContract = (rawteller) => {
-  const lat = intTo4bytes(parseFloat(rawteller.lat) * 100000);
-  const lng = intTo4bytes(parseFloat(rawteller.lng) * 100000);
+  const lat = intTo5bytes(parseFloat(rawteller.lat) * 100000);
+  const lng = intTo5bytes(parseFloat(rawteller.lng) * 100000);
   const currency = intTobytes(parseInt(rawteller.currencyId));
   const avatar = intTobytes(parseInt(rawteller.avatarId));
   const rates = intTo2bytes(parseFloat(rawteller.rates) * 10);
@@ -208,6 +230,7 @@ contract('Dether Dth', async () => {
     await dether.openZoneShop(web3.toHex(shop1.countryId),{from: cmo});
     await dether.openZoneShop(web3.toHex(shop2.countryId),{from: cmo});
     await dether.openZoneShop(web3.toHex(shop3.countryId),{from: cmo});
+    await dether.openZoneShop(web3.toHex(shop8.countryId),{from: cmo});
     await dether.openZoneTeller(web3.toHex(teller1.countryId),{from: cmo});
     await dether.openZoneTeller(web3.toHex(teller2.countryId),{from: cmo});
     await dether.openZoneTeller(web3.toHex(teller3.countryId),{from: cmo});
@@ -216,29 +239,27 @@ contract('Dether Dth', async () => {
   contract('Add shop --', async () =>  {
 
     it('should parse data and register and be on the map', async () => {
-
+      console.log('formated value to store in contract', shop8);
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
               dether.address,
               20,
-              shopToContract(shop1)
+              shopToContract(shop8)
           ]
       );
       const tsx = await web3.eth.sendTransaction({from: user1address, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
-      let shop1value = await dether.getShop(user1address);
+      let shop8value = await dether.getShop(user1address);
       assert.equal(await dether.isShop(user1address), true, 'assert shop is now online');
-      const formatedValue = shopFromContract(shop1value);
-      assert.equal(formatedValue.lat, shop1.lat, 'verif lat');
-      assert.equal(formatedValue.lng, shop1.lng, 'verif lng');
-      assert.equal(formatedValue.countryId, shop1.countryId, 'verif country id');
-      assert.equal(formatedValue.postalCode, shop1.postalCode, 'verif postal code');
-      assert.equal(formatedValue.cat, shop1.cat, 'verif cat');
-      assert.equal(formatedValue.name, shop1.name, 'verif name');
-      assert.equal(formatedValue.description, shop1.description, 'verif  description');
-      assert.equal(formatedValue.opening, shop1.opening, 'verif opening');
-
-      const zone = await dether.getZoneShop(shop1.countryId.hexEncode(), shop1.postalCode.hexEncode());
+      const formatedValue = shopFromContract(shop8value);
+      assert.equal(formatedValue.lat, shop8.lat, 'verif lat');
+      assert.equal(formatedValue.lng, shop8.lng, 'verif lng');
+      assert.equal(formatedValue.countryId, shop8.countryId, 'verif country id');
+      assert.equal(formatedValue.postalCode, shop8.postalCode, 'verif postal code');
+      assert.equal(formatedValue.cat, shop8.cat, 'verif cat');
+      assert.equal(formatedValue.name, shop8.name, 'verif name');
+      assert.equal(formatedValue.description, shop8.description, 'verif  description');
+      assert.equal(formatedValue.opening, shop8.opening, 'verif opening');
     })
 
     it('should not be possible to add shop in unopened zone', async () => {
@@ -283,7 +304,7 @@ contract('Dether Dth', async () => {
           [
               dether.address,
               20,
-              shopToContract(shop7)
+              shopToContract(shop2)
           ]
       );
       await web3.eth.sendTransaction({from: user2address, to: dthToken.address, data: transferMethodTransactionData2, value: 0, gas: 5700000});

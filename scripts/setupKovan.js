@@ -25,11 +25,11 @@ module.exports = async (callback) => {
   const dth = await Dth.deployed();
   const bank = await Bank.deployed();
 
-  await sms.addDelegate(ownerdeploy,'0x4652');
-  await sms.addDelegate('0x32BedF6609f002A591f871009C8e66D84F98d48E','0x4652'); // cert KYC
-  await sms.addDelegate('0x391edA1b8D31f891d1653B131779751BdeDA24D3','0x4652'); // cert detherJs
-  await sms.transferOwnership(ownerCertifier);
-  console.log('owner sms should be => ', ownerCertifier, await sms.owner.call());
+  // await sms.addDelegate(ownerdeploy,'0x4652');
+  // await sms.addDelegate('0x32BedF6609f002A591f871009C8e66D84F98d48E','0x4652'); // cert KYC
+  // await sms.addDelegate('0x391edA1b8D31f891d1653B131779751BdeDA24D3','0x4652'); // cert detherJs
+  // await sms.transferOwnership(ownerCertifier);
+  // console.log('owner sms should be => ', ownerCertifier, await sms.owner.call());
 
 
   await dether.setCMO(ownerdeploy);
