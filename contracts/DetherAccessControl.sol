@@ -25,6 +25,7 @@ contract DetherAccessControl {
     // The addresses of the accounts (or contracts) that can execute actions within each roles.
     address public ceoAddress;
     address public cmoAddress;
+    address public csoAddress; // CHIEF SHOP OFFICER
 	  mapping (address => bool) public shopModerators;   // centralised moderator, would become decentralised
     mapping (address => bool) public tellerModerators;   // centralised moderator, would become decentralised
 
@@ -42,6 +43,11 @@ contract DetherAccessControl {
         require(msg.sender == cmoAddress);
         _;
     }
+
+    function isCSO(address _addr) public returns (bool) {
+      return (_addr == csoAddress);
+    }
+
 
     modifier isShopModerator(address _user) {
       require(shopModerators[_user]);
@@ -64,6 +70,11 @@ contract DetherAccessControl {
     function setCMO(address _newCMO) external onlyCEO {
         require(_newCMO != address(0));
         cmoAddress = _newCMO;
+    }
+
+    function setCSO(address _newCSO) external onlyCEO {
+        require(_newCSO != address(0));
+        csoAddress = _newCSO;
     }
 
     function setShopModerator(address _moderator) external onlyCEO {

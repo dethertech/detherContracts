@@ -31,6 +31,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   // when a moderator delete a teller
   event DeleteTellerModerator(address indexed moderator, address tellerAddress);
 
+  event TempLog(address temp);
   /**
    * Modifier
    */
@@ -98,6 +99,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
 
     uint zoneIndex;       // index of the zone mapping
     uint generalIndex;    // index of general mapping
+    bool detherShop;      // bool if shop is registered by dether as business partnership (still required DTH)
   }
 
   // general mapping of shop
@@ -154,6 +156,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       require(!isShop(_from));
       // require zone is open
       require(openedCountryShop[_data.toBytes2(11)]);
+
       shop[_from].lat = posLat;
       shop[_from].lng = posLng;
       shop[_from].countryId = _data.toBytes2(11);
@@ -174,6 +177,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       require(!isTeller(_from));
       // require zone is open
       require(openedCountryTeller[_data.toBytes2(11)]);
+
       teller[_from].lat = posLat;
       teller[_from].lng = posLng;
       teller[_from].countryId = _data.toBytes2(11);
@@ -187,6 +191,37 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       teller[_from].online = true;
       RegisterTeller(_from);
       bank.addTokenTeller(_from, _value);
+      dth.transfer(address(bank), _value);
+    } else if (_func == bytes1(0x33)) {  // shop bulk registration
+      // We need to have the possibility to register in bulk some shop
+      // For big retailer company willing to be listed on dether, we need to have a way to add
+      // all their shop from one address
+      // This functionnality will become available for anyone willing to list multiple shop
+      // in the futures contract
+
+      // Only the CSO should be able to register shop in bulk
+      require(_from == csoAddress);
+      // Each shop still need his own staking
+      require(_value >= licenceShop[_data.toBytes2(11)]);
+      // require the addresses not already registered
+      require(!isShop(address(_data.toAddress(109))));
+      // require zone is open
+      require(openedCountryShop[_data.toBytes2(11)]);
+      address newShopAddress = _data.toAddress(109);
+      TempLog(newShopAddress);
+      shop[newShopAddress].lat = posLat;
+      shop[newShopAddress].lng = posLng;
+      shop[newShopAddress].countryId = _data.toBytes2(11);
+      shop[newShopAddress].postalCode = _data.toBytes16(13);
+      shop[newShopAddress].cat = _data.toBytes16(29);
+      shop[newShopAddress].name = _data.toBytes16(45);
+      shop[newShopAddress].description = _data.toBytes32(61);
+      shop[newShopAddress].opening = _data.toBytes16(93);
+      shop[newShopAddress].generalIndex = shopIndex.push(newShopAddress) - 1;
+      shop[newShopAddress].zoneIndex = shopInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(newShopAddress) - 1;
+      shop[newShopAddress].detherShop = true;
+      RegisterShop(newShopAddress);
+      bank.addTokenShop(csoAddress, _value);
       dth.transfer(address(bank), _value);
     }
   }
@@ -333,8 +368,11 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     shopIndex[rowToDelete2] = keyToMove2;
     shop[keyToMove2].generalIndex = rowToDelete2;
     shopIndex.length--;
+    if (!shop[_toDelete].detherShop)
+      bank.withdrawDthShop(_toDelete);
+    else
+      bank.withdrawDthShop(csoAddress);
     delete shop[_toDelete];
-    bank.withdrawDthShop(_toDelete);
     DeleteShopModerator(msg.sender, _toDelete);
   }
 
