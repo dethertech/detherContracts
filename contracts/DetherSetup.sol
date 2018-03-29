@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.21;
 
 import './certifier/Certifier.sol';
 import './DetherAccessControl.sol';
@@ -19,7 +19,7 @@ contract DetherSetup is DetherAccessControl  {
   Certifier public smsCertifier;
   Certifier public kycCertifier;
   // Zone need to be open by the CMO before accepting registration
-  // The bytes2 parameter wait for a country ID (ex: FR (0X4652 in hex) for france cf:README)
+  // The bytes2 parameter wait for a country ID (ex: FR (0x4652 in hex) for france cf:README)
   mapping(bytes2 => bool) public openedCountryShop;
   mapping(bytes2 => bool) public openedCountryTeller;
   // For registering in a zone you need to stake DTH
@@ -42,14 +42,14 @@ contract DetherSetup is DetherAccessControl  {
     _;
   }
   modifier isZoneTellerOpen(bytes2 _country) {
-    require(openedCountryShop[_country]);
+    require(openedCountryTeller[_country]);
     _;
   }
 
   /**
    * INIT
    */
-  function setSmsCertifier (address _smsCertifier) onlyCEO {
+  function setSmsCertifier (address _smsCertifier) external onlyCEO {
     require(!run1);
     smsCertifier = Certifier(_smsCertifier);
     run1 = true;
@@ -57,27 +57,27 @@ contract DetherSetup is DetherAccessControl  {
   /**
    * CORE FUNCTION
    */
-  function setKycCertifier (address _kycCertifier) onlyCEO {
+  function setKycCertifier (address _kycCertifier) external onlyCEO {
     require(!run2);
     kycCertifier = Certifier(_kycCertifier);
     run2 = true;
   }
-  function setLicenceShopPrice(bytes2 country, uint price) onlyCEO {
+  function setLicenceShopPrice(bytes2 country, uint price) external onlyCMO {
     licenceShop[country] = price;
   }
-  function setLicenceTellerPrice(bytes2 country, uint price) onlyCEO {
+  function setLicenceTellerPrice(bytes2 country, uint price) external onlyCMO {
     licenceTeller[country] = price;
   }
-  function openZoneShop(bytes2 _country) onlyCMO {
+  function openZoneShop(bytes2 _country) external onlyCMO {
     openedCountryShop[_country] = true;
   }
-  function closeZoneShop(bytes2 _country) onlyCMO {
+  function closeZoneShop(bytes2 _country) external onlyCMO {
     openedCountryShop[_country] = false;
   }
-  function openZoneTeller(bytes2 _country) onlyCMO {
+  function openZoneTeller(bytes2 _country) external onlyCMO {
     openedCountryTeller[_country] = true;
   }
-  function closeZoneTeller(bytes2 _country) onlyCMO {
+  function closeZoneTeller(bytes2 _country) external onlyCMO {
     openedCountryTeller[_country] = false;
   }
 }

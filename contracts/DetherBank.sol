@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.21;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './zepellin/SafeMath.sol';
@@ -28,7 +28,7 @@ contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
   /**
    * INIT
    */
-  function setDth (address _dth) {
+  function setDth (address _dth) external onlyOwner {
     require(!isInit);
     dth = ERC223Basic(_dth);
     isInit = true;
@@ -38,40 +38,48 @@ contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
    * Core fonction
    */
   // withdraw DTH when teller delete
-  function withdrawDthTeller(address _receiver) onlyOwner {
+  function withdrawDthTeller(address _receiver) external onlyOwner {
     require(dthTellerBalance[_receiver] > 0);
     uint tosend = dthTellerBalance[_receiver];
     dthTellerBalance[_receiver] = 0;
     require(dth.transfer(_receiver, tosend));
   }
   // withdraw DTH when shop delete
-  function withdrawDthShop(address _receiver) onlyOwner  {
+  function withdrawDthShop(address _receiver) external onlyOwner  {
     require(dthShopBalance[_receiver] > 0);
     uint tosend = dthShopBalance[_receiver];
     dthShopBalance[_receiver] = 0;
     require(dth.transfer(_receiver, tosend));
   }
+  // withdraw DTH when a shop add by admin is delete
+  function withdrawDthShopAdmin(address _from, address _receiver) external onlyOwner  {
+    require(dthShopBalance[_from]  > 0);
+    uint tosend = dthShopBalance[_from];
+    dthShopBalance[_from] = 0;
+    require(dth.transfer(_receiver, tosend));
+  }
+
   // add DTH when shop register
-  function addTokenShop(address _from, uint _value) public onlyOwner {
+  function addTokenShop(address _from, uint _value) external onlyOwner {
     dthShopBalance[_from] = SafeMath.add(dthShopBalance[_from], _value);
   }
   // add DTH when token register
-  function addTokenTeller(address _from, uint _value) public onlyOwner{
+  function addTokenTeller(address _from, uint _value) external onlyOwner{
     dthTellerBalance[_from] = SafeMath.add(dthTellerBalance[_from], _value);
   }
   // add ETH for escrow teller
-  function addEthTeller(address _from, uint _value) public payable onlyOwner returns (bool) {
+  function addEthTeller(address _from, uint _value) external payable onlyOwner returns (bool) {
     ethTellerBalance[_from] = SafeMath.add(ethTellerBalance[_from] ,_value);
     return true;
   }
   // withdraw ETH for teller escrow
-  function withdrawEth(address _from, address _to, uint _amount) public onlyOwner {
+  function withdrawEth(address _from, address _to, uint _amount) external onlyOwner {
     require(ethTellerBalance[_from] >= _amount);
     ethTellerBalance[_from] = SafeMath.sub(ethTellerBalance[_from], _amount);
     _to.transfer(_amount);
   }
   // refund all ETH from teller contract
-  function refundEth(address _from) public onlyOwner {
+  function refundEth(address _from) external onlyOwner {
     uint toSend = ethTellerBalance[_from];
     if (toSend > 0) {
       ethTellerBalance[_from] = 0;
@@ -96,7 +104,7 @@ contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
   // DO NOTHING but allow to receive token when addToken* function are called
   // by the dethercore contract
   function tokenFallback(address _from, uint _value, bytes _data) {
-
+    require(msg.sender == address(dth));
   }
 
 }

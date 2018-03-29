@@ -218,8 +218,7 @@ contract('Dether Dth', async () => {
     dether = await DetherCore.new({gas: 4700000, from: owner});
     smsCertifier = await SmsCertifier.new({gas: 4000000, from: owner});
     detherBank = await DetherBank.new({gas: 4000000, from: owner});
-
-    await dether.setLicenceShopPrice(web3.toHex(shop1.countryId) ,10);
+    //
     await dether.setSmsCertifier(smsCertifier.address);
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCMO(cmo);
@@ -242,6 +241,8 @@ contract('Dether Dth', async () => {
     await dthToken.mint(moderator, 1000);
     await dthToken.finishMinting();
     //
+    await dether.setLicenceShopPrice(web3.toHex(shop1.countryId) ,10,{from: cmo});
+    await dether.setLicenceTellerPrice(web3.toHex(shop1.countryId) ,10,{from: cmo});
     await dether.openZoneShop(web3.toHex(shop1.countryId),{from: cmo});
     await dether.openZoneShop(web3.toHex(shop2.countryId),{from: cmo});
     await dether.openZoneShop(web3.toHex(shop3.countryId),{from: cmo});
@@ -255,8 +256,9 @@ contract('Dether Dth', async () => {
 
     it('should be able to bulk add shop from the same address', async () => {
       console.log('ADD SHOP');
+      let balance = (await dthToken.balanceOf(moderator)).toNumber();
       shop1.address = '0000000000000000000000000000000000000001';
-      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+      let transferMethodTransactionData = web3Abi.encodeFunctionCall(
           overloadedTransferAbi,
           [
               dether.address,
@@ -264,10 +266,11 @@ contract('Dether Dth', async () => {
               shopToContractBulk(shop1)
           ]
       );
-      const tsx = await web3.eth.sendTransaction({from: moderator, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+      console.log('exe bytes', shopToContractBulk(shop1));
+      let tsx = await web3.eth.sendTransaction({from: moderator, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
       let shop1value = await dether.getShop('0x0000000000000000000000000000000000000001');
       assert.equal(await dether.isShop('0x0000000000000000000000000000000000000001'), true, 'assert shop is now online');
-      const formatedValue = shopFromContract(shop1value);
+      let formatedValue = shopFromContract(shop1value);
       assert.equal(formatedValue.lat, shop1.lat, 'verif lat');
       assert.equal(formatedValue.lng, shop1.lng, 'verif lng');
       assert.equal(formatedValue.countryId, shop1.countryId, 'verif country id');
@@ -276,6 +279,35 @@ contract('Dether Dth', async () => {
       assert.equal(formatedValue.name, shop1.name, 'verif name');
       assert.equal(formatedValue.description, shop1.description, 'verif  description');
       assert.equal(formatedValue.opening, shop1.opening, 'verif opening');
+
+      shop2.address = '0000000000000000000000000000000000000002';
+       transferMethodTransactionData = web3Abi.encodeFunctionCall(
+          overloadedTransferAbi,
+          [
+              dether.address,
+              20,
+              shopToContractBulk(shop2)
+          ]
+      );
+       tsx = await web3.eth.sendTransaction({from: moderator, to: dthToken.address, data: transferMethodTransactionData, value: 0, gas: 5700000});
+      let shop2value = await dether.getShop('0x0000000000000000000000000000000000000002');
+      assert.equal(await dether.isShop('0x0000000000000000000000000000000000000002'), true, 'assert shop is now online');
+       formatedValue = shopFromContract(shop2value);
+      assert.equal(formatedValue.lat, shop2.lat, 'verif lat');
+      assert.equal(formatedValue.lng, shop2.lng, 'verif lng');
+      assert.equal(formatedValue.countryId, shop2.countryId, 'verif country id');
+      assert.equal(formatedValue.postalCode, shop2.postalCode, 'verif postal code');
+      assert.equal(formatedValue.cat, shop2.cat, 'verif cat');
+      assert.equal(formatedValue.name, shop2.name, 'verif name');
+      assert.equal(formatedValue.description, shop2.description, 'verif  description');
+      assert.equal(formatedValue.opening, shop2.opening, 'verif opening');
+
+      // verify when delete CSO is refund
+      assert.equal((await dthToken.balanceOf(moderator)).toNumber(), 960, 'assert balance have 2 * 20 less');
+      // delete
+      await dether.deleteShopMods('0x0000000000000000000000000000000000000002', {from: moderator});
+      assert.equal(await dether.isShop('0x0000000000000000000000000000000000000002'), false, 'assert shop is now online');
+      assert.equal((await dthToken.balanceOf(moderator)).toNumber(), 980, 'assert balance have 20 more');
     })
 
 

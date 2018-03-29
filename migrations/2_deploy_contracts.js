@@ -15,6 +15,6 @@ module.exports = function(deployer, network) {
   deployer.deploy(DetherCore, {gas: 4700000})
   // .then(() => deployer.deploy(DetherToken, {gas: 4700000}))
   .then(() => deployer.deploy(DetherBank, {gas: 4700000}))
-  // .then(() => deployer.deploy(SmsCertifier, {gas: 4700000}))
+  .then(() => deployer.deploy(SmsCertifier, {gas: 4700000}))
 
 };

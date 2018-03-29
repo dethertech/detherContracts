@@ -202,15 +202,18 @@ const tellerFromContract = (rawTeller) => {
 
 contract('Dether Dth', async () => {
   beforeEach( async () => {
-    dthToken = await Dth.new({gas: 4000000, from: owner});
-    dether = await DetherCore.new({gas: 4000000, from: owner});
+    dthToken = await Dth.new({gas: 4700000, from: owner});
+    dether = await DetherCore.new({gas: 4700000, from: owner});
     smsCertifier = await SmsCertifier.new({gas: 4000000, from: owner});
     detherBank = await DetherBank.new({gas: 4000000, from: owner});
 
-    await dether.setLicenceShopPrice(web3.toHex(shop1.countryId) ,10);
+    await dether.setCMO(cmo);
+    await dether.setLicenceShopPrice(web3.toHex(shop1.countryId) ,10,{from: cmo});
+    await dether.setLicenceTellerPrice(web3.toHex(teller1.countryId) ,10,{from: cmo});
+    await dether.setLicenceTellerPrice(web3.toHex(teller2.countryId) ,10,{from: cmo});
     await dether.setSmsCertifier(smsCertifier.address);
     await dether.initContract(dthToken.address, detherBank.address);
-    await dether.setCMO(cmo);
+
     await dether.setShopModerator(moderator);
     await dether.setTellerModerator(moderator);
     await detherBank.setDth(dthToken.address);

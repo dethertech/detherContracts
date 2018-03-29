@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.21;
 
 import './DetherSetup.sol';
 import './DetherBank.sol';
@@ -31,7 +31,6 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   // when a moderator delete a teller
   event DeleteTellerModerator(address indexed moderator, address tellerAddress);
 
-  event TempLog(address temp);
   /**
    * Modifier
    */
@@ -115,7 +114,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   function DetherCore() {
    ceoAddress = msg.sender;
   }
-  function initContract (address _dth, address _bank) onlyCEO {
+  function initContract (address _dth, address _bank) external onlyCEO {
     require(!isStarted);
     dth = ERC223Basic(_dth);
     bank = DetherBank(_bank);
@@ -167,7 +166,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       shop[_from].opening = _data.toBytes16(93);
       shop[_from].generalIndex = shopIndex.push(_from) - 1;
       shop[_from].zoneIndex = shopInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(_from) - 1;
-      RegisterShop(_from);
+      emit RegisterShop(_from);
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
     } else if (_func == bytes1(0x32)) { // teller registration
@@ -189,7 +188,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       teller[_from].generalIndex = tellerIndex.push(_from) - 1;
       teller[_from].zoneIndex = tellerInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(_from) - 1;
       teller[_from].online = true;
-      RegisterTeller(_from);
+      emit RegisterTeller(_from);
       bank.addTokenTeller(_from, _value);
       dth.transfer(address(bank), _value);
     } else if (_func == bytes1(0x33)) {  // shop bulk registration
@@ -208,7 +207,6 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       // require zone is open
       require(openedCountryShop[_data.toBytes2(11)]);
       address newShopAddress = _data.toAddress(109);
-      TempLog(newShopAddress);
       shop[newShopAddress].lat = posLat;
       shop[newShopAddress].lng = posLng;
       shop[newShopAddress].countryId = _data.toBytes2(11);
@@ -220,8 +218,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       shop[newShopAddress].generalIndex = shopIndex.push(newShopAddress) - 1;
       shop[newShopAddress].zoneIndex = shopInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(newShopAddress) - 1;
       shop[newShopAddress].detherShop = true;
-      RegisterShop(newShopAddress);
-      bank.addTokenShop(csoAddress, _value);
+      emit RegisterShop(newShopAddress);
+      bank.addTokenShop(newShopAddress, _value);
       dth.transfer(address(bank), _value);
     }
   }
@@ -252,7 +250,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     if (msg.value > 0) {
       bank.addEthTeller.value(msg.value)(msg.sender, msg.value);
     }
-    UpdateTeller(msg.sender);
+    emit UpdateTeller(msg.sender);
   }
 
   /**
@@ -260,7 +258,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
    * @param _to -> the address for the receiver
    * @param _amount -> the amount to send
    */
-  function sellEth(address _to, uint _amount) whenNotPaused public {
+  function sellEth(address _to, uint _amount) whenNotPaused external {
     require(isTeller(msg.sender));
     require(_to != msg.sender);
     // send eth to the receiver from the bank contract
@@ -272,14 +270,14 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       volumeSell[msg.sender] = SafeMath.add(volumeSell[msg.sender], _amount);
       nbTrade[msg.sender] += 1;
     }
-    Sent(msg.sender, _to, _amount);
+    emit Sent(msg.sender, _to, _amount);
   }
 
   /**
    * switchStatus
    * Turn status teller on/off
    */
-  function switchStatus(bool _status) public {
+  function switchStatus(bool _status) external {
     if (teller[msg.sender].online != _status)
      teller[msg.sender].online = _status;
   }
@@ -288,14 +286,14 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
    * addFunds
    * teller can add more funds on his sellpoint
    */
-  function addFunds() payable {
+  function addFunds() external payable {
     require(isTeller(msg.sender));
     require(bank.addEthTeller.value(msg.value)(msg.sender, msg.value));
   }
 
   // gas used 67841
   // a teller can delete a sellpoint
-  function deleteTeller() public {
+  function deleteTeller() external {
     require(isTeller(msg.sender));
     uint rowToDelete1 = teller[msg.sender].zoneIndex;
     address keyToMove1 = tellerInZone[teller[msg.sender].countryId][teller[msg.sender].postalCode][tellerInZone[teller[msg.sender].countryId][teller[msg.sender].postalCode].length - 1];
@@ -311,12 +309,12 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     delete teller[msg.sender];
     bank.withdrawDthTeller(msg.sender);
     bank.refundEth(msg.sender);
-    DeleteTeller(msg.sender);
+    emit DeleteTeller(msg.sender);
   }
 
   // gas used 67841
   // A moderator can delete a sellpoint
-  function deleteTellerMods(address _toDelete) isTellerModerator(msg.sender) public {
+  function deleteTellerMods(address _toDelete) isTellerModerator(msg.sender) external {
     uint rowToDelete1 = teller[_toDelete].zoneIndex;
     address keyToMove1 = tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode][tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode].length - 1];
     tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode][rowToDelete1] = keyToMove1;
@@ -331,12 +329,12 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     delete teller[_toDelete];
     bank.withdrawDthTeller(_toDelete);
     bank.refundEth(_toDelete);
-    DeleteTellerModerator(msg.sender, _toDelete);
+    emit DeleteTellerModerator(msg.sender, _toDelete);
   }
 
   // gas used 67841
   // A shop owner can delete his point.
-  function deleteShop() public {
+  function deleteShop() external {
     require(isShop(msg.sender));
     uint rowToDelete1 = shop[msg.sender].zoneIndex;
     address keyToMove1 = shopInZone[shop[msg.sender].countryId][shop[msg.sender].postalCode][shopInZone[shop[msg.sender].countryId][shop[msg.sender].postalCode].length - 1];
@@ -351,12 +349,12 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     shopIndex.length--;
     delete shop[msg.sender];
     bank.withdrawDthShop(msg.sender);
-    DeleteShop(msg.sender);
+    emit DeleteShop(msg.sender);
   }
 
   // gas used 67841
   // Moderator can delete a shop point
-  function deleteShopMods(address _toDelete) isShopModerator(msg.sender) public {
+  function deleteShopMods(address _toDelete) isShopModerator(msg.sender) external {
     uint rowToDelete1 = shop[_toDelete].zoneIndex;
     address keyToMove1 = shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode][shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode].length - 1];
     shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode][rowToDelete1] = keyToMove1;
@@ -371,9 +369,9 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     if (!shop[_toDelete].detherShop)
       bank.withdrawDthShop(_toDelete);
     else
-      bank.withdrawDthShop(csoAddress);
+      bank.withdrawDthShopAdmin(_toDelete, csoAddress);
     delete shop[_toDelete];
-    DeleteShopModerator(msg.sender, _toDelete);
+    emit DeleteShopModerator(msg.sender, _toDelete);
   }
 
   /**
@@ -495,7 +493,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     return bank.getDthTeller(_teller);
   }
   // give ownership to the bank contract
-  function transferBankOwnership(address _newbankowner) onlyCEO whenPaused {
+  function transferBankOwnership(address _newbankowner) external onlyCEO whenPaused {
     bank.transferOwnership(_newbankowner);
   }
 }

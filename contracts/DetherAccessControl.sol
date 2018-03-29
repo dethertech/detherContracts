@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.21;
 
 /// @title A facet of Dether that manages special access privileges.
 /// @author Axiom Zen (https://www.axiomzen.co) && dether.io
@@ -44,7 +44,7 @@ contract DetherAccessControl {
         _;
     }
 
-    function isCSO(address _addr) public returns (bool) {
+    function isCSO(address _addr) public view returns (bool) {
       return (_addr == csoAddress);
     }
 
