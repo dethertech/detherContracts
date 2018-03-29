@@ -1,5 +1,5 @@
 require('dotenv').config({path: '.env'})
-const {MNEMONIC} = process.env
+const {MNEMONIC, MNEMONIC_MAIN} = process.env
 const HDWalletProvider = require("truffle-hdwallet-provider");
 
 module.exports = {
@@ -16,16 +16,16 @@ module.exports = {
       network_id: 42,
       gas: 4700000,
       gasPrice: 50000000000,
-      to: '0x9027e9fc4641e2991a36eaeb0347bc5b35322741',
+      from: '0x6AAb2B0913B70270E840B14c2b23B716C0a43522',
     },
     mainnet: {
       provider: function() {
-        return new HDWalletProvider(MNEMONIC_MAIN, "https://mainnet.infura.io/v604Wu8pXGoPC41ARh0B")
+        return new HDWalletProvider(MNEMONIC_MAIN, "https://mainnet.infura.io/wZNlMdy6TYSQ7A6krG7y")
       },
       network_id: 1,
-      gas: 4700000,
+      gas: 1000000,
       gasPrice: 25000000000,
-      to: '0x1ecb59E6EAb86eCdE351229e64E47dD6B65b9329',
+      from: '',
     },
   },
   solc: {
