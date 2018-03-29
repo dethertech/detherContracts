@@ -1,4 +1,4 @@
-pragma solidity ^0.4.18;
+pragma solidity 0.4.21;
 
 import './DetherSetup.sol';
 import './DetherBank.sol';
@@ -98,6 +98,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
 
     uint zoneIndex;       // index of the zone mapping
     uint generalIndex;    // index of general mapping
+    bool detherShop;      // bool if shop is registered by dether as business partnership (still required DTH)
   }
 
   // general mapping of shop
@@ -113,7 +114,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   function DetherCore() {
    ceoAddress = msg.sender;
   }
-  function initContract (address _dth, address _bank) onlyCEO {
+  function initContract (address _dth, address _bank) external onlyCEO {
     require(!isStarted);
     dth = ERC223Basic(_dth);
     bank = DetherBank(_bank);
@@ -145,47 +146,80 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     // check first byte to know if its shop or teller registration
     // 1 / 0x31 = shop // 2 / 0x32 = teller
     bytes1 _func = _data.toBytes1(0);
+    int32 posLat = _data.toBytes1(1) == bytes1(0x01) ? int32(_data.toBytes4(2)) * -1 : int32(_data.toBytes4(2));
+    int32 posLng = _data.toBytes1(6) == bytes1(0x01) ? int32(_data.toBytes4(7)) * -1 : int32(_data.toBytes4(7));
     if (_func == bytes1(0x31)) { // shop registration
       // require staked greater than licence price
-      require(_value >= licenceShop[_data.toBytes2(9)]);
+      require(_value >= licenceShop[_data.toBytes2(11)]);
       // require its not already shop
       require(!isShop(_from));
       // require zone is open
-      require(openedCountryShop[_data.toBytes2(9)]);
-      shop[_from].lat = int32(_data.toBytes4(1));
-      shop[_from].lng = int32(_data.toBytes4(5));
-      shop[_from].countryId = _data.toBytes2(9);
-      shop[_from].postalCode = _data.toBytes16(11);
-      shop[_from].cat = _data.toBytes16(27);
-      shop[_from].name = _data.toBytes16(43);
-      shop[_from].description = _data.toBytes32(59);
-      shop[_from].opening = _data.toBytes16(91);
+      require(openedCountryShop[_data.toBytes2(11)]);
+
+      shop[_from].lat = posLat;
+      shop[_from].lng = posLng;
+      shop[_from].countryId = _data.toBytes2(11);
+      shop[_from].postalCode = _data.toBytes16(13);
+      shop[_from].cat = _data.toBytes16(29);
+      shop[_from].name = _data.toBytes16(45);
+      shop[_from].description = _data.toBytes32(61);
+      shop[_from].opening = _data.toBytes16(93);
       shop[_from].generalIndex = shopIndex.push(_from) - 1;
-      shop[_from].zoneIndex = shopInZone[_data.toBytes2(9)][_data.toBytes16(11)].push(_from) - 1;
-      RegisterShop(_from);
+      shop[_from].zoneIndex = shopInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(_from) - 1;
+      emit RegisterShop(_from);
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
-
     } else if (_func == bytes1(0x32)) { // teller registration
       // require staked greater than licence price
-      require(_value >= licenceTeller[_data.toBytes2(9)]);
+      require(_value >= licenceTeller[_data.toBytes2(11)]);
       // require is not already a teller
       require(!isTeller(_from));
       // require zone is open
-      require(openedCountryTeller[_data.toBytes2(9)]);
-      teller[_from].lat = int32(_data.toBytes4(1));
-      teller[_from].lng = int32(_data.toBytes4(5));
-      teller[_from].countryId = _data.toBytes2(9);
-      teller[_from].postalCode = _data.toBytes16(11);
-      teller[_from].avatarId = int8(_data.toBytes1(27));
-      teller[_from].currencyId = int8(_data.toBytes1(28));
-      teller[_from].messenger = _data.toBytes16(29);
-      teller[_from].rates = int16(_data.toBytes2(45));
+      require(openedCountryTeller[_data.toBytes2(11)]);
+
+      teller[_from].lat = posLat;
+      teller[_from].lng = posLng;
+      teller[_from].countryId = _data.toBytes2(11);
+      teller[_from].postalCode = _data.toBytes16(13);
+      teller[_from].avatarId = int8(_data.toBytes1(29));
+      teller[_from].currencyId = int8(_data.toBytes1(30));
+      teller[_from].messenger = _data.toBytes16(31);
+      teller[_from].rates = int16(_data.toBytes2(47));
       teller[_from].generalIndex = tellerIndex.push(_from) - 1;
-      teller[_from].zoneIndex = tellerInZone[_data.toBytes2(9)][_data.toBytes16(11)].push(_from) - 1;
+      teller[_from].zoneIndex = tellerInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(_from) - 1;
       teller[_from].online = true;
-      RegisterTeller(_from);
+      emit RegisterTeller(_from);
       bank.addTokenTeller(_from, _value);
+      dth.transfer(address(bank), _value);
+    } else if (_func == bytes1(0x33)) {  // shop bulk registration
+      // We need to have the possibility to register in bulk some shop
+      // For big retailer company willing to be listed on dether, we need to have a way to add
+      // all their shop from one address
+      // This functionnality will become available for anyone willing to list multiple shop
+      // in the futures contract
+
+      // Only the CSO should be able to register shop in bulk
+      require(_from == csoAddress);
+      // Each shop still need his own staking
+      require(_value >= licenceShop[_data.toBytes2(11)]);
+      // require the addresses not already registered
+      require(!isShop(address(_data.toAddress(109))));
+      // require zone is open
+      require(openedCountryShop[_data.toBytes2(11)]);
+      address newShopAddress = _data.toAddress(109);
+      shop[newShopAddress].lat = posLat;
+      shop[newShopAddress].lng = posLng;
+      shop[newShopAddress].countryId = _data.toBytes2(11);
+      shop[newShopAddress].postalCode = _data.toBytes16(13);
+      shop[newShopAddress].cat = _data.toBytes16(29);
+      shop[newShopAddress].name = _data.toBytes16(45);
+      shop[newShopAddress].description = _data.toBytes32(61);
+      shop[newShopAddress].opening = _data.toBytes16(93);
+      shop[newShopAddress].generalIndex = shopIndex.push(newShopAddress) - 1;
+      shop[newShopAddress].zoneIndex = shopInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(newShopAddress) - 1;
+      shop[newShopAddress].detherShop = true;
+      emit RegisterShop(newShopAddress);
+      bank.addTokenShop(newShopAddress, _value);
       dth.transfer(address(bank), _value);
     }
   }
@@ -216,7 +250,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     if (msg.value > 0) {
       bank.addEthTeller.value(msg.value)(msg.sender, msg.value);
     }
-    UpdateTeller(msg.sender);
+    emit UpdateTeller(msg.sender);
   }
 
   /**
@@ -224,7 +258,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
    * @param _to -> the address for the receiver
    * @param _amount -> the amount to send
    */
-  function sellEth(address _to, uint _amount) whenNotPaused public {
+  function sellEth(address _to, uint _amount) whenNotPaused external {
     require(isTeller(msg.sender));
     require(_to != msg.sender);
     // send eth to the receiver from the bank contract
@@ -236,14 +270,14 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       volumeSell[msg.sender] = SafeMath.add(volumeSell[msg.sender], _amount);
       nbTrade[msg.sender] += 1;
     }
-    Sent(msg.sender, _to, _amount);
+    emit Sent(msg.sender, _to, _amount);
   }
 
   /**
    * switchStatus
    * Turn status teller on/off
    */
-  function switchStatus(bool _status) public {
+  function switchStatus(bool _status) external {
     if (teller[msg.sender].online != _status)
      teller[msg.sender].online = _status;
   }
@@ -252,14 +286,14 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
    * addFunds
    * teller can add more funds on his sellpoint
    */
-  function addFunds() payable {
+  function addFunds() external payable {
     require(isTeller(msg.sender));
     require(bank.addEthTeller.value(msg.value)(msg.sender, msg.value));
   }
 
   // gas used 67841
   // a teller can delete a sellpoint
-  function deleteTeller() public {
+  function deleteTeller() external {
     require(isTeller(msg.sender));
     uint rowToDelete1 = teller[msg.sender].zoneIndex;
     address keyToMove1 = tellerInZone[teller[msg.sender].countryId][teller[msg.sender].postalCode][tellerInZone[teller[msg.sender].countryId][teller[msg.sender].postalCode].length - 1];
@@ -275,12 +309,12 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     delete teller[msg.sender];
     bank.withdrawDthTeller(msg.sender);
     bank.refundEth(msg.sender);
-    DeleteTeller(msg.sender);
+    emit DeleteTeller(msg.sender);
   }
 
   // gas used 67841
   // A moderator can delete a sellpoint
-  function deleteTellerMods(address _toDelete) isTellerModerator(msg.sender) public {
+  function deleteTellerMods(address _toDelete) isTellerModerator(msg.sender) external {
     uint rowToDelete1 = teller[_toDelete].zoneIndex;
     address keyToMove1 = tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode][tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode].length - 1];
     tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode][rowToDelete1] = keyToMove1;
@@ -295,12 +329,12 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     delete teller[_toDelete];
     bank.withdrawDthTeller(_toDelete);
     bank.refundEth(_toDelete);
-    DeleteTellerModerator(msg.sender, _toDelete);
+    emit DeleteTellerModerator(msg.sender, _toDelete);
   }
 
   // gas used 67841
   // A shop owner can delete his point.
-  function deleteShop() public {
+  function deleteShop() external {
     require(isShop(msg.sender));
     uint rowToDelete1 = shop[msg.sender].zoneIndex;
     address keyToMove1 = shopInZone[shop[msg.sender].countryId][shop[msg.sender].postalCode][shopInZone[shop[msg.sender].countryId][shop[msg.sender].postalCode].length - 1];
@@ -315,12 +349,12 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     shopIndex.length--;
     delete shop[msg.sender];
     bank.withdrawDthShop(msg.sender);
-    DeleteShop(msg.sender);
+    emit DeleteShop(msg.sender);
   }
 
   // gas used 67841
   // Moderator can delete a shop point
-  function deleteShopMods(address _toDelete) isShopModerator(msg.sender) public {
+  function deleteShopMods(address _toDelete) isShopModerator(msg.sender) external {
     uint rowToDelete1 = shop[_toDelete].zoneIndex;
     address keyToMove1 = shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode][shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode].length - 1];
     shopInZone[shop[_toDelete].countryId][shop[_toDelete].postalCode][rowToDelete1] = keyToMove1;
@@ -332,9 +366,12 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     shopIndex[rowToDelete2] = keyToMove2;
     shop[keyToMove2].generalIndex = rowToDelete2;
     shopIndex.length--;
+    if (!shop[_toDelete].detherShop)
+      bank.withdrawDthShop(_toDelete);
+    else
+      bank.withdrawDthShopAdmin(_toDelete, csoAddress);
     delete shop[_toDelete];
-    bank.withdrawDthShop(_toDelete);
-    DeleteShopModerator(msg.sender, _toDelete);
+    emit DeleteShopModerator(msg.sender, _toDelete);
   }
 
   /**
@@ -456,7 +493,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     return bank.getDthTeller(_teller);
   }
   // give ownership to the bank contract
-  function transferBankOwnership(address _newbankowner) onlyCEO whenPaused {
+  function transferBankOwnership(address _newbankowner) external onlyCEO whenPaused {
     bank.transferOwnership(_newbankowner);
   }
 }
