@@ -25,10 +25,10 @@ module.exports = async (callback) => {
   const dth = await Dth.deployed();
   const bank = await Bank.deployed();
 
-  // await sms.addDelegate(ownerdeploy,'0x4652');
-  // await sms.addDelegate('0x32BedF6609f002A591f871009C8e66D84F98d48E','0x4652'); // cert KYC
-  // await sms.addDelegate('0x391edA1b8D31f891d1653B131779751BdeDA24D3','0x4652'); // cert detherJs
-  // await sms.transferOwnership(ownerCertifier);
+  await sms.addDelegate(ownerdeploy,'0x4652');
+  await sms.addDelegate('0x32BedF6609f002A591f871009C8e66D84F98d48E','0x4652'); // cert KYC
+  await sms.addDelegate('0x391edA1b8D31f891d1653B131779751BdeDA24D3','0x4652'); // cert detherJs
+  await sms.transferOwnership(ownerCertifier);
   // console.log('owner sms should be => ', ownerCertifier, await sms.owner.call());
 
   await dether.setCSO(ownerdeploy);
@@ -71,9 +71,9 @@ module.exports = async (callback) => {
   await dether.setCEO(ceoDether);
   console.log('ceo should be => ',ceoDether, await dether.ceoAddress.call());
 
-  // await dth.mint(ceoDether, web3.toWei(10000000,'ether'));
-  // await dth.finishMinting();
-  // console.log('balance should be 10000000 => ', await dth.balanceOf.call(ceoDether));
+  await dth.mint(ceoDether, web3.toWei(10000000,'ether'));
+  await dth.finishMinting();
+  console.log('balance should be 10000000 => ', await dth.balanceOf.call(ceoDether));
 
   console.log('Address detherCore => ', dether.address);
   console.log('Address detherbank => ', bank.address);
