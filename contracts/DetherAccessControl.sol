@@ -44,8 +44,9 @@ contract DetherAccessControl {
         _;
     }
 
-    function isCSO(address _addr) public view returns (bool) {
-      return (_addr == csoAddress);
+    modifier onlyCSO() {
+        require(msg.sender == csoAddress);
+        _;
     }
 
 
