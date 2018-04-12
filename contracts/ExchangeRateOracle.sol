@@ -8,9 +8,9 @@ import "oraclize-api/usingOraclize.sol";
 // - Set custom gasPrice since it's default 20 gwei, which is way too much
 //   https://docs.oraclize.it/#ethereum-quick-start-custom-gas-limit-and-gas-price
 
-contract GetTheExchangeRate is usingOraclize {
+contract ExchangeRateOracle is usingOraclize {
 
-  uint256 public weiPriceOfOneUsd;
+  uint256 public weiPriceOneUsd;
 
   // log during testing
   event LogTxt(string text);
@@ -23,9 +23,9 @@ contract GetTheExchangeRate is usingOraclize {
   // @param timestampToStart - timestamp of the next UTC 00:00:00 when deploying
   //                           this way we will always at roughly midnight, get a
   //                           callback with the new 1 USD = ? ETH exchange rate
-  function GetTheExchangeRate(uint timestampToStart) public {
+  function ExchangeRateOracle(uint timestampToStart) public {
     // UNCOMMENT BELOW LINE WHEN TESTING WITH GANACHE
-    OAR = OraclizeAddrResolverI(0x6f485C8BF6fc43eA212E93BBF8ce046C7f1cb475);
+    /* OAR = OraclizeAddrResolverI(0x72C277f2fAc5B7a0c7CdFc7298e9eC96FDdF34AC); */
 
     if (timestampToStart == 0) {
       // update immediately
@@ -34,6 +34,10 @@ contract GetTheExchangeRate is usingOraclize {
       // set delay not to a delay but to a timestamp at which the operation is to be executed
       update(timestampToStart);
     }
+  }
+
+  function getWeiPriceOneUsd() external view returns(uint256) {
+    return weiPriceOneUsd;
   }
 
   //
@@ -60,12 +64,12 @@ contract GetTheExchangeRate is usingOraclize {
   //
   // Oraclize will callback to this function when it has the result
   //
-  // @param ethPriceOfOneUsd - eth amount that equals 1 usd, as a string
+  // @param ethPriceOneUsd - eth amount that equals 1 usd, as a string
   //
 
-  function __callback(bytes32 myid, string ethPriceOfOneUsd) public {
+  function __callback(bytes32 myid, string ethPriceOneUsd) public {
     LogTxt("Oraclize response received as string");
-    LogTxt(ethPriceOfOneUsd);
+    LogTxt(ethPriceOneUsd);
 
     require(msg.sender != oraclize_cbAddress());
 
@@ -73,9 +77,9 @@ contract GetTheExchangeRate is usingOraclize {
     // 1. convert string to uint
     // 2. multiple by 1 ether to get wei
     // NOTE: does cryptocompare always return 6 decimals ?!
-    weiPriceOfOneUsd = parseInt(ethPriceOfOneUsd, 18);
+    weiPriceOneUsd = parseInt(ethPriceOneUsd, 18);
     LogTxt("converted ETH price to wei as uint256 and saved it to contract state");
-    LogNum(weiPriceOfOneUsd);
+    LogNum(weiPriceOneUsd);
 
     // since we setup this __callback to arrive at midnight UTC 00:00:00 inside
     // the constructor. we are gonna set the next update to exactly 24 hours from
