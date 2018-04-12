@@ -24,10 +24,13 @@ const {
   shop8,
 } = require('./mock.json');
 
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
 const DetherCore = artifacts.require('./DetherCore.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
 const Dth = artifacts.require('./token/DetherToken.sol');
+const ExchangeRateOracle = artifacts.require('./token/ExchangeRateOracle.sol');
 
 // fix to solve truffle pblm with overloading
 const web3Abi = require('web3-eth-abi');
@@ -65,6 +68,7 @@ let dether;
 let smsCertifier;
 let dthToken;
 let detherBank;
+let priceOracle;
 
 const [
   owner,
@@ -167,12 +171,14 @@ contract('Dether Dth', async () => {
   beforeEach(async () => {
     dthToken = await Dth.new({ gas: 4700000, from: owner });
     dether = await DetherCore.new({ gas: 4700000, from: owner });
-    smsCertifier = await SmsCertifier.new({ gas: 4000000, from: owner });
-    detherBank = await DetherBank.new({ gas: 4000000, from: owner });
+    smsCertifier = await SmsCertifier.new({ gas: 4700000, from: owner });
+    detherBank = await DetherBank.new({ gas: 4700000, from: owner });
+    priceOracle = await ExchangeRateOracle.new(0, { gas: 4700000, from: owner });
 
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCSO(moderator);
     await dether.setCMO(cmo);
+    await dether.setPriceOracle(priceOracle.address);
     await dether.setSmsCertifier(smsCertifier.address);
     await dether.setShopModerator(moderator);
     await dether.setTellerModerator(moderator);
@@ -203,6 +209,11 @@ contract('Dether Dth', async () => {
     await dether.openZoneTeller(web3.toHex(teller1.countryId), { from: cmo });
     await dether.openZoneTeller(web3.toHex(teller2.countryId), { from: cmo });
     await dether.openZoneTeller(web3.toHex(teller3.countryId), { from: cmo });
+
+    await dether.setSellDailyLimit(1, web3.toHex(teller1.countryId), 1000, { from: moderator });
+    await dether.setSellDailyLimit(2, web3.toHex(teller1.countryId), 5000, { from: moderator });
+    console.log('##<o>## set sell daily limit for,', teller1.countryId); // BR brazil
+    console.log('sell limit', (await dether.getSellDailyLimit(1, web3.toHex(teller1.countryId))).toNumber());
   });
 
   contract('Add shop --', async () => {
@@ -831,6 +842,9 @@ contract('Dether Dth', async () => {
     });
 
     it('should be able to send coin from contract', async () => {
+      await delay(10000);
+      // wait for exchange rate oracel to call back
+
       const balanceBeforeReceiver = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -866,8 +880,11 @@ contract('Dether Dth', async () => {
         'teller balance of user 1 should equal 1 ETH because we added 1 ETH funds',
       );
 
+      console.log('allowed to sell', (await dether.getSellDailyLimit(1, web3.toHex(teller1.countryId))).toNumber());
+      console.log('weiLimit', (await priceOracle.getWeiPriceOneUsd()).toNumber());
+
       // Sell ETH from user1 to moderator
-      await dether.sellEth(moderator, ethToWei(1), { from: user1address });
+      await dether.sellEth(moderator, ethToWei(0.1), { from: user1address });
 
       // get updated user1 teller balance
       const balanceTellerAfterUser1 = await dether.getTellerBalance(user1address);
@@ -881,7 +898,7 @@ contract('Dether Dth', async () => {
 
       // get updated moderator balance
       const balanceAfterReceiver = await web3.eth.getBalance(moderator);
-
+      console.log('f');
       assert.equal(
         weiToEth(balanceAfterReceiver).toNumber(),
         weiToEth(balanceBeforeReceiver).toNumber() + 1,
@@ -993,7 +1010,7 @@ contract('Dether Dth', async () => {
       assert.equal(teller.online, false, 'status did not match');
     });
 
-    it.only('should have his reput upgrade when sell', async () => {
+    it('should have his reput upgrade when sell', async () => {
       const balanceBeforeReceiver = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
