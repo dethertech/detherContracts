@@ -2,13 +2,6 @@
 
 [![Join the chat at https://gitter.im/dethertech/detherContracts](https://badges.gitter.im/dethertech/detherContracts.svg)](https://gitter.im/dethertech/detherContracts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Warning: This contracts has not been thoroughly audited, it will evolve and improve before launching.
-
-Dether provides a decentralized peer-to-peer ether network that enables anyone on Earth to buy ether
-with cash and spend it at physical stores nearby. No bank account is needed, just a mobile phone with
-internet access. Our belief is that the beauty and power of the Ethereum technology should be easily
-accessible to all.
-
 ### Version 0.1    
 This version is the MVP version, its not suppose to reflect our entire version describe in our white paper.    
 What this version is supposed to do:    
@@ -114,8 +107,8 @@ Of the DTH contract with the address of dether core as a parameter
 | PARAM       | BYTES NUMBERS | value                                                                                                                                                                                                    | value in hex                                                     |
 |-------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
 | category    | 1st           | 1 for shop                                                                                                                                                                                               | 0x31                                                             |
-| Latitude    | 4 bytes       | latitude * 10000 => Hex value padded in 4 bytes - We keep 5 digit for the latitude parameter - So we need to multiply the parameter byt 10000 to store it on the EVM Exemple: 36.14081 * 10000 = 3614081 | 00496E39                                                         |
-| Longitude   | 4 bytes       | longitude * 10000 => Hex value padded in 4 bytes - We keep 5 digit for the longitude parameter - So we need to multiply the parameter byt 10000 to store it on the EVM Exemple:5.35360 * 10000 = 535360  | 000386BB                                                         |
+| Latitude    | 5 bytes       | latitude * 10000 => if first bytes is 0x01 the value will be negative if not positive, then Hex value padded in 4 bytes - We keep 5 digit for the latitude parameter - So we need to multiply the parameter byt 10000 to store it on the EVM Exemple: 36.14081 * 10000 = 3614081 | 00496E39                                                         |
+| Longitude   | 5 bytes       | longitude * 10000 => if first bytes is 0x01 the value will be negative if not positive, then Hex value padded in 4 bytes - We keep 5 digit for the longitude parameter - So we need to multiply the parameter byt 10000 to store it on the EVM Exemple:5.35360 * 10000 = 535360  | 000386BB                                                         |
 | CountryID   | 2bytes        | -Country Code ID. We use the ISO ALPHA 2 format: https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2 Ex for Gibraltar: GI                                                                                   | 4749                                                             |
 | PostalCode  | 16bytes       | -Postal code value in ascii Hex, padded in 16 bytes Exemple for Gibraltar: GX11 1AA                                                                                                                      | 475831312031414100000000000000000000                             |
 | Category    | 16bytes       | -Catogory value in ascii Hex, padded in 16 bytes. The category will be use for the search engine, and for the keyword staking keyword. Exemple: restaurant                                               | 72657374617572616e74000000000000                                 |
@@ -157,6 +150,7 @@ UpdateTeller()
 * `avatarId`: 1 - 100 value for avatar
 * `rates`: margin seller want to take * 10, for 8.7%, put 87
 * `online`: true if teller want to stay visible, false if teller want to pass offline
+* `PAYABLE FUNCTION`, you can send ETH during transaction.
 
 ### (TODO add other fonction)
 
