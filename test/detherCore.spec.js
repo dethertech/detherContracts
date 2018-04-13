@@ -78,6 +78,8 @@ const [
   moderator,
   cmo,
   certifier,
+  cfo,
+  // NOTE: address 9 is taken by the oraclize ethereum-bridge ("-a 9")
 ] = web3.eth.accounts;
 
 const shopToContract = (rawshop) => {
@@ -178,6 +180,7 @@ contract('Dether Dth', async () => {
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCSO(moderator);
     await dether.setCMO(cmo);
+    await dether.setCFO(cfo);
     await dether.setPriceOracle(priceOracle.address);
     await dether.setSmsCertifier(smsCertifier.address);
     await dether.setShopModerator(moderator);

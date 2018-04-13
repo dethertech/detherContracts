@@ -145,7 +145,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     isStarted = true;
   }
 
-  function setPriceOracle (address _priceOracle) external onlyCEO {
+  function setPriceOracle (address _priceOracle) external onlyCFO {
     priceOracle = ExchangeRateOracle(_priceOracle);
   }
 
@@ -287,7 +287,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   //      tier             countryId usdDailyLimit
   mapping(uint => mapping (bytes2 => uint)) limitTier;
 
-  function setSellDailyLimit(uint _tier, bytes2 _countryId, uint256 _limitUsd) public onlyCSO {
+  function setSellDailyLimit(uint _tier, bytes2 _countryId, uint256 _limitUsd) public onlyCFO {
     limitTier[_tier][_countryId] = _limitUsd;
   }
   function getSellDailyLimit(uint _tier, bytes2 _countryId) public view returns(uint limitUsd) {
