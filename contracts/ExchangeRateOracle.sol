@@ -12,74 +12,65 @@ contract ExchangeRateOracle is usingOraclize {
 
   uint256 public weiPriceOneUsd;
 
-  // log during testing
-  event LogTxt(string text);
-  event LogNum(uint number);
+  event LogNotEnoughBalance(uint256 _weiContractBalance, uint256 _weiQueryPrice);
+  event LogScheduledExecution(uint256 _now, uint256 _delay);
+  event LogNewUsdPrice(uint256 _weiPriceOneUsd);
+  event LogCallback(address _sender, address _cbAddress);
 
-  //
-  // Constructor
-  //
-
-  // @param timestampToStart - timestamp of the next UTC 00:00:00 when deploying
-  //                           this way we will always at roughly midnight, get a
-  //                           callback with the new 1 USD = ? ETH exchange rate
-  function ExchangeRateOracle(uint timestampToStart) public {
-    // UNCOMMENT BELOW LINE WHEN TESTING WITH GANACHE
-    /* OAR = OraclizeAddrResolverI(0x72C277f2fAc5B7a0c7CdFc7298e9eC96FDdF34AC); */
-
-    if (timestampToStart == 0) {
+  /**
+   * @dev constructor which will do the initial update() call
+   *
+   * @param _timestampToStart  Should be timestamp of the next UTC 00:00:00
+   *                          could also be zero, in which case will update
+   *                          immediately (used in testing)
+   */
+  function ExchangeRateOracle(uint _timestampToStart) public payable {
+    if (_timestampToStart == 0) {
       // update immediately
       update(0);
     } else {
-      // set delay not to a delay but to a timestamp at which the operation is to be executed
-      update(timestampToStart);
+      // set update to fire at a timestamp int he future
+      update(_timestampToStart);
     }
   }
 
-  function getWeiPriceOneUsd() external view returns(uint256) {
-    return weiPriceOneUsd;
-  }
+  /**
+   * @dev Send the query schedule message to oraclize, will check if this contract
+   *      has enough eth balance, if not query will NOT be scheduled and contract needs
+   *      to be manually restarted by Owner
+   *
+   * @param _delay Delay in seconds OR timestamp, to schedule oraclize call at
+   */
+  function update(uint _delay) internal {
+    // NOTE: the first query to oraclize is FREE, all other queries will require a fee in wei
 
-  //
-  // update will call to Oraclize to setup the execution of a query at some future
-  // point in the future, Oraclize will callback to this contract's __callback method
-  // with the result at the specified time in the future
-  //
-  // in Dether the 'delay' can be:
-  // - a timestamp, at boot we once set a timestamp of the next UTC 00:00:00
-  // - an amount of seconds to wait till the next execution, inside the __callback
-  //   function we will set it to 24 hours from now, creating a loop
-  //
-  function update(uint delay) internal {
-    // NOTE: the first query to oraclize is FREE, all other queries will
+    uint _weiQueryPrice = oraclize_getPrice("URL");
+
     // check if this contract has enough balance to pay for the query
-    if (oraclize_getPrice("URL") > this.balance) {
-      LogTxt("Oraclize query was NOT sent, please add some ETH to cover for the query fee");
+    if (_weiQueryPrice > this.balance) {
+      emit LogNotEnoughBalance(this.balance, _weiQueryPrice);
     } else {
-      oraclize_query(delay, 'URL', 'json(https://min-api.cryptocompare.com/data/price?fsym=USD&tsyms=ETH).ETH');
-      LogTxt("Oraclize query was sent (this contact has enough balance for the fee), waiting for the answer..");
+      oraclize_query(_delay, 'URL', 'json(https://min-api.cryptocompare.com/data/price?fsym=USD&tsyms=ETH).ETH');
+      emit LogScheduledExecution(block.timestamp, _delay);
     }
   }
 
-  //
-  // Oraclize will callback to this function when it has the result
-  //
-  // @param ethPriceOneUsd - eth amount that equals 1 usd, as a string
-  //
+  /**
+   * @dev Oraclize will callback the result of the execution of the scheduled query.
+   *      This function will also setup the next update to be 24 hours (exactly) from
+   *      now (block.timestamp)
+   *
+   * @param _myid            Oraclize assigned query id, we dont use this (yet)
+   * @param _ethPriceOneUsd  eth price of 1 usd from cryptocompare as string, e.g. 0.001957
+   */
+  function __callback(bytes32 _myid, string _ethPriceOneUsd) public {
+    emit LogCallback(msg.sender, oraclize_cbAddress());
+    require(msg.sender == oraclize_cbAddress());
 
-  function __callback(bytes32 myid, string ethPriceOneUsd) public {
-    LogTxt("Oraclize response received as string");
-    LogTxt(ethPriceOneUsd);
-
-    require(msg.sender != oraclize_cbAddress());
-
-    // we get back the string eth amount of 1 usd, example: 0.002536
-    // 1. convert string to uint
-    // 2. multiple by 1 ether to get wei
-    // NOTE: does cryptocompare always return 6 decimals ?!
-    weiPriceOneUsd = parseInt(ethPriceOneUsd, 18);
-    LogTxt("converted ETH price to wei as uint256 and saved it to contract state");
-    LogNum(weiPriceOneUsd);
+    // convert eth as string to wei as uint256, e.g. 0.001957 --> 1957000000000000
+    // and store the result in the contract state
+    weiPriceOneUsd = parseInt(_ethPriceOneUsd, 18);
+    emit LogNewUsdPrice(weiPriceOneUsd);
 
     // since we setup this __callback to arrive at midnight UTC 00:00:00 inside
     // the constructor. we are gonna set the next update to exactly 24 hours from
@@ -87,7 +78,13 @@ contract ExchangeRateOracle is usingOraclize {
     // roughly since every time the next one will possibly be some seconds "late"
     //
     // TODO: set time a bit less than 24 hours to deal with slippage as described above
-    LogTxt("Trying to set next update to be in 1 day from now");
     update(day); // update every day, this constant is provided by usingOraclize
+  }
+
+  /**
+   * @dev Return wei price of 1 USD from the contract state (updated in __callback)
+   */
+  function getWeiPriceOneUsd() external view returns(uint256) {
+    return weiPriceOneUsd;
   }
 }

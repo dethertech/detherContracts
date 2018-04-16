@@ -290,7 +290,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   function setSellDailyLimit(uint _tier, bytes2 _countryId, uint256 _limitUsd) public onlyCFO {
     limitTier[_tier][_countryId] = _limitUsd;
   }
-  function getSellDailyLimit(uint _tier, bytes2 _countryId) public view returns(uint limitUsd) {
+  function getSellDailyLimit(uint _tier, bytes2 _countryId) public view returns(uint256 limitUsd) {
     limitUsd = limitTier[_tier][_countryId];
   }
 
@@ -310,13 +310,13 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     uint256 newWeiSoldToday = SafeMath.add(weiSoldToday, _weiSellAmount);
 
     // we may not exceed the daily wei limit with this sell
-    require(newWeiSoldToday < weiDailyLimit);
-
+    require(newWeiSoldToday <= weiDailyLimit);
     _;
   }
 
   /**
    * SellEth
+   * average gas cost: 123173
    * @param _to -> the address for the receiver
    * @param _amount -> the amount to send
    */

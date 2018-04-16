@@ -1,5 +1,6 @@
 /* eslint-env node, mocha */
 /* global artifacts, contract, web3, assert */
+/* eslint-disable max-len */
 
 const {
   // expectThrow,
@@ -29,6 +30,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 const DetherCore = artifacts.require('./DetherCore.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
+const KycCertifier = artifacts.require('./certifier/KycCertifier.sol');
 const Dth = artifacts.require('./token/DetherToken.sol');
 const ExchangeRateOracle = artifacts.require('./token/ExchangeRateOracle.sol');
 
@@ -66,6 +68,7 @@ const overloadedTransferAbi = {
 
 let dether;
 let smsCertifier;
+let kycCertifier;
 let dthToken;
 let detherBank;
 let priceOracle;
@@ -171,18 +174,25 @@ const tellerFromContract = rawTeller => ({
 
 contract('Dether Dth', async () => {
   beforeEach(async () => {
-    dthToken = await Dth.new({ gas: 4700000, from: owner });
-    dether = await DetherCore.new({ gas: 4700000, from: owner });
-    smsCertifier = await SmsCertifier.new({ gas: 4700000, from: owner });
-    detherBank = await DetherBank.new({ gas: 4700000, from: owner });
-    priceOracle = await ExchangeRateOracle.new(0, { gas: 4700000, from: owner });
+    dthToken = await Dth.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
+    dether = await DetherCore.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
+    smsCertifier = await SmsCertifier.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
+    kycCertifier = await KycCertifier.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
+    detherBank = await DetherBank.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
+    priceOracle = await ExchangeRateOracle.new(0, {
+      value: 1000000000000000000,
+      gas: 5000000,
+      gasPrice: 25000000000,
+      from: owner,
+    });
 
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCSO(moderator);
     await dether.setCMO(cmo);
     await dether.setCFO(cfo);
-    await dether.setPriceOracle(priceOracle.address);
+    await dether.setPriceOracle(priceOracle.address, { from: cfo });
     await dether.setSmsCertifier(smsCertifier.address);
+    await dether.setKycCertifier(kycCertifier.address);
     await dether.setShopModerator(moderator);
     await dether.setTellerModerator(moderator);
 
@@ -194,6 +204,9 @@ contract('Dether Dth', async () => {
     await smsCertifier.certify(user2address, { gas: 4000000, from: certifier });
     await smsCertifier.certify(user3address, { gas: 4000000, from: certifier });
     await smsCertifier.certify(moderator, { gas: 4000000, from: certifier });
+
+    await kycCertifier.addDelegate(certifier, 'test', { gas: 4000000, from: owner });
+    await kycCertifier.certify(user2address, { gas: 4000000, from: certifier });
 
     await dthToken.mint(owner, 1000);
     await dthToken.mint(user1address, 1000);
@@ -213,10 +226,9 @@ contract('Dether Dth', async () => {
     await dether.openZoneTeller(web3.toHex(teller2.countryId), { from: cmo });
     await dether.openZoneTeller(web3.toHex(teller3.countryId), { from: cmo });
 
-    await dether.setSellDailyLimit(1, web3.toHex(teller1.countryId), 1000, { from: moderator });
-    await dether.setSellDailyLimit(2, web3.toHex(teller1.countryId), 5000, { from: moderator });
-    console.log('##<o>## set sell daily limit for,', teller1.countryId); // BR brazil
-    console.log('sell limit', (await dether.getSellDailyLimit(1, web3.toHex(teller1.countryId))).toNumber());
+    await dether.setSellDailyLimit(1, web3.toHex(teller1.countryId), 1000, { from: cfo });
+    await dether.setSellDailyLimit(2, web3.toHex(teller2.countryId), 5000, { from: cfo });
+    await dether.setPriceOracle(priceOracle.address, { from: cfo });
   });
 
   contract('Add shop --', async () => {
@@ -233,7 +245,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionDataShop1,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const shop1value = await dether.getShop('0x0000000000000000000000000000000000000001');
@@ -266,7 +278,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionDataShop2,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const shop2value = await dether.getShop('0x0000000000000000000000000000000000000002');
@@ -321,7 +333,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const shop8value = await dether.getShop(user1address);
@@ -354,7 +366,7 @@ contract('Dether Dth', async () => {
           to: dthToken.address,
           data: transferMethodTransactionData,
           value: 0,
-          gas: 5700000,
+          gas: 5000000,
         });
       } catch (err) {
         // nothing
@@ -381,7 +393,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const transferMethodTransactionData2 = web3Abi.encodeFunctionCall(
@@ -394,7 +406,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData2,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const zoneAfter = await dether.getZoneShop(
@@ -423,7 +435,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const transferMethodTransactionData2 = web3Abi.encodeFunctionCall(
@@ -436,7 +448,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData2,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(await dether.isShop(user1address), true, 'shop should be online');
@@ -481,7 +493,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(await dether.isShop(user1address), true, 'shop should be true since its now online');
@@ -518,7 +530,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(await dether.isShop(user1address), true, 'shop should be true since its now online');
@@ -544,7 +556,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(
@@ -586,7 +598,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const teller1value = await dether.getTeller(user1address);
@@ -621,7 +633,7 @@ contract('Dether Dth', async () => {
           to: dthToken.address,
           data: transferMethodTransactionData,
           value: 0,
-          gas: 5700000,
+          gas: 5000000,
         });
       } catch (err) {
         // nothing
@@ -648,7 +660,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const transferMethodTransactionData2 = web3Abi.encodeFunctionCall(
@@ -661,7 +673,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData2,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const zoneAfter = await dether.getZoneTeller(
@@ -690,7 +702,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const transferMethodTransactionData2 = web3Abi.encodeFunctionCall(
@@ -703,7 +715,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData2,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(await dether.isTeller(user1address), true, 'assert shop is now online');
@@ -741,7 +753,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       const balanceBeforeUser1 = await dthToken.balanceOf(user1address);
@@ -781,7 +793,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(
@@ -819,7 +831,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(
@@ -840,72 +852,7 @@ contract('Dether Dth', async () => {
       assert.equal(
         await dether.isTeller(user1address),
         true,
-        'TODO',
-      );
-    });
-
-    it('should be able to send coin from contract', async () => {
-      await delay(10000);
-      // wait for exchange rate oracel to call back
-
-      const balanceBeforeReceiver = await web3.eth.getBalance(moderator);
-
-      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
-        overloadedTransferAbi,
-        [dether.address, 20, tellerToContract(teller1)],
-      );
-
-      await web3.eth.sendTransaction({
-        from: user1address,
-        to: dthToken.address,
-        data: transferMethodTransactionData,
-        value: 0,
-        gas: 5700000,
-      });
-
-      // verify that user1 is a teller
-      assert.equal(
-        await dether.isTeller(user1address),
-        true,
-        'should be true since user 1 is a teller',
-      );
-
-      // add ETH funds from user1 in 'escrow'
-      await dether.addFunds({
-        from: user1address,
-        value: ethToWei(1),
-      });
-
-      // verify user1 teller balance contains added funds
-      assert.equal(
-        weiToEth(await dether.getTellerBalance(user1address)).toNumber(),
-        1,
-        'teller balance of user 1 should equal 1 ETH because we added 1 ETH funds',
-      );
-
-      console.log('allowed to sell', (await dether.getSellDailyLimit(1, web3.toHex(teller1.countryId))).toNumber());
-      console.log('weiLimit', (await priceOracle.getWeiPriceOneUsd()).toNumber());
-
-      // Sell ETH from user1 to moderator
-      await dether.sellEth(moderator, ethToWei(0.1), { from: user1address });
-
-      // get updated user1 teller balance
-      const balanceTellerAfterUser1 = await dether.getTellerBalance(user1address);
-
-      // verify that our teller balance is zero since we sent all funds to moderator
-      assert.equal(
-        balanceTellerAfterUser1.toNumber(),
-        0,
-        'teller balance should be zero since we send all of it to the moderator',
-      );
-
-      // get updated moderator balance
-      const balanceAfterReceiver = await web3.eth.getBalance(moderator);
-      console.log('f');
-      assert.equal(
-        weiToEth(balanceAfterReceiver).toNumber(),
-        weiToEth(balanceBeforeReceiver).toNumber() + 1,
-        'moderator balance should have increased by 1 ETH',
+        'should be true since user1 is teller',
       );
     });
 
@@ -920,7 +867,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(
@@ -974,7 +921,7 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(
@@ -1014,7 +961,10 @@ contract('Dether Dth', async () => {
     });
 
     it('should have his reput upgrade when sell', async () => {
-      const balanceBeforeReceiver = await web3.eth.getBalance(moderator);
+      // wait for price oracle to have fetched the eth price of 1 usd
+      await delay(10000);
+
+      const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
         overloadedTransferAbi,
@@ -1026,49 +976,671 @@ contract('Dether Dth', async () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5700000,
+        gas: 5000000,
       });
 
       assert.equal(
         await dether.isTeller(user1address),
         true,
-        'should be true since user1 is teller',
+        'should be true since user 1 is a teller',
       );
+
+      const weiToSell = ethToWei(0.1);
 
       await dether.addFunds({
         from: user1address,
-        value: ethToWei(1),
+        value: weiToSell,
       });
 
       assert.equal(
-        weiToEth(await dether.getTellerBalance(user1address)).toNumber(),
-        1,
-        'should be 1 since we added 1 eth funds to teller balance',
+        (await dether.getTellerBalance(user1address)).toString(),
+        weiToSell.toString(),
+        'teller balance should equal added funds',
       );
 
       // sell 1 eth belonging to user1 to moderator
-      await dether.sellEth(moderator, ethToWei(1), { from: user1address });
+      await dether.sellEth(moderator, weiToSell, { from: user1address });
 
       assert.equal(
         (await dether.getTellerBalance(user1address)).toNumber(),
         0,
-        'should be 0 since we sold all (1 eth) to moderator',
+        'should be 0 since we sold all to moderator',
       );
 
-      const balanceAfterReceiver = await web3.eth.getBalance(moderator);
+      const balanceReceiverAfter = await web3.eth.getBalance(moderator);
 
       assert.equal(
-        weiToEth(balanceBeforeReceiver).toNumber() + 1,
-        weiToEth(balanceAfterReceiver).toNumber(),
-        'should have increased by 1 since user1 sold 1 eth to moderator',
+        balanceReceiverBefore.add(weiToSell).toString(),
+        balanceReceiverAfter.toString(),
+        'should have increased by amount received',
       );
 
       const profileTellerUser1 = await dether.Reput(user1address);
 
       assert.equal(
-        weiToEth(profileTellerUser1[2].toNumber()),
-        1,
-        '(sell volume) should equal 1 since we just sold 1 eth to moderator',
+        profileTellerUser1[2].toString(),
+        weiToSell.toString(),
+        '(sell volume) should equal sold eth amount',
+      );
+    });
+
+    it('tier1 teller should be able to sell less than max daily limit eth', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const balanceReceiverBefore = await web3.eth.getBalance(moderator);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller1)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user1address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user1address),
+        true,
+        'should be true since user 1 is a teller',
+      );
+
+      const weiToSell = ethToWei(0.1);
+
+      await dether.addFunds({
+        from: user1address,
+        value: weiToSell,
+      });
+
+      assert.equal(
+        (await dether.getTellerBalance(user1address)).toNumber(),
+        weiToSell,
+        'teller balance should equal added funds',
+      );
+
+      await dether.sellEth(moderator, weiToSell, { from: user1address });
+
+      assert.equal(
+        (await dether.getTellerBalance(user1address)).toNumber(),
+        0,
+        'teller balance should be zero since we send all of it to the moderator',
+      );
+
+      const balanceReceiverAfter = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverAfter.toString(),
+        balanceReceiverBefore.add(weiToSell).toString(),
+        'receiver balance should have increased by sold amount',
+      );
+    });
+
+    it('tier2 teller should be able to sell less than max daily limit eth', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const balanceReceiverBefore = await web3.eth.getBalance(moderator);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller2)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user2address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user2address),
+        true,
+        'should be true since user 2 is a teller',
+      );
+
+      const weiToSell = ethToWei(0.1);
+
+      await dether.addFunds({
+        from: user2address,
+        value: weiToSell,
+      });
+
+      assert.equal(
+        (await dether.getTellerBalance(user2address)).toNumber(),
+        weiToSell,
+        'teller balance should equal added funds',
+      );
+
+      await dether.sellEth(moderator, weiToSell, { from: user2address });
+
+      assert.equal(
+        (await dether.getTellerBalance(user2address)).toNumber(),
+        0,
+        'teller balance should be zero since we send all of it to the moderator',
+      );
+
+      const balanceReceiverAfter = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverAfter.toString(),
+        balanceReceiverBefore.add(weiToSell).toString(),
+        'receiver balance should have increased by sold amount',
+      );
+    });
+
+    it('tier1 teller should be able to sell max daily limit of eth', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const balanceReceiverBefore = await web3.eth.getBalance(moderator);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller1)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user1address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user1address),
+        true,
+        'should be true since user 1 is a teller',
+      );
+
+      const usdDailyLimit = await dether.getSellDailyLimit(1, web3.toHex(teller1.countryId));
+      const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
+      const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
+
+      const weiToSell = weiDailyLimit;
+
+      await dether.addFunds({
+        from: user1address,
+        value: weiToSell,
+      });
+
+      assert.equal(
+        (await dether.getTellerBalance(user1address)).toString(),
+        weiToSell.toString(),
+        'teller balance should equal the added funds',
+      );
+
+      await dether.sellEth(moderator, weiToSell, { from: user1address });
+
+      assert.equal(
+        (await dether.getTellerBalance(user1address)).toNumber(),
+        0,
+        'teller balance should be zero since we send all of it to the moderator',
+      );
+
+      const balanceReceiverAfter = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverAfter.toString(),
+        balanceReceiverBefore.add(weiToSell).toString(),
+        'receiver balance should have increased with the amount sold',
+      );
+    });
+
+    it('tier2 teller should be able to sell max daily limit of eth', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const balanceReceiverBefore = await web3.eth.getBalance(moderator);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller2)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user2address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user2address),
+        true,
+        'should be true since user 2 is a teller',
+      );
+
+      const usdDailyLimit = await dether.getSellDailyLimit(2, web3.toHex(teller2.countryId));
+      const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
+      const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
+
+      const weiToSell = weiDailyLimit;
+
+      await dether.addFunds({
+        from: user2address,
+        value: weiToSell,
+      });
+
+      assert.equal(
+        (await dether.getTellerBalance(user2address)).toString(),
+        weiToSell.toString(),
+        'teller balance should equal the added funds',
+      );
+
+      await dether.sellEth(moderator, weiToSell, { from: user2address });
+
+      assert.equal(
+        (await dether.getTellerBalance(user2address)).toNumber(),
+        0,
+        'teller balance should be zero since we send all of it to the moderator',
+      );
+
+      const balanceReceiverAfter = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverAfter.toString(),
+        balanceReceiverBefore.add(weiToSell).toString(),
+        'receiver balance should have increased with the amount sold',
+      );
+    });
+
+    it('tier1 teller should not be able to sell more eth than max daily tier1 limit (1 tx)', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const balanceReceiverBefore = await web3.eth.getBalance(moderator);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller1)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user1address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user1address),
+        true,
+        'should be true since user 1 is a teller',
+      );
+
+      const usdDailyLimit = await dether.getSellDailyLimit(1, web3.toHex(teller1.countryId));
+      const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
+      const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
+
+      // try to sell a bit more than the daily limit wei
+      const weiToSell = weiDailyLimit.add(1);
+
+      await dether.addFunds({
+        from: user1address,
+        value: weiToSell,
+      });
+
+      const balanceTellerBefore = await dether.getTellerBalance(user1address);
+
+      assert.equal(
+        balanceTellerBefore.toString(),
+        weiToSell.toString(),
+        'teller balance of user 1 should equal the added funds',
+      );
+
+      // should throw since sell amount exceeds daily limit for tier 1
+      let caughtError = false;
+      try {
+        await dether.sellEth(moderator, weiToSell, { from: user1address });
+      } catch (err) {
+        caughtError = true;
+      }
+      assert(caughtError, true, 'dether.sellEth should have thrown');
+
+      const balanceTellerAfter = await dether.getTellerBalance(user1address);
+
+      assert.equal(
+        balanceTellerBefore.toString(),
+        balanceTellerAfter.toString(),
+        'teller balance should not have changed',
+      );
+
+      const balanceReceiverAfter = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverAfter.toString(),
+        balanceReceiverBefore.toString(),
+        'receiver balance should not have changed',
+      );
+    });
+
+    it('tier2 teller should not be able to sell more eth than max daily tier2 limit (1 tx)', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const balanceReceiverBefore = await web3.eth.getBalance(moderator);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller2)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user2address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user2address),
+        true,
+        'should be true since user 2 is a teller',
+      );
+
+      const usdDailyLimit = await dether.getSellDailyLimit(2, web3.toHex(teller2.countryId));
+      const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
+      const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
+
+      // try to sell a bit more than the daily limit wei
+      const weiToSell = weiDailyLimit.add(1);
+
+      await dether.addFunds({
+        from: user2address,
+        value: weiToSell,
+      });
+
+      const balanceTellerBefore = await dether.getTellerBalance(user2address);
+
+      assert.equal(
+        balanceTellerBefore.toString(),
+        weiToSell.toString(),
+        'teller balance of user 1 should equal the added funds',
+      );
+
+      // should throw since sell amount exceeds daily limit for tier 2
+      let caughtError = false;
+      try {
+        await dether.sellEth(moderator, weiToSell, { from: user2address });
+      } catch (err) {
+        caughtError = true;
+      }
+      assert(caughtError, true, 'dether.sellEth should have thrown');
+
+      const balanceTellerAfter = await dether.getTellerBalance(user2address);
+
+      assert.equal(
+        balanceTellerBefore.toString(),
+        balanceTellerAfter.toString(),
+        'teller balance should not have changed',
+      );
+
+      const balanceReceiverAfter = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverBefore.toString(),
+        balanceReceiverAfter.toString(),
+        'receiver balance should not have changed',
+      );
+    });
+
+    it('tier1 teller should not be able to sell more eth than max daily tier1 limit (multiple tx)', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller1)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user1address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user1address),
+        true,
+        'should be true since user 1 is a teller',
+      );
+
+      const usdDailyLimit = await dether.getSellDailyLimit(1, web3.toHex(teller1.countryId));
+      const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
+      const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
+
+      //
+      // first sell
+      //
+
+      const weiSoldTodayBefore1 = await detherBank.getWeiSoldToday(user1address);
+      const balanceReceiverBefore1 = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        weiSoldTodayBefore1.toNumber(),
+        0,
+        'should  be zero since didnt sell anything yet',
+      );
+
+      // first, sell half of allowed daily limit
+      const weiToSell1 = weiDailyLimit.div(2);
+
+      await dether.addFunds({
+        from: user1address,
+        value: weiToSell1,
+      });
+
+      const balanceTellerBefore1 = await dether.getTellerBalance(user1address);
+
+      assert.equal(
+        balanceTellerBefore1.toString(),
+        weiToSell1.toString(),
+        'teller balance of user 1 should equal the added funds',
+      );
+
+      await dether.sellEth(moderator, weiToSell1, { from: user1address });
+
+      const weiSoldTodayAfter1 = await detherBank.getWeiSoldToday(user1address);
+      const balanceTellerAfter1 = await dether.getTellerBalance(user1address);
+
+      assert.equal(
+        weiSoldTodayBefore1.add(weiToSell1).toString(),
+        weiSoldTodayAfter1.toString(),
+        'should reflect the sold eth',
+      );
+
+      assert.equal(
+        balanceTellerAfter1.toNumber(),
+        0,
+        'teller balance should be zero since we send all of it to the moderator',
+      );
+
+      const balanceReceiverAfter1 = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverAfter1.toString(),
+        balanceReceiverBefore1.add(weiToSell1).toString(),
+        'receiver balance should have increased with the amount sold',
+      );
+
+      //
+      // second sell
+      //
+
+      const balanceReceiverBefore2 = await web3.eth.getBalance(moderator);
+
+      // second, try to sell full daily limit
+      const weiToSell2 = weiDailyLimit;
+
+      const balanceTellerBefore2 = await dether.getTellerBalance(user1address);
+
+      // should throw since sell amount exceeds daily limit for tier 1
+      let caughtError = false;
+      try {
+        await dether.sellEth(moderator, weiToSell2, { from: user1address });
+      } catch (err) {
+        caughtError = true;
+      }
+      assert(caughtError, true, 'dether.sellEth should have thrown');
+
+      const weiSoldTodayAfter2 = await detherBank.getWeiSoldToday(user1address);
+      const balanceTellerAfter2 = await dether.getTellerBalance(user1address);
+
+      assert.equal(
+        weiSoldTodayAfter1.toString(),
+        weiSoldTodayAfter2.toString(),
+        'should not have changed since sell failed',
+      );
+
+      assert.equal(
+        balanceTellerAfter2.toString(),
+        balanceTellerBefore2.toString(),
+        'teller balance should not have changed since sell failed',
+      );
+
+      const balanceReceiverAfter2 = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverBefore2.toString(),
+        balanceReceiverAfter2.toString(),
+        'receiver balance should not have changed',
+      );
+    });
+
+    it('tier2 teller should not be able to sell more eth than max daily tier2 limit (multiple tx)', async () => {
+      // wait for exchange rate oracle to call back
+      await delay(10000);
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller2)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user2address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user2address),
+        true,
+        'should be true since user 2 is a teller',
+      );
+
+      const usdDailyLimit = await dether.getSellDailyLimit(2, web3.toHex(teller2.countryId));
+      const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
+      const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
+
+      //
+      // first sell
+      //
+
+      const weiSoldTodayBefore1 = await detherBank.getWeiSoldToday(user2address);
+      const balanceReceiverBefore1 = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        weiSoldTodayBefore1.toNumber(),
+        0,
+        'should  be zero since didnt sell anything yet',
+      );
+
+      // first, sell half of allowed daily limit
+      const weiToSell1 = weiDailyLimit.div(2);
+
+      await dether.addFunds({
+        from: user2address,
+        value: weiToSell1,
+      });
+
+      const balanceTellerBefore1 = await dether.getTellerBalance(user2address);
+
+      assert.equal(
+        balanceTellerBefore1.toString(),
+        weiToSell1.toString(),
+        'teller balance of user 2 should equal the added funds',
+      );
+
+      await dether.sellEth(moderator, weiToSell1, { from: user2address });
+
+      const weiSoldTodayAfter1 = await detherBank.getWeiSoldToday(user2address);
+      const balanceTellerAfter1 = await dether.getTellerBalance(user2address);
+
+      assert.equal(
+        weiSoldTodayBefore1.add(weiToSell1).toString(),
+        weiSoldTodayAfter1.toString(),
+        'should reflect the sold eth',
+      );
+
+      assert.equal(
+        balanceTellerAfter1.toNumber(),
+        0,
+        'teller balance should be zero since we send all of it to the moderator',
+      );
+
+      const balanceReceiverAfter1 = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverAfter1.toString(),
+        balanceReceiverBefore1.add(weiToSell1).toString(),
+        'receiver balance should have increased with the amount sold',
+      );
+
+      //
+      // second sell
+      //
+
+      const balanceReceiverBefore2 = await web3.eth.getBalance(moderator);
+
+      // second, try to sell full daily limit
+      const weiToSell2 = weiDailyLimit;
+
+      const balanceTellerBefore2 = await dether.getTellerBalance(user2address);
+
+      // should throw since sell amount exceeds daily limit for tier 1
+      let caughtError = false;
+      try {
+        await dether.sellEth(moderator, weiToSell2, { from: user2address });
+      } catch (err) {
+        caughtError = true;
+      }
+      assert(caughtError, true, 'dether.sellEth should have thrown');
+
+      const weiSoldTodayAfter2 = await detherBank.getWeiSoldToday(user2address);
+      const balanceTellerAfter2 = await dether.getTellerBalance(user2address);
+
+      assert.equal(
+        weiSoldTodayAfter1.toString(),
+        weiSoldTodayAfter2.toString(),
+        'should not have changed since sell failed',
+      );
+
+      assert.equal(
+        balanceTellerAfter2.toString(),
+        balanceTellerBefore2.toString(),
+        'teller balance should not have changed since sell failed',
+      );
+
+      const balanceReceiverAfter2 = await web3.eth.getBalance(moderator);
+
+      assert.equal(
+        balanceReceiverBefore2.toString(),
+        balanceReceiverAfter2.toString(),
+        'receiver balance should not have changed',
       );
     });
   });
