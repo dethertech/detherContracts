@@ -40,6 +40,6 @@ module.exports = {
   },
   mocha: {
     useColors: true,
-    reporter: 'eth-gas-reporter',
+    // reporter: 'eth-gas-reporter', uncomment this line to get gas report!
   },
 };
