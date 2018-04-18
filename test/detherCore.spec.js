@@ -1161,10 +1161,6 @@ contract('Dether Dth', () => {
       const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
       const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
 
-      console.log({
-        weiPriceOneUsd: weiPriceOneUsd.toString(),
-        weiDailyLimit: weiDailyLimit.toString(),
-      })
       const weiToSell = weiDailyLimit;
 
       await dether.addFunds({
