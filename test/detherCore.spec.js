@@ -25,14 +25,13 @@ const {
   shop8,
 } = require('./mock.json');
 
-const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
 const DetherCore = artifacts.require('./DetherCore.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
 const KycCertifier = artifacts.require('./certifier/KycCertifier.sol');
 const Dth = artifacts.require('./token/DetherToken.sol');
-const ExchangeRateOracle = artifacts.require('./token/ExchangeRateOracle.sol');
+// use a fake version with a preset exchange rate
+const FakeExchangeRateOracle = artifacts.require('./token/FakeExchangeRateOracle.sol');
 
 // fix to solve truffle pblm with overloading
 const web3Abi = require('web3-eth-abi');
@@ -72,18 +71,6 @@ let kycCertifier;
 let dthToken;
 let detherBank;
 let priceOracle;
-
-const [
-  owner,
-  user1address,
-  user2address,
-  user3address,
-  moderator,
-  cmo,
-  certifier,
-  cfo,
-  // NOTE: address 9 is taken by the oraclize ethereum-bridge ("-a 9")
-] = web3.eth.accounts;
 
 const shopToContract = (rawshop) => {
   const lat = intTo5bytes(parseFloat(rawshop.lat) * 100000);
@@ -172,19 +159,43 @@ const tellerFromContract = rawTeller => ({
   buyRates: rawTeller[11].toNumber() / 10,
 });
 
-contract('Dether Dth', async () => {
+const getAccounts = () => new Promise((resolve, reject) => {
+  web3.eth.getAccounts((err, acc) => err ? reject(err) : resolve(acc)); // eslint-disable-line
+});
+
+let owner;
+let user1address;
+let user2address;
+let user3address;
+let moderator;
+let cmo;
+let certifier;
+let cfo;
+
+contract('Dether Dth', () => {
+  before(async () => {
+    const accs = await getAccounts();
+    /* eslint-disable prefer-destructuring */
+    owner = accs[0];
+    user1address = accs[1];
+    user2address = accs[2];
+    user3address = accs[3];
+    moderator = accs[4];
+    cmo = accs[5];
+    certifier = accs[6];
+    cfo = accs[7];
+    /* eslint-enable prefer-destructuring */
+  });
+
   beforeEach(async () => {
     dthToken = await Dth.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
     dether = await DetherCore.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
     smsCertifier = await SmsCertifier.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
     kycCertifier = await KycCertifier.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
     detherBank = await DetherBank.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
-    priceOracle = await ExchangeRateOracle.new(0, {
-      value: 1000000000000000000,
-      gas: 5000000,
-      gasPrice: 25000000000,
-      from: owner,
-    });
+
+    // no arguments in 'development'
+    priceOracle = await FakeExchangeRateOracle.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
 
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCSO(moderator);
@@ -228,7 +239,6 @@ contract('Dether Dth', async () => {
 
     await dether.setSellDailyLimit(1, web3.toHex(teller1.countryId), 1000, { from: cfo });
     await dether.setSellDailyLimit(2, web3.toHex(teller2.countryId), 5000, { from: cfo });
-    await dether.setPriceOracle(priceOracle.address, { from: cfo });
   });
 
   contract('Add shop --', async () => {
@@ -961,9 +971,6 @@ contract('Dether Dth', async () => {
     });
 
     it('should have his reput upgrade when sell', async () => {
-      // wait for price oracle to have fetched the eth price of 1 usd
-      await delay(10000);
-
       const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -1025,9 +1032,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier1 teller should be able to sell less than max daily limit eth', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -1080,9 +1084,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier2 teller should be able to sell less than max daily limit eth', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -1135,9 +1136,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier1 teller should be able to sell max daily limit of eth', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -1163,6 +1161,10 @@ contract('Dether Dth', async () => {
       const weiPriceOneUsd = await priceOracle.getWeiPriceOneUsd();
       const weiDailyLimit = usdDailyLimit.mul(weiPriceOneUsd);
 
+      console.log({
+        weiPriceOneUsd: weiPriceOneUsd.toString(),
+        weiDailyLimit: weiDailyLimit.toString(),
+      })
       const weiToSell = weiDailyLimit;
 
       await dether.addFunds({
@@ -1194,9 +1196,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier2 teller should be able to sell max daily limit of eth', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -1253,9 +1252,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier1 teller should not be able to sell more eth than max daily tier1 limit (1 tx)', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -1324,9 +1320,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier2 teller should not be able to sell more eth than max daily tier2 limit (1 tx)', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const balanceReceiverBefore = await web3.eth.getBalance(moderator);
 
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
@@ -1395,9 +1388,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier1 teller should not be able to sell more eth than max daily tier1 limit (multiple tx)', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
         overloadedTransferAbi,
         [dether.address, 20, tellerToContract(teller1)],
@@ -1520,9 +1510,6 @@ contract('Dether Dth', async () => {
     });
 
     it('tier2 teller should not be able to sell more eth than max daily tier2 limit (multiple tx)', async () => {
-      // wait for exchange rate oracle to call back
-      await delay(10000);
-
       const transferMethodTransactionData = web3Abi.encodeFunctionCall(
         overloadedTransferAbi,
         [dether.address, 20, tellerToContract(teller2)],

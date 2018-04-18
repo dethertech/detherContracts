@@ -5,8 +5,18 @@ const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
 const KycCertifier = artifacts.require('./certifier/KycCertifier.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const ExchangeRateOracle = artifacts.require('./ExchangeRateOracle.sol');
+const FakeExchangeRateOracle = artifacts.require('./FakeExchangeRateOracle.sol');
 
-module.exports = async (deployer) => {
+const CONTRACT_ADDRESSES = {
+  kovan: {
+    mkrPriceFeed: '0xa944bd4b25c9f186a846fd5668941aa3d3b8425f',
+  },
+  mainnet: {
+    mkrPriceFeed: '0x729D19f657BD0614b4985Cf1D82531c67569197B',
+  },
+};
+
+module.exports = async (deployer, network) => {
   // Migrations: gas 41915
 
   // gas: 4,643,520
@@ -24,11 +34,27 @@ module.exports = async (deployer) => {
   // gas 552,780
   await deployer.deploy(KycCertifier, { gas: 5000000, gasPrice: 25000000000 });
 
-  // gas 1,422,974
-  await deployer.deploy(ExchangeRateOracle, 0, {
-    // add 1 eth to contract, needed to pay for oraclize queries
-    value: '1000000000000000000',
-    gas: 5000000,
-    gasPrice: 25000000000,
-  });
+  switch (network) {
+    case 'development':
+      // use a fake instance to test locally using ganache
+      // fall through
+    case 'ropsten':
+      // Maker doesn't test on ropsten so we use a fake instance
+      await deployer.deploy(FakeExchangeRateOracle, { gas: 5000000, gasPrice: 25000000000 });
+      break;
+
+    case 'kovan':
+      // fall through
+    case 'mainnet':
+      await deployer.deploy(
+        ExchangeRateOracle,
+        // pass int he address of the Maker price feed contract on the blockchain
+        CONTRACT_ADDRESSES[network].mkrPriceFeed,
+        { gas: 5000000, gasPrice: 25000000000 },
+      );
+      break;
+
+    default:
+      throw new Error(`did not specify how to deploy ExchangeRateOracle on this network (${network})`);
+  }
 };

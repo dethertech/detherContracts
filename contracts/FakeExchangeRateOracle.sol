@@ -19,25 +19,14 @@ contract Medianizer {
   function peek() constant public returns (bytes32, bool);
 }
 
-contract ExchangeRateOracle is DSMath {
-
-  Medianizer public mkrPriceFeed;
-
-  function ExchangeRateOracle(address mkrPriceFeed_) public {
-    mkrPriceFeed = Medianizer(mkrPriceFeed_);
-  }
-
+contract FakeExchangeRateOracle is DSMath {
   /**
    * @dev Return wei price of 1 USD
    */
   function getWeiPriceOneUsd() public view returns(uint) {
-    // get usd price of 1 eth from maker contract
-    bytes32 priceRaw;
-    bool success;
-    (priceRaw, success) = mkrPriceFeed.peek();
-
-    // convert "1 eth = X usd" to "X eth = 1 usd"
-    uint256 weiPriceOneUsd = DSMath.wdiv(WAD, uint(priceRaw));
+    // we fake it here so we can test it, the value represents:
+    // 513 dollar and 4975 cents
+    uint256 weiPriceOneUsd = DSMath.wdiv(WAD, 513497500000000000000);
 
     return weiPriceOneUsd;
   }
