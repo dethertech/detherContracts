@@ -14,7 +14,7 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 
-pragma solidity ^0.4.18;
+pragma solidity ^0.4.21;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
@@ -37,22 +37,22 @@ contract SmsCertifier is Ownable {
 		mapping (string => bytes32) meta;
 	}
 
-	function addDelegate(address _delegate, bytes32 _who) onlyOwner {
+	function addDelegate(address _delegate, bytes32 _who) public onlyOwner {
 		delegate[_delegate].active = true;
 		delegate[_delegate].meta['who'] = _who;
 	}
 
-	function removeDelegate(address _delegate) onlyOwner {
+	function removeDelegate(address _delegate) public onlyOwner {
 		delegate[_delegate].active = false;
 	}
 
 	function certify(address _who) only_delegate(msg.sender) {
 		certs[_who].active = true;
-		Confirmed(_who);
+		emit Confirmed(_who);
 	}
 	function revoke(address _who) only_delegate(msg.sender) only_certified(_who) {
 		certs[_who].active = false;
-		Revoked(_who);
+		emit Revoked(_who);
 	}
 
 	function isDelegate(address _who) public view returns (bool) { return delegate[_who].active; }

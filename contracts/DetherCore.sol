@@ -64,6 +64,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     bytes16 messenger;    // telegrame nickname
     int8 avatarId;        // 1 - 100 , regarding the front-end app you use
     int16 rates;          // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
+    bool buyer;           // appear as a buyer as well on the map
+    int16 buyRates;         // margin of tellers of
 
     uint zoneIndex;       // index of the zone mapping
     uint generalIndex;    // index of general mapping
@@ -148,7 +150,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     bytes1 _func = _data.toBytes1(0);
     int32 posLat = _data.toBytes1(1) == bytes1(0x01) ? int32(_data.toBytes4(2)) * -1 : int32(_data.toBytes4(2));
     int32 posLng = _data.toBytes1(6) == bytes1(0x01) ? int32(_data.toBytes4(7)) * -1 : int32(_data.toBytes4(7));
-    if (_func == bytes1(0x31)) { // shop registration
+    if (_func == bytes1(0x31)) { // shop registration // GAS USED 311000
       // require staked greater than licence price
       require(_value >= licenceShop[_data.toBytes2(11)]);
       // require its not already shop
@@ -169,7 +171,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       emit RegisterShop(_from);
       bank.addTokenShop(_from,_value);
       dth.transfer(address(bank), _value);
-    } else if (_func == bytes1(0x32)) { // teller registration
+    } else if (_func == bytes1(0x32)) { // teller registration -- GAS USED 310099
       // require staked greater than licence price
       require(_value >= licenceTeller[_data.toBytes2(11)]);
       // require is not already a teller
@@ -185,6 +187,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       teller[_from].currencyId = int8(_data.toBytes1(30));
       teller[_from].messenger = _data.toBytes16(31);
       teller[_from].rates = int16(_data.toBytes2(47));
+      teller[_from].buyer = _data.toBytes1(49) == bytes1(0x01) ? true : false;
+      teller[_from].buyRates = int16(_data.toBytes2(50));
       teller[_from].generalIndex = tellerIndex.push(_from) - 1;
       teller[_from].zoneIndex = tellerInZone[_data.toBytes2(11)][_data.toBytes16(13)].push(_from) - 1;
       teller[_from].online = true;
@@ -391,8 +395,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     int16 rates,
     uint balance,
     bool online,
-    uint sellVolume,
-    uint numTrade
+    bool buyer,
+    int16 buyRates
     ) {
     Teller storage theTeller = teller[_teller];
     lat = theTeller.lat;
@@ -404,8 +408,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     avatarId = theTeller.avatarId;
     rates = theTeller.rates;
     online = theTeller.online;
-    sellVolume = volumeSell[_teller];
-    numTrade = nbTrade[_teller];
+    buyer = theTeller.buyer;
+    buyRates = theTeller.buyRates;
     balance = bank.getEthBalTeller(_teller);
   }
 

@@ -165,7 +165,9 @@ const tellerToContract = (rawteller) => {
   const currency = intTobytes(parseInt(rawteller.currencyId));
   const avatar = intTobytes(parseInt(rawteller.avatarId));
   const rates = intTo2bytes(parseFloat(rawteller.rates) * 10);
-  const hexteller = `0x32${lat}${lng}${toNBytes(rawteller.countryId, 2)}${toNBytes(rawteller.postalCode, 16)}${avatar}${currency}${toNBytes(rawteller.messenger, 16)}${rates}`
+  const buyer = rawteller.buyer ? '01' : '00';
+  const buyRates = intTo2bytes(parseFloat(rawteller.buyRates) * 10);
+  const hexteller = `0x32${lat}${lng}${toNBytes(rawteller.countryId, 2)}${toNBytes(rawteller.postalCode, 16)}${avatar}${currency}${toNBytes(rawteller.messenger, 16)}${rates}${buyer}${buyRates}`;
   return hexteller;
 }
 
@@ -184,16 +186,19 @@ const shopFromContract = (rawshop) => {
 
 const tellerFromContract = (rawTeller) => {
   const data = {
-      lat: rawTeller[0] / 100000,
-      lng: rawTeller[1] / 100000,
-      countryId: web3.toAscii(rawTeller[2]).replace(/\0/g,''),
-      postalCode: web3.toAscii(rawTeller[3]).replace(/\0/g,''),
+
+    lat: rawTeller[0] / 100000,
+    lng: rawTeller[1] / 100000,
+    countryId: web3.toAscii(rawTeller[2]).replace(/\0/g,''),
+    postalCode: web3.toAscii(rawTeller[3]).replace(/\0/g,''),
     currencyId: rawTeller[4].toNumber(),
     messenger: web3.toAscii(rawTeller[5]).replace(/\0/g,''),
     avatarId: rawTeller[6].toNumber(),
     rates: rawTeller[7].toNumber() / 10,
     balance: web3.fromWei(rawTeller[8].toNumber(), 'ether'),
     online: rawTeller[9],
+    buyer: rawTeller[10],
+    buyRates: rawTeller[11].toNumber() / 10,
     // amount: ,
   }
   return data;
@@ -436,7 +441,8 @@ contract('Dether Dth', async () => {
         assert.equal(valueFromContract.messenger, teller1.messenger, 'verif messenger');
         assert.equal(valueFromContract.avatarId, teller1.avatarId, 'verif avatar');
         assert.equal(valueFromContract.rates, teller1.rates, 'verif rate');
-        assert.equal(valueFromContract.online,true, 'verif status')
+        assert.equal(valueFromContract.online, true, 'verif status');
+        assert.equal(valueFromContract.buyer, teller1.buyer, 'verif buyer');
       })
 
       it('should not be possible to add shop in unopened zone', async () => {
@@ -677,8 +683,8 @@ contract('Dether Dth', async () => {
         assert.equal(balance.toNumber() , 0, 'verif balance post sell teller1');
         let newbal = await web3.eth.getBalance(moderator);
         assert.equal(web3.fromWei(newbal).toNumber(), web3.fromWei(balancereceiverpre).toNumber() + 1, 'verif moderator has good receive his ETH');
-        const profilePostSell = await dether.getTeller(user1address);
-        assert(web3.fromWei(profilePostSell[10].toNumber()), 1, 'verif sell volume')
+        const profilePostSell = await dether.getReput(user1address);
+        assert(web3.fromWei(profilePostSell[2].toNumber()), 1, 'verif sell volume')
         const profileTeller = await dether.getReput(user1address);
       })
     })
