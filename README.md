@@ -155,16 +155,13 @@ UpdateTeller()
 ### (TODO add other fonction)
 
 ## Test  
-Since we use Oraclize to fetch json from a url, we need  [`oraclize/ethereum-bridge`](https://github.com/oraclize/ethereum-bridge) to be able to run
-local tests using `ganache-cli`. Follow the instructions in the repo to install it
 
-Tests are located on the test/ folder, since we use `ethereum-bridge` don't run the tests from
-within the truffle console (`truffle develop`).
+Test are located on the test/ folder, you can run it in the truffle console directly
 
-1. start `ganache-cli` with a static seed to get the same accounts: `npm run ganache`
-2. start `ethereum-bridge` and let it use the running `ganache-cli`, go inside the
-  `ethereum-bridge` folder and type: `node bridge --dev -H localhost:8545 -a 9`
-3. now run the tests by doing: `npm test`
+```
+truffle develop
+test
+```
 
 ## deploy
 You need to have an .env files with valid mnemonic phrase with ETH:
