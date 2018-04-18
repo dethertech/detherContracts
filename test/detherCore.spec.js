@@ -1022,12 +1022,12 @@ contract('Dether Dth', () => {
         'should have increased by amount received',
       );
 
-      const profileTellerUser1 = await dether.Reput(user1address);
+      const profileTellerUser1 = await dether.getReput(user1address);
 
       assert.equal(
         profileTellerUser1[2].toString(),
-        weiToSell.toString(),
-        '(sell volume) should equal sold eth amount',
+        1,
+        '(nbTrade) should equal 1, the number of times this teller sold something',
       );
     });
 
