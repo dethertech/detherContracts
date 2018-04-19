@@ -75,8 +75,8 @@ module.exports = async (callback) => {
   await dether.setCEO(ceoDether);
   console.log('ceo should be => ',ceoDether, await dether.ceoAddress.call());
 
-  await dth.mint(ceoDether, web3.toWei(10000000,'ether'));
-  await dth.finishMinting();
+  // await dth.mint(ceoDether, web3.toWei(10000000,'ether'));
+  // await dth.finishMinting();
   console.log('balance should be 10000000 => ', await dth.balanceOf.call(ceoDether));
 
 
