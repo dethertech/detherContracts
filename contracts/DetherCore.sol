@@ -1,12 +1,32 @@
 pragma solidity 0.4.21;
 
 import './DetherSetup.sol';
-import './DetherBank.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './zepellin/SafeMath.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import './DetherAccessControl.sol';
 import 'bytes/BytesLib.sol';
+
+contract ExchangeRateOracle {
+  function getWeiPriceOneUsd() external view returns(uint256);
+}
+
+// only interface to save gas
+contract DetherBank {
+  function withdrawDthTeller(address _receiver) external;
+  function withdrawDthShop(address _receiver) external;
+  function withdrawDthShopAdmin(address _from, address _receiver) external;
+  function addTokenShop(address _from, uint _value) external;
+  function addTokenTeller(address _from, uint _value) external;
+  function addEthTeller(address _from, uint _value) external payable returns (bool);
+  function withdrawEth(address _from, address _to, uint _amount) external;
+  function refundEth(address _from) external;
+  function getDthTeller(address _user) public view returns (uint);
+  function getDthShop(address _user) public view returns (uint);
+  function getEthBalTeller(address _user) public view returns (uint);
+  function getWeiSoldToday(address _user) public view returns (uint256 weiSoldToday);
+  function transferOwnership(address newOwner) public;
+}
 
 contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   using BytesLib for bytes;
@@ -52,6 +72,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   ERC223Basic public dth;
   // bank contract where are stored ETH and DTH
   DetherBank public bank;
+
+  ExchangeRateOracle public priceOracle;
 
   // teller struct
   struct Teller {
@@ -121,6 +143,10 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     dth = ERC223Basic(_dth);
     bank = DetherBank(_bank);
     isStarted = true;
+  }
+
+  function setPriceOracle (address _priceOracle) external onlyCFO {
+    priceOracle = ExchangeRateOracle(_priceOracle);
   }
 
   /**
@@ -257,16 +283,54 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     emit UpdateTeller(msg.sender);
   }
 
+  // mapping for limiting the sell amount
+  //      tier             countryId usdDailyLimit
+  mapping(uint => mapping (bytes2 => uint)) limitTier;
+
+  function setSellDailyLimit(uint _tier, bytes2 _countryId, uint256 _limitUsd) public onlyCFO {
+    limitTier[_tier][_countryId] = _limitUsd;
+  }
+  function getSellDailyLimit(uint _tier, bytes2 _countryId) public view returns(uint256 limitUsd) {
+    limitUsd = limitTier[_tier][_countryId];
+  }
+
+  modifier doesNotExceedDailySellLimit(address _teller, uint256 _weiSellAmount) {
+    // limits are set per country
+    bytes2 countryId = teller[_teller].countryId;
+
+    // user is always tier1, and could be tier2
+    uint256 usdDailyLimit = getSellDailyLimit(isTier2(_teller) ? 2 : 1, countryId);
+
+    // weiPriceOneUsd is set by the oracle (which runs every day at midnight)
+    uint256 weiDailyLimit = SafeMath.mul(priceOracle.getWeiPriceOneUsd(), usdDailyLimit);
+
+    // with each sell we update wei sold today for that user inside the Bank contract
+    uint256 weiSoldToday = bank.getWeiSoldToday(_teller);
+
+    uint256 newWeiSoldToday = SafeMath.add(weiSoldToday, _weiSellAmount);
+
+    // we may not exceed the daily wei limit with this sell
+    require(newWeiSoldToday <= weiDailyLimit);
+    _;
+  }
+
   /**
    * SellEth
+   * average gas cost: 123173
    * @param _to -> the address for the receiver
    * @param _amount -> the amount to send
    */
-  function sellEth(address _to, uint _amount) whenNotPaused external {
+  function sellEth(address _to, uint _amount)
+    whenNotPaused
+    doesNotExceedDailySellLimit(msg.sender, _amount)
+    external
+  {
     require(isTeller(msg.sender));
     require(_to != msg.sender);
     // send eth to the receiver from the bank contract
+    // this will also update eth amount sold 'today' by msg.sender
     bank.withdrawEth(msg.sender, _to, _amount);
+
     // increase reput for the buyer and the seller Only if the buyer is also whitelisted,
     // It's a way to incentive user to trade on the system
     if (smsCertifier.certified(_to)) {
