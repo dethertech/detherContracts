@@ -155,6 +155,7 @@ UpdateTeller()
 ### (TODO add other fonction)
 
 ## Test  
+
 Test are located on the test/ folder, you can run it in the truffle console directly
 
 ```
