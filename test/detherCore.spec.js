@@ -30,8 +30,9 @@ const DetherBank = artifacts.require('./DetherBank.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
 const KycCertifier = artifacts.require('./certifier/KycCertifier.sol');
 const Dth = artifacts.require('./token/DetherToken.sol');
-// use a fake version with a preset exchange rate
-const FakeExchangeRateOracle = artifacts.require('./token/FakeExchangeRateOracle.sol');
+
+// NOTE: use a fake version with a preset exchange rate
+const ExchangeRateOracle = artifacts.require('./token/FakeExchangeRateOracle.sol');
 
 // fix to solve truffle pblm with overloading
 const web3Abi = require('web3-eth-abi');
@@ -194,8 +195,8 @@ contract('Dether Dth', () => {
     kycCertifier = await KycCertifier.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
     detherBank = await DetherBank.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
 
-    // no arguments in 'development'
-    priceOracle = await FakeExchangeRateOracle.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
+    // uses the FakeExchangeRateOracle.sol contract during testing
+    priceOracle = await ExchangeRateOracle.new({ gas: 5000000, gasPrice: 25000000000, from: owner });
 
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCSO(moderator);
