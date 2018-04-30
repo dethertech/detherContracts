@@ -20,21 +20,23 @@ module.exports = async (deployer, network) => {
   // Migrations: gas 41915
 
   // gas: 4,643,520
-  await deployer.deploy(DetherCore, { gas: 5000000, gasPrice: 25000000000 });
+  await deployer.deploy(DetherCore, { gas: 6000000, gasPrice: 25000000000 });
 
   // gas 1,161,360
-  await deployer.deploy(DetherToken, { gas: 5000000, gasPrice: 25000000000 });
+  // await deployer.deploy(DetherToken, { gas: 5000000, gasPrice: 25000000000 });
 
   // gas 1,477,280
-  await deployer.deploy(DetherBank, { gas: 5000000, gasPrice: 25000000000 });
+  await deployer.deploy(DetherBank, { gas: 6000000, gasPrice: 25000000000 });
 
   // gas 552,780
-  await deployer.deploy(SmsCertifier, { gas: 5000000, gasPrice: 25000000000 });
+  await deployer.deploy(SmsCertifier, { gas: 6000000, gasPrice: 25000000000 });
 
   // gas 552,780
-  await deployer.deploy(KycCertifier, { gas: 5000000, gasPrice: 25000000000 });
+  await deployer.deploy(KycCertifier, { gas: 6000000, gasPrice: 25000000000 });
 
   switch (network) {
+    case 'develop':
+      // use a fake instance to test locally using truffle develop
     case 'development':
       // use a fake instance to test locally using ganache
       // fall through
@@ -45,6 +47,7 @@ module.exports = async (deployer, network) => {
 
     case 'kovan':
       // fall through
+
     case 'mainnet':
       await deployer.deploy(
         ExchangeRateOracle,

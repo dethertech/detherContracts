@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity ^0.4.21;
 
 import './DetherSetup.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
@@ -383,6 +383,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   // gas used 67841
   // A moderator can delete a sellpoint
   function deleteTellerMods(address _toDelete) isTellerModerator(msg.sender) external {
+    require(isTeller(_toDelete));
     uint rowToDelete1 = teller[_toDelete].zoneIndex;
     address keyToMove1 = tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode][tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode].length - 1];
     tellerInZone[teller[_toDelete].countryId][teller[_toDelete].postalCode][rowToDelete1] = keyToMove1;

@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity ^0.4.21;
 
 /// @title A facet of Dether that manages special access privileges.
 /// @author Axiom Zen (https://www.axiomzen.co) && dether.io

@@ -10,7 +10,6 @@ module.exports = {
       port: 8545,
       network_id: '*', // Match any network id
       gasPrice: 25000000000,
-      gas: 4700000,
     },
     kovan: {
       provider: () => new HDWalletProvider(MNEMONIC, 'https://kovan.infura.io/v604Wu8pXGoPC41ARh0B'),
@@ -21,7 +20,8 @@ module.exports = {
     ropsten: {
       provider: () => new HDWalletProvider(MNEMONIC, 'https://ropsten.infura.io/v604Wu8pXGoPC41ARh0B'),
       network_id: 3,
-      gas: 4698712,
+      gas: 4700000,
+      gasPrice: 50000000000,
     },
     mainnet: {
       provider: () => new HDWalletProvider(MNEMONIC_MAIN, 'http://localhost:8545'),
@@ -29,7 +29,6 @@ module.exports = {
       network_id: 1,
       gas: 1000000,
       gasPrice: 25000000000,
-      from: '0x1ecb59E6EAb86eCdE351229e64E47dD6B65b9329',
     },
   },
   solc: {
