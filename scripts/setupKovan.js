@@ -3,7 +3,7 @@ const DetherCore = artifacts.require('./DetherCore.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const DetherToken = artifacts.require('./dth/DetherToken.sol');
 const SmsCertifier = artifacts.require('./certifier/SmsCertifier.sol');
-const KycCertifier = artifacts.require('./certifier/SmsCertifier.sol');
+const KycCertifier = artifacts.require('./certifier/KycCertifier.sol');
 const ExchangeRateOracle = artifacts.require('./ExchangeRateOracle.sol');
 
 const ceoDether = "0xC5F8a06ed1CfB17d0366eF03FEDF37568B0ce246";
@@ -118,15 +118,15 @@ module.exports = async (callback) => {
   //
   // [DetherCore] set roles to correct addresses
   //
-  await detherCore.setCEO(ceoDether);
-  console.log('ceo should be => ', ceoDether, await detherCore.ceoAddress.call());
+
   await detherCore.setCFO(initScript);
   console.log('cfo should be => ', cfoDether, await detherCore.cfoAddress.call());
-  await detherCore.setCSO(csoDether);
+  await detherCore.setCSO(initScript);
   console.log('cso should be => ', csoDether, await detherCore.csoAddress.call());
   await detherCore.setCMO(initScript);
   console.log('cmo should be => ', cmoDether, await detherCore.cmoAddress.call());
-
+  await detherCore.setCEO(ceoDether);
+  console.log('ceo should be => ', ceoDether, await detherCore.ceoAddress.call());
   //
   // [DetherToken] mint some tokens
   //

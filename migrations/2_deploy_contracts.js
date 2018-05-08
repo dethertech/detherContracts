@@ -6,6 +6,7 @@ const KycCertifier = artifacts.require('./certifier/KycCertifier.sol');
 const DetherBank = artifacts.require('./DetherBank.sol');
 const ExchangeRateOracle = artifacts.require('./ExchangeRateOracle.sol');
 const FakeExchangeRateOracle = artifacts.require('./FakeExchangeRateOracle.sol');
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const CONTRACT_ADDRESSES = {
   kovan: {
@@ -18,21 +19,27 @@ const CONTRACT_ADDRESSES = {
 
 module.exports = async (deployer, network) => {
   // Migrations: gas 41915
-
-  // gas: 4,643,520
-  await deployer.deploy(DetherCore, { gas: 6000000, gasPrice: 25000000000 });
-
+  console.log('delay');
+  await delay(60000);
+  // gas: 4,873,314
+  await deployer.deploy(DetherCore, { gas: 5000000});
+  console.log('delay');
+  await delay(60000);
   // gas 1,161,360
-  // await deployer.deploy(DetherToken, { gas: 5000000, gasPrice: 25000000000 });
+  // await deployer.deploy(DetherToken, { gas: 4700000, gasPrice: 25000000000 });
 
   // gas 1,477,280
-  await deployer.deploy(DetherBank, { gas: 6000000, gasPrice: 25000000000 });
-
-  // gas 552,780
-  await deployer.deploy(SmsCertifier, { gas: 6000000, gasPrice: 25000000000 });
-
-  // gas 552,780
-  await deployer.deploy(KycCertifier, { gas: 6000000, gasPrice: 25000000000 });
+  await deployer.deploy(DetherBank, { gas: 4700000});
+  console.log('delay');
+  await delay(60000);
+  // // // gas 552,780
+  await deployer.deploy(SmsCertifier, { gas: 4700000});
+  console.log('delay');
+  await delay(60000);
+  // // // gas 552,780
+  await deployer.deploy(KycCertifier, { gas: 4700000 });
+  console.log('delay');
+  await delay(60000);
 
   switch (network) {
     case 'develop':
@@ -42,7 +49,7 @@ module.exports = async (deployer, network) => {
       // fall through
     case 'ropsten':
       // Maker doesn't test on ropsten so we use a fake instance
-      await deployer.deploy(FakeExchangeRateOracle, { gas: 5000000, gasPrice: 25000000000 });
+      await deployer.deploy(FakeExchangeRateOracle, { gas: 4700000 });
       break;
 
     case 'kovan':
@@ -53,7 +60,7 @@ module.exports = async (deployer, network) => {
         ExchangeRateOracle,
         // pass int he address of the Maker price feed contract on the blockchain
         CONTRACT_ADDRESSES[network].mkrPriceFeed,
-        { gas: 5000000, gasPrice: 25000000000 },
+        { gas: 4700000},
       );
       break;
 
