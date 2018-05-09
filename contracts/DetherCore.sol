@@ -318,6 +318,14 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     _;
   }
 
+  function getPairSellLoyaltyPerc(address _from, address _to) public view returns(uint256) {
+    return pairSellsLoyaltyPerc[_from][_to];
+  }
+
+  function getLoyaltyPoints(address who) public view returns (uint256) {
+    return loyaltyPoints[who];
+  }
+
   /**
    * SellEth
    * average gas cost: 123173
