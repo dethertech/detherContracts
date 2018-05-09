@@ -525,11 +525,13 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   function getReput(address _teller) public view returns (
    uint buyVolume,
    uint sellVolume,
-   uint numTrade
+   uint numTrade,
+   uint256 loyaltyPoints_
    ) {
      buyVolume = volumeBuy[_teller];
      sellVolume = volumeSell[_teller];
      numTrade = nbTrade[_teller];
+     loyaltyPoints_ = loyaltyPoints[_teller];
   }
   // return balance of teller put in escrow
   function getTellerBalance(address _teller) public view returns (uint) {
