@@ -50,6 +50,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   event DeleteShopModerator(address indexed moderator, address shopAddress);
   // when a moderator delete a teller
   event DeleteTellerModerator(address indexed moderator, address tellerAddress);
+  // comment added between Teller seller/buyer
+  event CommentAdded(address from, address to, bytes32 commentHash);
 
   /**
    * Modifier
@@ -75,6 +77,11 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
 
   ExchangeRateOracle public priceOracle;
 
+  struct Comment {
+    address from;
+    bytes32 hash;
+  }
+
   // teller struct
   struct Teller {
     int32 lat;            // Latitude
@@ -88,6 +95,9 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     int16 rates;          // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     bool buyer;           // appear as a buyer as well on the map
     int16 buyRates;         // margin of tellers of
+
+    Comment[] comments; // all comments send to this teller from other tellers
+    mapping (address => bool) commentRights; // if true, this teller can one-time send a comment to the address passed into the mapping
 
     uint zoneIndex;       // index of the zone mapping
     uint generalIndex;    // index of general mapping
@@ -326,6 +336,22 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     return loyaltyPoints[who];
   }
 
+  function getComment(address teller_, uint idx) public view returns (address, bytes32) {
+    require(isTeller(teller_));
+
+    Comment storage comment = teller[teller_].comments[idx];
+
+    return (comment.from, comment.hash);
+  }
+
+  function addComment(address to, bytes32 commentHash) public {
+    require(teller[msg.sender].commentRights[to] == true);
+    teller[msg.sender].commentRights[to] = false;
+    Comment memory comment = Comment(msg.sender, commentHash);
+    teller[to].comments.push(comment);
+    emit CommentAdded(msg.sender, to, commentHash);
+  }
+
   /**
    * SellEth
    * average gas cost: 123173
@@ -362,6 +388,9 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       volumeBuy[_to] = SafeMath.add(volumeBuy[_to], _amount);
       volumeSell[msg.sender] = SafeMath.add(volumeSell[msg.sender], _amount);
       nbTrade[msg.sender] += 1;
+
+      teller[msg.sender].commentRights[_to] = true;
+      teller[_to].commentRights[msg.sender] = true;
     }
     emit Sent(msg.sender, _to, _amount);
   }
@@ -501,6 +530,11 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     buyer = theTeller.buyer;
     buyRates = theTeller.buyRates;
     balance = bank.getEthBalTeller(_teller);
+  }
+
+  function getTellerCommentCount(address _teller) public view returns (uint) {
+    require(isTeller(_teller));
+    return teller[_teller].comments.length;
   }
 
   /*
