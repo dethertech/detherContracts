@@ -94,6 +94,9 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     bool online;          // switch online/offline, if the tellers want to be inactive without deleting his point
   }
 
+  mapping(address => mapping(address => uint)) internal pairSellsLoyaltyPerc;
+  //      from               to         percentage of loyalty points from gets
+
   /*
    * Reputation field V0.1
    * Reputation is based on volume sell, volume buy, and number of transaction
@@ -101,6 +104,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   mapping(address => uint) volumeBuy;
   mapping(address => uint) volumeSell;
   mapping(address => uint) nbTrade;
+  mapping(address => uint256) loyaltyPoints;
 
   // general mapping of teller
   mapping(address => Teller) teller;
@@ -314,6 +318,14 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     _;
   }
 
+  function getPairSellLoyaltyPerc(address _from, address _to) public view returns(uint256) {
+    return pairSellsLoyaltyPerc[_from][_to];
+  }
+
+  function getLoyaltyPoints(address who) public view returns (uint256) {
+    return loyaltyPoints[who];
+  }
+
   /**
    * SellEth
    * average gas cost: 123173
@@ -334,6 +346,19 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     // increase reput for the buyer and the seller Only if the buyer is also whitelisted,
     // It's a way to incentive user to trade on the system
     if (smsCertifier.certified(_to)) {
+      uint currentSellerLoyaltyPointsPerc = pairSellsLoyaltyPerc[msg.sender][_to];
+      if (currentSellerLoyaltyPointsPerc == 0) {
+        // this is the first sell between seller and buyer, set to 100%
+        pairSellsLoyaltyPerc[msg.sender][_to] = 10000;
+        currentSellerLoyaltyPointsPerc = 10000;
+      }
+
+      // add percentage of loyaltyPoints of this sell to seller's loyaltyPoints
+      loyaltyPoints[msg.sender] = SafeMath.add(loyaltyPoints[msg.sender], SafeMath.mul(_amount, currentSellerLoyaltyPointsPerc) / 10000);
+
+      // update the loyaltyPoints percentage of the seller, there will be a 21% decrease with every sell to the same buyer (100 - 21 = 79)
+      pairSellsLoyaltyPerc[msg.sender][_to] = SafeMath.mul(currentSellerLoyaltyPointsPerc, 79) / 100;
+
       volumeBuy[_to] = SafeMath.add(volumeBuy[_to], _amount);
       volumeSell[msg.sender] = SafeMath.add(volumeSell[msg.sender], _amount);
       nbTrade[msg.sender] += 1;
@@ -508,11 +533,13 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   function getReput(address _teller) public view returns (
    uint buyVolume,
    uint sellVolume,
-   uint numTrade
+   uint numTrade,
+   uint256 loyaltyPoints_
    ) {
      buyVolume = volumeBuy[_teller];
      sellVolume = volumeSell[_teller];
      numTrade = nbTrade[_teller];
+     loyaltyPoints_ = loyaltyPoints[_teller];
   }
   // return balance of teller put in escrow
   function getTellerBalance(address _teller) public view returns (uint) {

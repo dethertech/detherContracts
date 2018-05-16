@@ -189,11 +189,11 @@ contract('Dether Dth', () => {
   });
 
   beforeEach(async () => {
-    dthToken = await Dth.new({ gas: 6000000, gasPrice: 26000000000, from: owner });
-    dether = await DetherCore.new({ gas: 6000000, gasPrice: 26000000000, from: owner });
-    smsCertifier = await SmsCertifier.new({ gas: 6000000, gasPrice: 26000000000, from: owner });
-    kycCertifier = await KycCertifier.new({ gas: 6000000, gasPrice: 26000000000, from: owner });
-    detherBank = await DetherBank.new({ gas: 6000000, gasPrice: 26000000000, from: owner });
+    dthToken = await Dth.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
+    dether = await DetherCore.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
+    smsCertifier = await SmsCertifier.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
+    kycCertifier = await KycCertifier.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
+    detherBank = await DetherBank.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
 
     // uses the FakeExchangeRateOracle.sol contract during testing
     priceOracle = await ExchangeRateOracle.new({ gas: 6000000, gasPrice: 25000000000, from: owner });
@@ -1625,6 +1625,165 @@ contract('Dether Dth', () => {
         balanceReceiverBefore2.toString(),
         balanceReceiverAfter2.toString(),
         'receiver balance should not have changed',
+      );
+    });
+    it('loyalty points decrease 21% with each sell between same teller and buyer (both sms certified)', async () => {
+      const balanceReceiverBefore = await web3.eth.getBalance(user2address);
+
+      //
+      // make user1address a Teller
+      //
+
+      const transferMethodTransactionData = web3Abi.encodeFunctionCall(
+        overloadedTransferAbi,
+        [dether.address, 20, tellerToContract(teller1)],
+      );
+
+      await web3.eth.sendTransaction({
+        from: user1address,
+        to: dthToken.address,
+        data: transferMethodTransactionData,
+        value: 0,
+        gas: 5000000,
+      });
+
+      assert.equal(
+        await dether.isTeller(user1address),
+        true,
+        'should be true since user 1 is a teller',
+      );
+
+      const weiToSell = new web3.toBigNumber(ethToWei(0.4));
+
+      await dether.addFunds({
+        from: user1address,
+        value: weiToSell,
+      });
+
+      //
+      // before checks
+      //
+
+      assert.equal(
+        (await dether.getTellerBalance(user1address)).toNumber(),
+        weiToSell,
+        'teller balance should equal added funds',
+      );
+
+      const loyaltyPercBefore = await dether.getPairSellLoyaltyPerc(user1address, user2address);
+
+      assert.equal(
+        loyaltyPercBefore.toString(),
+        '0',
+        'loyalty percentage should be 0 before first sell',
+      );
+
+      const loyaltyPointsBefore = await dether.getLoyaltyPoints(user1address);
+
+      //
+      // first sell
+      //
+
+      await dether.sellEth(user2address, weiToSell.div(4), { from: user1address });
+
+      const loyaltyPercAfter1 = await dether.getPairSellLoyaltyPerc(user1address, user2address);
+
+      assert.equal(
+        loyaltyPercAfter1.toString(),
+        '7900',
+        'loyalty percentage should have decreased by 21% after first sell (=79,00%)',
+      );
+
+      const loyaltyPointsAfter1 = await dether.getLoyaltyPoints(user1address);
+
+      assert.equal(
+        weiToSell.div(4).toString(),
+        loyaltyPointsAfter1.toString(),
+        'loyalty points should have increased by 100% of the sold wei amount',
+      );
+
+      //
+      // second sell
+      //
+
+      await dether.sellEth(user2address, weiToSell.div(4), { from: user1address });
+
+      const loyaltyPercAfter2 = await dether.getPairSellLoyaltyPerc(user1address, user2address);
+
+      assert.equal(
+        loyaltyPercAfter1.mul(79).div(100).toFixed(0),
+        loyaltyPercAfter2.toString(),
+        'loyalty percentage should have decreased by 21% after second sell (=62,41%)',
+      );
+
+      const loyaltyPointsAfter2 = await dether.getLoyaltyPoints(user1address);
+
+      assert.equal(
+        loyaltyPointsAfter1.add(weiToSell.div(4).mul(79).div(100)).toString(),
+        loyaltyPointsAfter2.toString(),
+        'loyalty points should have increased by 79% of the sold wei amount',
+      );
+
+      //
+      // third sell
+      //
+
+      await dether.sellEth(user2address, weiToSell.div(4), { from: user1address });
+
+      const loyaltyPercAfter3 = await dether.getPairSellLoyaltyPerc(user1address, user2address);
+
+      assert.equal(
+        loyaltyPercAfter2.mul(79).div(100).toFixed(0),
+        loyaltyPercAfter3.toString(),
+        'loyalty percentage should have decreased by 21% after third sell (=49,30%)',
+      );
+
+      const loyaltyPointsAfter3 = await dether.getLoyaltyPoints(user1address);
+
+      assert.equal(
+        loyaltyPointsAfter2.add(weiToSell.div(4).mul(62.41).div(100)).toString(),
+        loyaltyPointsAfter3.toString(),
+        'loyalty points should have increased by 62,41% of the sold wei amount',
+      );
+
+      //
+      // fourth sell
+      //
+
+      await dether.sellEth(user2address, weiToSell.div(4), { from: user1address });
+
+      const loyaltyPercAfter4 = await dether.getPairSellLoyaltyPerc(user1address, user2address);
+
+      assert.equal(
+        loyaltyPercAfter3.mul(79).div(100).toFixed(0),
+        loyaltyPercAfter4.toString(),
+        'loyalty percentage should have decreased by 21% after fourth sell (=38,94%)',
+      );
+
+      const loyaltyPointsAfter4 = await dether.getLoyaltyPoints(user1address);
+
+      assert.equal(
+        loyaltyPointsAfter3.add(weiToSell.div(4).mul(49.30).div(100)).toString(),
+        loyaltyPointsAfter4.toString(),
+        'loyalty points should have increased by 49,30% of the sold wei amount',
+      );
+
+      //
+      // after checks
+      //
+
+      assert.equal(
+        (await dether.getTellerBalance(user1address)).toNumber(),
+        0,
+        'teller balance should be zero since we send all of it to user2',
+      );
+
+      const balanceReceiverAfter = await web3.eth.getBalance(user2address);
+
+      assert.equal(
+        balanceReceiverAfter.toString(),
+        balanceReceiverBefore.add(weiToSell).toString(),
+        'receiver balance should have increased by sold amount',
       );
     });
   });
