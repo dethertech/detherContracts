@@ -80,6 +80,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
   struct Comment {
     address from;
     bytes32 hash;
+    bool exists;
   }
 
   // teller struct
@@ -96,16 +97,19 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     bool buyer;           // appear as a buyer as well on the map
     int16 buyRates;         // margin of tellers of
 
-    Comment[] comments; // all comments send to this teller from other tellers
-    mapping (address => bool) commentRights; // if true, this teller can one-time send a comment to the address passed into the mapping
-
     uint zoneIndex;       // index of the zone mapping
     uint generalIndex;    // index of general mapping
     bool online;          // switch online/offline, if the tellers want to be inactive without deleting his point
   }
 
-  mapping(address => mapping(address => uint)) internal pairSellsLoyaltyPerc;
+  //      recipient  comment(from, hash)
+  mapping(address => Comment[]) internal comments; // all comments to this address
+
+  //      from               to         canSendComment
+  mapping(address => mapping(address => bool)) internal commentRights;
+
   //      from               to         percentage of loyalty points from gets
+  mapping(address => mapping(address => uint)) internal pairSellsLoyaltyPerc;
 
   /*
    * Reputation field V0.1
@@ -336,19 +340,23 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     return loyaltyPoints[who];
   }
 
-  function getComment(address teller_, uint idx) public view returns (address, bytes32) {
-    require(isTeller(teller_));
 
-    Comment storage comment = teller[teller_].comments[idx];
+  function getCommentCount(address _recipient) public view returns (uint) {
+    return comments[_recipient].length;
+  }
 
+  function getComment(address recipient, uint idx) public view returns (address, bytes32) {
+    require(comments[recipient][idx].exists);
+    Comment storage comment = comments[recipient][idx];
     return (comment.from, comment.hash);
   }
 
   function addComment(address to, bytes32 commentHash) public {
-    require(teller[msg.sender].commentRights[to] == true);
-    teller[msg.sender].commentRights[to] = false;
-    Comment memory comment = Comment(msg.sender, commentHash);
-    teller[to].comments.push(comment);
+    require(smsCertifier.certified(msg.sender));
+    require(commentRights[msg.sender][to]);
+    commentRights[msg.sender][to] = false;
+    Comment memory comment = Comment(msg.sender, commentHash, true);
+    comments[to].push(comment);
     emit CommentAdded(msg.sender, to, commentHash);
   }
 
@@ -389,8 +397,8 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
       volumeSell[msg.sender] = SafeMath.add(volumeSell[msg.sender], _amount);
       nbTrade[msg.sender] += 1;
 
-      teller[msg.sender].commentRights[_to] = true;
-      teller[_to].commentRights[msg.sender] = true;
+      commentRights[msg.sender][_to] = true;
+      commentRights[_to][msg.sender] = true;
     }
     emit Sent(msg.sender, _to, _amount);
   }
@@ -530,11 +538,6 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     buyer = theTeller.buyer;
     buyRates = theTeller.buyRates;
     balance = bank.getEthBalTeller(_teller);
-  }
-
-  function getTellerCommentCount(address _teller) public view returns (uint) {
-    require(isTeller(_teller));
-    return teller[_teller].comments.length;
   }
 
   /*

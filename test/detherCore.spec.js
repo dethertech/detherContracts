@@ -168,17 +168,12 @@ const getAccounts = () => new Promise((resolve, reject) => {
 
 // storing IPFS has as bytes32 helper functions --> https://ethereum.stackexchange.com/a/39961
 const getBytes32FromIpfsHash = ipfsListing => (
-  `0x${bs58.decode(ipfsListing).slice(2).toString('hex')}`
+  `0x${bs58.decode(ipfsListing).slice(2).map(x => x < 15 ? `0${x.toString(16)}` : x.toString(16)).join('')}`
 );
-const getIpfsHashFromBytes32 = (bytes32Hex) => {
-  // Add our default ipfs values for first 2 bytes:
-  // function:0x12=sha2, size:0x20=256 bits
-  // and cut off leading "0x"
-  const hashHex = `1220${bytes32Hex.slice(2)}`;
-  const hashBytes = Buffer.from(hashHex, 'hex');;
-  return bs58.encode(hashBytes);
-  return hashStr;
-}
+// Add our default ipfs values for first 2 bytes: function:0x12=sha2, size:0x20=256 bits + cut off leading "0x"
+const getIpfsHashFromBytes32 = bytes32Hex => (
+  bs58.encode(Buffer.from(`1220${bytes32Hex.slice(2)}`, 'hex'))
+);
 
 let owner;
 let user1address;
@@ -1805,168 +1800,128 @@ contract('Dether Dth', () => {
       );
     });
 
-    it('teller (seller) and teller (buyer) can post 1 comment to eachother', async () => {
-      const ipfsHash = 'QmNSUYVKDSvPUnRLKmuxk9diJ6yS96r1TrAXzjTiBcCLAL';
-
-      const weiToSell = ethToWei(0.1);
-
-      // make user1 a teller
-      const transferMethodTransactionData1 = web3Abi.encodeFunctionCall(
-        overloadedTransferAbi,
-        [dether.address, 20, tellerToContract(teller1)],
+    describe('comments', () => {
+      const makeTeller = (from, tellerObj) => (
+        web3.eth.sendTransaction({
+          from,
+          to: dthToken.address,
+          data: web3Abi.encodeFunctionCall(
+            overloadedTransferAbi,
+            [dether.address, 20, tellerToContract(tellerObj)],
+          ),
+          value: 0,
+          gas: 5000000,
+        })
       );
-      await web3.eth.sendTransaction({
-        from: user1address,
-        to: dthToken.address,
-        data: transferMethodTransactionData1,
-        value: 0,
-        gas: 5000000,
+      const addFundsTo = (from, weiAmount) => (
+        dether.addFunds({
+          from,
+          value: weiAmount,
+        })
+      );
+      const sellEthFromTo = (from, to, weiAmount) => (
+        dether.sellEth(to, weiAmount, { from })
+      );
+      const addCommentFromTo = (from, to, ipfsHash) => (
+        dether.addComment(to, getBytes32FromIpfsHash(ipfsHash), { from })
+      );
+      const checkCommentCountEquals = async (from, num) => {
+        assert.equal(await dether.getCommentCount(from), num, `comment count should equal ${num}`);
+      };
+      const verifyLatestComment = async (from, to, ipfsHash) => {
+        const comment_count = await dether.getCommentCount(to);
+        const posted_comment = await dether.getComment(to, comment_count - 1);
+        assert.equal(
+          posted_comment[0], // from field of Comment
+          from,
+          'comment from does not equal expected address',
+        );
+        assert.equal(
+          getIpfsHashFromBytes32(posted_comment[1]), // ipfs hash field of comment
+          ipfsHash,
+          'ipfsHash did not match retrieved latest comment hash of teller1',
+        );
+      };
+      const expectFailAddCommentFromTo = async (from, to, ipfsHash) => {
+        let caughtError = false;
+        try {
+          await dether.addComment(to, getBytes32FromIpfsHash(ipfsHash), { from });
+        } catch (err) {
+          caughtError = true;
+        }
+        assert(caughtError, true, 'should have thrown since buyer we already added 1 comment');
+      };
+      it('smsCertified=TRUE teller=TRUE (seller) and smsCertified=TRUE teller=TRUE (buyer) can post 1 comment to eachother', async () => {
+        const ipfsHash = 'QmahqCsAUAw7zMv6P6Ae8PjCTck7taQA6FgGQLnWdKG7U8';
+        const weiToSell = ethToWei(0.1);
+
+        await makeTeller(user1address, teller1);
+        await makeTeller(user2address, teller1);
+
+        await addFundsTo(user1address, weiToSell);
+        await sellEthFromTo(user1address, user2address, weiToSell);
+
+        await addCommentFromTo(user1address, user2address, ipfsHash);
+        await addCommentFromTo(user2address, user1address, ipfsHash);
+
+        await checkCommentCountEquals(user1address, 1);
+        await checkCommentCountEquals(user2address, 1);
+
+        await verifyLatestComment(user1address, user2address, ipfsHash);
+        await verifyLatestComment(user2address, user1address, ipfsHash);
+
+        await expectFailAddCommentFromTo(user1address, user2address, ipfsHash);
+        await expectFailAddCommentFromTo(user2address, user1address, ipfsHash);
       });
 
-      // make user2 a teller
-      const transferMethodTransactionData2 = web3Abi.encodeFunctionCall(
-        overloadedTransferAbi,
-        [dether.address, 20, tellerToContract(teller1)],
-      );
-      await web3.eth.sendTransaction({
-        from: user2address,
-        to: dthToken.address,
-        data: transferMethodTransactionData2,
-        value: 0,
-        gas: 5000000,
+      it('smsCertified=TRUE teller=TRUE (seller) and smsCertified=TRUE teller=FALSE (buyer) can post 1 comment to eachother', async () => {
+        const ipfsHash = 'QmahqCsAUAw7zMv6P6Ae8PjCTck7taQA6FgGQLnWdKG7U8';
+        const weiToSell = ethToWei(0.1);
+
+        await makeTeller(user1address, teller1);
+
+        await addFundsTo(user1address, weiToSell);
+        await sellEthFromTo(user1address, user2address, weiToSell);
+
+        await addCommentFromTo(user1address, user2address, ipfsHash);
+        await addCommentFromTo(user2address, user1address, ipfsHash);
+
+        await checkCommentCountEquals(user1address, 1);
+        await checkCommentCountEquals(user2address, 1);
+
+        await verifyLatestComment(user1address, user2address, ipfsHash);
+        await verifyLatestComment(user2address, user1address, ipfsHash);
+
+        await expectFailAddCommentFromTo(user1address, user2address, ipfsHash);
+        await expectFailAddCommentFromTo(user2address, user1address, ipfsHash);
       });
 
-      // add funds in escrow for user1 (to be sold to user2 below)
-      await dether.addFunds({
-        from: user1address,
-        value: weiToSell,
+      it('smsCertified=TRUE teller=TRUE (seller) and smsCertified=FALSE teller=FALSE (buyer) can post NO comment to eachother', async () => {
+        const ipfsHash = 'QmahqCsAUAw7zMv6P6Ae8PjCTck7taQA6FgGQLnWdKG7U8';
+        const weiToSell = ethToWei(0.1);
+
+        // user4address is NOT sms certified
+
+        await makeTeller(user1address, teller1);
+
+        await addFundsTo(user1address, weiToSell);
+        await sellEthFromTo(user1address, user4address, weiToSell);
+
+        await expectFailAddCommentFromTo(user1address, user4address, ipfsHash);
+        await expectFailAddCommentFromTo(user4address, user1address, ipfsHash);
+
+        await checkCommentCountEquals(user1address, 0);
+        await checkCommentCountEquals(user4address, 0);
       });
-
-      // sell ETH from user1 to user2
-      await dether.sellEth(user2address, weiToSell, { from: user1address });
-
-      // send comment from user1 to user2
-      await dether.addComment(user2address, getBytes32FromIpfsHash(ipfsHash), { from: user1address });
-
-      // send comment from user2 to user1
-      await dether.addComment(user1address, getBytes32FromIpfsHash(ipfsHash), { from: user2address });
-
-      // fetch the updated comment counts for user1/user2
-      const teller1_comment_count = await dether.getTellerCommentCount(user1address);
-      const teller2_comment_count = await dether.getTellerCommentCount(user2address);
-
-      assert.equal(
-        teller1_comment_count.toString(),
-        '1',
-        'user1 comment count should equal 1',
-      );
-      assert.equal(
-        teller2_comment_count.toString(),
-        '1',
-        'user2 comment count should equal 1',
-      );
-
-      // [from, hash]
-      const teller1_posted_comment = await dether.getComment(user1address, teller1_comment_count - 1);
-      const teller2_posted_comment = await dether.getComment(user2address, teller2_comment_count - 1);
-      assert.equal(
-        teller1_posted_comment[0],
-        user2address,
-        'comment from does not equal expected user2address',
-      );
-      assert.equal(
-        teller2_posted_comment[0],
-        user1address,
-        'comment from does not equal expected user1address',
-      );
-      assert.equal(
-        getIpfsHashFromBytes32(teller1_posted_comment[1]),
-        ipfsHash,
-        'ipfsHash did not match retrieved latest comment hash of teller1',
-      );
-      assert.equal(
-        getIpfsHashFromBytes32(teller2_posted_comment[1]),
-        ipfsHash,
-        'ipfsHash did not match retrieved latest comment hash of teller2',
-      );
-
-      // try to send comments
-      let caughtError = false;
-      try {
-        // send comment from user1 to user2
-        await dether.addComment(user2address, getBytes32FromIpfsHash(ipfsHash), { from: user1address });
-      } catch (err) {
-        caughtError = true;
-      }
-      assert(caughtError, true, 'should have thrown since we already added 1 comment');
-
-      caughtError = false;
-
-      try {
-        // send comment from user2 to user1
-        await dether.addComment(user1address, getBytes32FromIpfsHash(ipfsHash), { from: user2address });
-      } catch (err) {
-        caughtError = true;
-      }
-      assert(caughtError, true, 'should have thrown since buyer we already added 1 comment');
-    });
-
-    it('teller (seller) and non-certified address (buyer) can not post a comment', async () => {
-      const ipfsHash = 'QmNSUYVKDSvPUnRLKmuxk9diJ6yS96r1TrAXzjTiBcCLAL';
-
-      const weiToSell = ethToWei(0.1);
-
-      // make user1 a teller
-      const transferMethodTransactionData1 = web3Abi.encodeFunctionCall(
-        overloadedTransferAbi,
-        [dether.address, 20, tellerToContract(teller1)],
-      );
-      await web3.eth.sendTransaction({
-        from: user1address,
-        to: dthToken.address,
-        data: transferMethodTransactionData1,
-        value: 0,
-        gas: 5000000,
+      it('throws when trying to get comment that doesn\'t exist', async () => {
+        let caughtError = false;
+        try {
+          await dether.getComment(user4address, 99);
+        } catch (err) {
+          caughtError = true;
+        }
+        assert(caughtError, true, 'should have thrown since comment with that index doesn\'t exist');
       });
-
-      // add funds in escrow for user1 (to be sold to user2 below)
-      await dether.addFunds({
-        from: user1address,
-        value: weiToSell,
-      });
-
-      // sell ETH from user1 to user2
-      await dether.sellEth(user4address, weiToSell, { from: user1address });
-
-      // try to send comments
-      let caughtError = false;
-
-      try {
-        // send comment from user1 to user2
-        await dether.addComment(user4address, getBytes32FromIpfsHash(ipfsHash), { from: user1address });
-      } catch (err) {
-        caughtError = true;
-      }
-      assert(caughtError, true, 'should have thrown since buyer is not certified');
-
-      caughtError = false;
-
-      try {
-        // send comment from user2 to user1
-        await dether.addComment(user1address, getBytes32FromIpfsHash(ipfsHash), { from: user4address });
-      } catch (err) {
-        caughtError = true;
-      }
-      assert(caughtError, true, 'should have thrown since buyer is not certified');
-
-      // fetch the updated comment counts for user1/user2
-      const teller1_comment_count = await dether.getTellerCommentCount(user1address);
-
-      assert.equal(
-        teller1_comment_count.toString(),
-        '0',
-        'user1 comment count should equal 1',
-      );
     });
   });
 });
