@@ -351,6 +351,7 @@ contract DetherCore is DetherSetup, ERC223ReceivingContract, SafeMath {
     return (comment.from, comment.hash);
   }
 
+  // gas: 102154
   function addComment(address to, bytes32 commentHash) public {
     require(smsCertifier.certified(msg.sender));
     require(commentRights[msg.sender][to]);
