@@ -19,8 +19,6 @@ const CONTRACT_ADDRESSES = {
 
 module.exports = async (deployer, network) => {
   // Migrations: gas 41915
-  console.log('delay');
-  await delay(60000);
   // gas: 4,873,314
   await deployer.deploy(DetherCore, { gas: 5000000});
   console.log('delay');
@@ -29,11 +27,11 @@ module.exports = async (deployer, network) => {
   // await deployer.deploy(DetherToken, { gas: 4700000, gasPrice: 25000000000 });
 
   // gas 1,477,280
-  await deployer.deploy(DetherBank, { gas: 4700000});
+  await deployer.deploy(DetherBank, { gas: 5000000});
   console.log('delay');
   await delay(60000);
   // // // gas 552,780
-  await deployer.deploy(SmsCertifier, { gas: 4700000});
+  await deployer.deploy(SmsCertifier, { gas: 5000000});
   console.log('delay');
   await delay(60000);
   // // // gas 552,780
@@ -44,12 +42,14 @@ module.exports = async (deployer, network) => {
   switch (network) {
     case 'develop':
       // use a fake instance to test locally using truffle develop
+    case 'rinkeby':
+      // use a fake instance to test locally using truffle develop
     case 'development':
       // use a fake instance to test locally using ganache
       // fall through
     case 'ropsten':
       // Maker doesn't test on ropsten so we use a fake instance
-      await deployer.deploy(FakeExchangeRateOracle, { gas: 4700000 });
+      await deployer.deploy(FakeExchangeRateOracle, { gas: 5000000 });
       break;
 
     case 'kovan':

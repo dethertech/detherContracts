@@ -189,14 +189,14 @@ contract('Dether Dth', () => {
   });
 
   beforeEach(async () => {
-    dthToken = await Dth.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
-    dether = await DetherCore.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
-    smsCertifier = await SmsCertifier.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
-    kycCertifier = await KycCertifier.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
-    detherBank = await DetherBank.new({ gas: 6000000, gasPrice: 10000000000, from: owner });
+    dthToken = await Dth.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
+    dether = await DetherCore.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
+    smsCertifier = await SmsCertifier.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
+    kycCertifier = await KycCertifier.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
+    detherBank = await DetherBank.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
 
     // uses the FakeExchangeRateOracle.sol contract during testing
-    priceOracle = await ExchangeRateOracle.new({ gas: 6000000, gasPrice: 25000000000, from: owner });
+    priceOracle = await ExchangeRateOracle.new({ gas: 7800000, gasPrice: 25000000000, from: owner });
 
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCSO(moderator);
