@@ -12,8 +12,8 @@ module.exports = {
       gasPrice: 25000000000,
     },
     kovan: {
-      // provider: () => new HDWalletProvider(MNEMONIC, 'https://kovan.infura.io/'),
-      provider: () => new HDWalletProvider(MNEMONIC, 'http://localhost:8545'),
+      provider: () => new HDWalletProvider(MNEMONIC, 'https://kovan.infura.io/'),
+      // provider: () => new HDWalletProvider(MNEMONIC, 'http://localhost:8545'),
       network_id: 42,
       // gas: 4700000,
       gasPrice: 20000000000,

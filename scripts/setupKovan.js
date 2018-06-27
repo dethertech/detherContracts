@@ -20,9 +20,9 @@ const ownerdeploy = "0x6AAb2B0913B70270E840B14c2b23B716C0a43522"
 
 module.exports = async (callback) => {
 
-  //
-  // Deploy all contracts
-  //
+  // //
+  // // Deploy all contracts
+  // //
   const detherCore = await DetherCore.deployed();
   console.log('address DetherCore => ', detherCore.address);
   const detherBank = await DetherBank.deployed();
@@ -36,16 +36,16 @@ module.exports = async (callback) => {
   const exchangeRateOracle = await ExchangeRateOracle.deployed();
   console.log('Address ExchangeRateOracle => ', exchangeRateOracle.address);
 
-  //
-  // [DetherCore] init
-  //
+  // //
+  // // [DetherCore] init
+  // //
   await detherCore.initContract(detherToken.address, detherBank.address);
   console.log('bank should be => ', detherBank.address, await detherCore.bank.call());
   console.log('dth should be => ', detherToken.address, await detherCore.dth.call());
 
-  //
-  // [DetherCore] set initial user roles (will be updated at the very last step down below)
-  //
+  // //
+  // // [DetherCore] set initial user roles (will be updated at the very last step down below)
+  // //
   await detherCore.setCEO(ownerdeploy);
   console.log('ceo should be => ', ownerdeploy, await detherCore.ceoAddress.call());
   await detherCore.setCFO(ownerdeploy);
@@ -55,9 +55,9 @@ module.exports = async (callback) => {
   await detherCore.setCMO(ownerdeploy);
   console.log('cmo should be => ', ownerdeploy, await detherCore.cmoAddress.call());
 
-  //
-  // [DetherCore] set references (addresses) to other contracts
-  //
+  // //
+  // // [DetherCore] set references (addresses) to other contracts
+  // //
   await detherCore.setPriceOracle(exchangeRateOracle.address);
   console.log('priceOralce should be => ', exchangeRateOracle.address, await detherCore.priceOracle.call());
   await detherCore.setSmsCertifier(smsCertifier.address);
@@ -65,9 +65,9 @@ module.exports = async (callback) => {
   await detherCore.setKycCertifier(kycCertifier.address);
   console.log('kyc certifier should be => ', kycCertifier.address, await detherCore.kycCertifier.call());
 
-  //
-  // [DetherCore] set moderator of shop/teller
-  //
+  // //
+  // // [DetherCore] set moderator of shop/teller
+  // //
   await detherCore.setTellerModerator(kycDelegateTestnet);  //
   console.log('teller moderator should be => ', ceoDether, await detherCore.tellerModerators.call(ceoDether));
 
@@ -84,7 +84,11 @@ module.exports = async (callback) => {
   //
 
   await smsCertifier.addDelegate(kycDelegateTestnet, 'smsDelegate');
+  await smsCertifier.addDelegate(ownerdeploy, 'smsDelegate');
   console.log('ownerdeploy should be a sms delegate => ', await smsCertifier.isDelegate.call(ownerdeploy));
+  console.log('ownerdeploy should be a sms delegate => ', await smsCertifier.isDelegate.call(kycDelegateTestnet));
+  await smsCertifier.transferOwnership(ceoDether);
+  await kycCertifier.transferOwnership(ceoDether);
   //
   // [DetherCore] set license prices
   //
@@ -93,6 +97,13 @@ module.exports = async (callback) => {
   await detherCore.setLicenceShopPrice(web3.toHex('FR'), web3.toWei('1'));
   console.log('licenceshop should be => ', '10', web3.fromWei(await detherCore.licenceShop.call(web3.toHex('FR'))));
 
+  await detherCore.setLicenceTellerPrice(web3.toHex('GI'), web3.toWei('1'));
+  console.log('licenceteller should be => ', '10', web3.fromWei(await detherCore.licenceTeller.call(web3.toHex('FR'))));
+  await detherCore.setLicenceShopPrice(web3.toHex('GI'), web3.toWei('1'));
+  console.log('licenceshop should be => ', '10', web3.fromWei(await detherCore.licenceShop.call(web3.toHex('FR'))));
+
+  //
+
   //
   // [DetherCore] set tier1 + tier2 daily sell limit (in usd)
   //
@@ -100,30 +111,31 @@ module.exports = async (callback) => {
   console.log('getSellDailyLimit tier1 FR should be => ', '1000', (await detherCore.getSellDailyLimit(1, web3.toHex('FR'))));
   await detherCore.setSellDailyLimit(2, web3.toHex('FR'), 5000);
   console.log('getSellDailyLimit tier2 FR should be => ', '5000', (await detherCore.getSellDailyLimit(2, web3.toHex('FR'))));
-  await detherCore.setSellDailyLimit(1, web3.toHex('AU'), 1000);
-  console.log('getSellDailyLimit tier1 AU should be => ', '1000', (await detherCore.getSellDailyLimit(1, web3.toHex('AU'))));
-  await detherCore.setSellDailyLimit(2, web3.toHex('AU'), 5000);
-  console.log('getSellDailyLimit tier2 AU should be => ', '5000', (await detherCore.getSellDailyLimit(2, web3.toHex('AU'))));
+  await detherCore.setSellDailyLimit(1, web3.toHex('GI'), 1000);
+  console.log('getSellDailyLimit tier1 AU should be => ', '1000', (await detherCore.getSellDailyLimit(1, web3.toHex('GI'))));
+  await detherCore.setSellDailyLimit(2, web3.toHex('GI'), 5000);
+  console.log('getSellDailyLimit tier2 AU should be => ', '5000', (await detherCore.getSellDailyLimit(2, web3.toHex('GI'))));
 
   //
   // [DetherCore] open specific zones(=countries) for shops/tellers
   //
   await detherCore.openZoneShop(web3.toHex('FR'));
   console.log('zone FR for shop should be open', await detherCore.openedCountryShop.call(web3.toHex('FR')));
-  await detherCore.openZoneShop(web3.toHex('AU'));
-  console.log('zone AU for shop should be open', await detherCore.openedCountryShop.call(web3.toHex('AU')));
+  await detherCore.openZoneShop(web3.toHex('GI'));
+  console.log('zone GI for shop should be open', await detherCore.openedCountryShop.call(web3.toHex('GI')));
   await detherCore.openZoneTeller(web3.toHex('FR'));
   console.log('zone FR for teller should be open', await detherCore.openedCountryTeller.call(web3.toHex('FR')));
+  await detherCore.openZoneTeller(web3.toHex('GI'));
+  console.log('zone GI for teller should be open', await detherCore.openedCountryTeller.call(web3.toHex('GI')));
 
   //
   // [DetherCore] set roles to correct addresses
   //
-
-  await detherCore.setCFO(initScript);
+  await detherCore.setCFO(ceoDether);
   console.log('cfo should be => ', cfoDether, await detherCore.cfoAddress.call());
-  await detherCore.setCSO(initScript);
+  await detherCore.setCSO(ceoDether);
   console.log('cso should be => ', csoDether, await detherCore.csoAddress.call());
-  await detherCore.setCMO(initScript);
+  await detherCore.setCMO(ceoDether);
   console.log('cmo should be => ', cmoDether, await detherCore.cmoAddress.call());
   await detherCore.setCEO(ceoDether);
   console.log('ceo should be => ', ceoDether, await detherCore.ceoAddress.call());
@@ -132,7 +144,7 @@ module.exports = async (callback) => {
   //
   // await detherToken.mint(ceoDether, web3.toWei(10000000, 'ether'));
   // await detherToken.finishMinting();
-  console.log('balance should be 10000000 => ', await detherToken.balanceOf.call(ceoDether));
+  // console.log('balance should be 10000000 => ', await detherToken.balanceOf.call(ceoDether));
 
   callback();
 };

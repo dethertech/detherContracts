@@ -49,6 +49,7 @@ contract DetherSetup is DetherAccessControl  {
   function isTier1(address _user) public view returns(bool) {
     return smsCertifier.certified(_user);
   }
+  
   function isTier2(address _user) public view returns(bool) {
     return kycCertifier.certified(_user);
   }
