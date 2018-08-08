@@ -189,14 +189,14 @@ contract('Dether Dth', () => {
   });
 
   beforeEach(async () => {
-    dthToken = await Dth.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
-    dether = await DetherCore.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
-    smsCertifier = await SmsCertifier.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
-    kycCertifier = await KycCertifier.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
-    detherBank = await DetherBank.new({ gas: 7800000, gasPrice: 10000000000, from: owner });
-
-    // uses the FakeExchangeRateOracle.sol contract during testing
-    priceOracle = await ExchangeRateOracle.new({ gas: 7800000, gasPrice: 25000000000, from: owner });
+    dthToken = await Dth.new({ gas: 6500000, gasPrice: 10000000000, from: owner });
+    dether = await DetherCore.new({ gas: 6500000, gasPrice: 10000000000, from: owner });
+    smsCertifier = await SmsCertifier.new({ gas: 6500000, gasPrice: 10000000000, from: owner });
+    kycCertifier = await KycCertifier.new({ gas: 6500000, gasPrice: 10000000000, from: owner });
+    detherBank = await DetherBank.new({ gas: 6500000, gasPrice: 10000000000, from: owner });
+    //
+    // // uses the FakeExchangeRateOracle.sol contract during testing
+    priceOracle = await ExchangeRateOracle.new({ gas: 6500000, gasPrice: 25000000000, from: owner });
 
     await dether.initContract(dthToken.address, detherBank.address);
     await dether.setCSO(moderator);
@@ -250,13 +250,12 @@ contract('Dether Dth', () => {
         overloadedTransferAbi,
         [dether.address, 20, shopToContractBulk(shop1)],
       );
-
       await web3.eth.sendTransaction({
         from: moderator,
         to: dthToken.address,
         data: transferMethodTransactionDataShop1,
         value: 0,
-        gas: 5000000,
+        gas: 4700000,
       });
 
       const shop1value = await dether.getShop('0x0000000000000000000000000000000000000001');
@@ -266,8 +265,8 @@ contract('Dether Dth', () => {
         true,
         'should be true since shop is now online',
       );
-
       const formatedValueShop1 = shopFromContract(shop1value);
+        console.log('test 4 formated value => ', formatedValueShop1);
       assert.equal(formatedValueShop1.lat, shop1.lat, 'lat did not match');
       assert.equal(formatedValueShop1.lng, shop1.lng, 'lng did not match');
       assert.equal(formatedValueShop1.countryId, shop1.countryId, 'countryId did not match');
@@ -289,7 +288,7 @@ contract('Dether Dth', () => {
         to: dthToken.address,
         data: transferMethodTransactionDataShop2,
         value: 0,
-        gas: 5000000,
+        gas: 4700000,
       });
 
       const shop2value = await dether.getShop('0x0000000000000000000000000000000000000002');
@@ -301,6 +300,7 @@ contract('Dether Dth', () => {
       );
 
       const formatedValueShop2 = shopFromContract(shop2value);
+
       assert.equal(formatedValueShop2.lat, shop2.lat, 'lat did not match');
       assert.equal(formatedValueShop2.lng, shop2.lng, 'lng did not match');
       assert.equal(formatedValueShop2.countryId, shop2.countryId, 'countryId did not match');
@@ -344,7 +344,7 @@ contract('Dether Dth', () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5000000,
+        gas: 4700000,
       });
 
       const shop8value = await dether.getShop(user1address);
@@ -377,7 +377,7 @@ contract('Dether Dth', () => {
           to: dthToken.address,
           data: transferMethodTransactionData,
           value: 0,
-          gas: 5000000,
+          gas: 4700000,
         });
       } catch (err) {
         // nothing
@@ -404,7 +404,7 @@ contract('Dether Dth', () => {
         to: dthToken.address,
         data: transferMethodTransactionData,
         value: 0,
-        gas: 5000000,
+        gas: 4700000,
       });
 
       const transferMethodTransactionData2 = web3Abi.encodeFunctionCall(

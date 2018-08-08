@@ -1,13 +1,14 @@
 require('dotenv').config({ path: '.env' });
 
-const { MNEMONIC, MNEMONIC_MAIN } = process.env;
+const { MNEMONIC, MNEMONIC_MAIN, PRIVKEY_MAIN } = process.env;
 const HDWalletProvider = require('truffle-hdwallet-provider');
+const PKWalletProvider = require('truffle-privatekey-provider');
 
 module.exports = {
   networks: {
     development: {
       host: 'localhost',
-      port: 8545,
+      port: 8645,
       network_id: '*', // Match any network id
       gasPrice: 25000000000,
     },
@@ -36,9 +37,10 @@ module.exports = {
     mainnet: {
       // provider: () => new HDWalletProvider(MNEMONIC_MAIN, 'http://localhost:8545'),
       provider: () => new HDWalletProvider(MNEMONIC_MAIN, 'https://mainnet.infura.io/'),
+      // provider: () => new PKWalletProvider(PRIVKEY_MAIN, 'http://localhost:8545'),
       network_id: 1,
-      gasPrice: 50000000000,
-      gas: 5000000,
+      gasPrice: 20000000000,
+      gas: 6500000,
       // gasPrice: 25000000000,
     },
   },

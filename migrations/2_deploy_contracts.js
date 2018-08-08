@@ -20,52 +20,52 @@ const CONTRACT_ADDRESSES = {
 module.exports = async (deployer, network) => {
   // await delay(60000);
   // gas 1,161,360
-  // await deployer.deploy(DetherToken, { gas: 4700000, gasPrice: 27000000000 });
+  // await deployer.deploy(DetherToken, { gas: 6000000, gasPrice: 27000000000 });
 
-  // // gas: 4,873,314
-  // await deployer.deploy(DetherCore, { gas: 7000000});
-  // console.log('delay');
-
-  // // gas 1,477,280
-  // await deployer.deploy(DetherBank, { gas: 7000000});
-  // console.log('delay');
-  // // await delay(60000);
-
-  // // gas 552,780
-  // await deployer.deploy(SmsCertifier, { gas: 7000000});
-  // console.log('delay');
-  // await delay(60000);
-  // // // gas 552,780
-  await deployer.deploy(KycCertifier, { gas: 7000000 });
+  // gas: 4,873,314
+  await deployer.deploy(DetherCore, { gas: 6500000});
   console.log('delay');
+  await delay(60000);
+  // gas 1,477,280
+  await deployer.deploy(DetherBank, { gas: 6500000});
+  console.log('delay');
+  await delay(60000);
+
+  // gas 552,780
+  await deployer.deploy(SmsCertifier, { gas: 6500000});
+  console.log('delay');
+  await delay(60000);
+  // // // gas 552,780
+  await deployer.deploy(KycCertifier, { gas: 6500000 });
+  // console.log('delay');
   // await delay(60000);
 
-  // switch (network) {
-  //   case 'develop':
-  //     // use a fake instance to test locally using truffle develop
-  //   case 'rinkeby':
-  //     // use a fake instance to test locally using truffle develop
-  //   case 'development':
-  //     // use a fake instance to test locally using ganache
-  //     // fall through
-  //   case 'ropsten':
-  //     // Maker doesn't test on ropsten so we use a fake instance
-  //     await deployer.deploy(FakeExchangeRateOracle, { gas: 7000000 });
-  //     break;
-  //
-  //   case 'kovan':
-  //     // fall through
-  //
-  //   case 'mainnet':
-  //     // await deployer.deploy(
-  //     //   ExchangeRateOracle,
-  //     //   // pass int he address of the Maker price feed contract on the blockchain
-  //     //   CONTRACT_ADDRESSES[network].mkrPriceFeed,
-  //     //   { gas: 7000000},
-  //     // );
-  //     // break;
-  //
-  //   default:
-  //     throw new Error(`did not specify how to deploy ExchangeRateOracle on this network (${network})`);
-  // }
+  switch (network) {
+    case 'develop':
+      // use a fake instance to test locally using truffle develop
+    case 'rinkeby':
+      // use a fake instance to test locally using truffle develop
+    case 'development':
+      // use a fake instance to test locally using ganache
+      // fall through
+    case 'ropsten':
+      // Maker doesn't test on ropsten so we use a fake instance
+      await deployer.deploy(FakeExchangeRateOracle, { gas: 6000000 });
+      break;
+
+    case 'kovan':
+      // fall through
+
+    case 'mainnet':
+      await deployer.deploy(
+        ExchangeRateOracle,
+        // pass int he address of the Maker price feed contract on the blockchain
+        CONTRACT_ADDRESSES[network].mkrPriceFeed,
+        { gas: 7000000},
+      );
+      break;
+
+    default:
+      throw new Error(`did not specify how to deploy ExchangeRateOracle on this network (${network})`);
+  }
 };

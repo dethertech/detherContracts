@@ -15,7 +15,6 @@ const csoDether = "0xC5F8a06ed1CfB17d0366eF03FEDF37568B0ce246";
 const kycDelegateTestnet = '0x32BedF6609f002A591f871009C8e66D84F98d48E';
 const initScript = '0x391edA1b8D31f891d1653B131779751BdeDA24D3';
 
-
 const ownerdeploy = "0x6AAb2B0913B70270E840B14c2b23B716C0a43522"
 
 module.exports = async (callback) => {
