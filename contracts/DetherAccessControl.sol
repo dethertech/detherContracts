@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity ^0.4.21;
 
 /// @title A facet of Dether that manages special access privileges.
 /// @author Axiom Zen (https://www.axiomzen.co) && dether.io
@@ -26,6 +26,7 @@ contract DetherAccessControl {
     address public ceoAddress;
     address public cmoAddress;
     address public csoAddress; // CHIEF SHOP OFFICER
+    address public cfoAddress; // CHIEF FINANCIAL OFFICER
 	  mapping (address => bool) public shopModerators;   // centralised moderator, would become decentralised
     mapping (address => bool) public tellerModerators;   // centralised moderator, would become decentralised
 
@@ -44,10 +45,15 @@ contract DetherAccessControl {
         _;
     }
 
-    function isCSO(address _addr) public view returns (bool) {
-      return (_addr == csoAddress);
+    modifier onlyCSO() {
+        require(msg.sender == csoAddress);
+        _;
     }
 
+    modifier onlyCFO() {
+        require(msg.sender == cfoAddress);
+        _;
+    }
 
     modifier isShopModerator(address _user) {
       require(shopModerators[_user]);
@@ -75,6 +81,11 @@ contract DetherAccessControl {
     function setCSO(address _newCSO) external onlyCEO {
         require(_newCSO != address(0));
         csoAddress = _newCSO;
+    }
+
+    function setCFO(address _newCFO) external onlyCEO {
+        require(_newCFO != address(0));
+        cfoAddress = _newCFO;
     }
 
     function setShopModerator(address _moderator) external onlyCEO {

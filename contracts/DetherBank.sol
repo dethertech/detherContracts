@@ -1,12 +1,14 @@
-pragma solidity 0.4.21;
+pragma solidity ^0.4.21;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 import './zepellin/SafeMath.sol';
 import './dth/tokenfoundry/ERC223ReceivingContract.sol';
 import './dth/tokenfoundry/ERC223Basic.sol';
 import 'bytes/BytesLib.sol';
+import 'ethereum-datetime/contracts/DateTime.sol';
+
 /// @title Contract that will store the Dth from user
-contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
+contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath, DateTime {
   using BytesLib for bytes;
 
   /*
@@ -21,6 +23,12 @@ contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
   mapping(address => uint) public dthTellerBalance;
   mapping(address => uint) public ethShopBalance;
   mapping(address => uint) public ethTellerBalance;
+
+
+  // store a mapping with per day/month/year a uint256 containing the wei sold amount on that date
+  //
+  //      user               day               month             year      weiSold
+  mapping(address => mapping(uint16 => mapping(uint16 => mapping(uint16 => uint256)))) ethSellsUserToday;
 
   ERC223Basic public dth;
   bool public isInit = false;
@@ -72,10 +80,24 @@ contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
     ethTellerBalance[_from] = SafeMath.add(ethTellerBalance[_from] ,_value);
     return true;
   }
-  // withdraw ETH for teller escrow
+  // helper function to extra date info from block.timestamp
+  function getDateInfo(uint timestamp) internal view returns(_DateTime) {
+    // use DateTime.sol to extract date info from the timestamp
+    _DateTime memory date = parseTimestamp(timestamp);
+    return date;
+  }
+  // withdraw ETH for teller escrow + save amount sold today for the _from user
   function withdrawEth(address _from, address _to, uint _amount) external onlyOwner {
     require(ethTellerBalance[_from] >= _amount);
     ethTellerBalance[_from] = SafeMath.sub(ethTellerBalance[_from], _amount);
+
+    uint256 weiSoldToday = getWeiSoldToday(_from);
+
+    _DateTime memory date = getDateInfo(block.timestamp);
+
+    // add the sold amount, should not exceed daily limit (checked in DetherCore)
+    ethSellsUserToday[_from][date.day][date.month][date.year] = SafeMath.add(weiSoldToday, _amount);
+
     _to.transfer(_amount);
   }
   // refund all ETH from teller contract
@@ -100,6 +122,14 @@ contract DetherBank is ERC223ReceivingContract, Ownable, SafeMath  {
   function getEthBalTeller(address _user) public view returns (uint) {
     return ethTellerBalance[_user];
   }
+
+  // get amount wei sold today for this user
+  function getWeiSoldToday(address _user) public view returns (uint256 weiSoldToday) {
+    // use DateTime.sol to extract date info from the timestamp
+    _DateTime memory date = getDateInfo(block.timestamp);
+    weiSoldToday = ethSellsUserToday[_user][date.day][date.month][date.year];
+  }
+
   /// @dev Standard ERC223 function that will handle incoming token transfers.
   // DO NOTHING but allow to receive token when addToken* function are called
   // by the dethercore contract

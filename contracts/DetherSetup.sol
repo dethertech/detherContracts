@@ -1,4 +1,4 @@
-pragma solidity 0.4.21;
+pragma solidity ^0.4.21;
 
 import './certifier/Certifier.sol';
 import './DetherAccessControl.sol';
@@ -44,6 +44,14 @@ contract DetherSetup is DetherAccessControl  {
   modifier isZoneTellerOpen(bytes2 _country) {
     require(openedCountryTeller[_country]);
     _;
+  }
+
+  function isTier1(address _user) public view returns(bool) {
+    return smsCertifier.certified(_user);
+  }
+  
+  function isTier2(address _user) public view returns(bool) {
+    return kycCertifier.certified(_user);
   }
 
   /**

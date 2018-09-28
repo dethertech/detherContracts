@@ -14,11 +14,11 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.18;
 
 import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
 
-contract SmsCertifier is Ownable {
+contract KycCertifier is Ownable {
 	event Confirmed(address indexed who);
 	event Revoked(address indexed who);
 	modifier only_certified(address _who) { require(certs[_who].active); _; }
@@ -37,22 +37,22 @@ contract SmsCertifier is Ownable {
 		mapping (string => bytes32) meta;
 	}
 
-	function addDelegate(address _delegate, bytes32 _who) public onlyOwner {
+	function addDelegate(address _delegate, bytes32 _who) onlyOwner {
 		delegate[_delegate].active = true;
 		delegate[_delegate].meta['who'] = _who;
 	}
 
-	function removeDelegate(address _delegate) public onlyOwner {
+	function removeDelegate(address _delegate) onlyOwner {
 		delegate[_delegate].active = false;
 	}
 
 	function certify(address _who) only_delegate(msg.sender) {
 		certs[_who].active = true;
-		emit Confirmed(_who);
+		Confirmed(_who);
 	}
 	function revoke(address _who) only_delegate(msg.sender) only_certified(_who) {
 		certs[_who].active = false;
-		emit Revoked(_who);
+		Revoked(_who);
 	}
 
 	function isDelegate(address _who) public view returns (bool) { return delegate[_who].active; }
