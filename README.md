@@ -2,6 +2,9 @@
 
 [![Join the chat at https://gitter.im/dethertech/detherContracts](https://badges.gitter.im/dethertech/detherContracts.svg)](https://gitter.im/dethertech/detherContracts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
+## Deployed on mainnet: 0x876617584678d5B9A6Ef93ebA92b408367D9457C
+## Deployed on kovan: 0x484e4411A840727Cc4814b396720742a388e9C70
+
 ### Version 0.1    
 This version is the MVP version, its not suppose to reflect our entire version describe in our white paper.    
 What this version is supposed to do:    
