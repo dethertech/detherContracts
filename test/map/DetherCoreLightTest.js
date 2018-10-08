@@ -2,13 +2,13 @@
 /* global artifacts, contract, web3, assert */
 /* eslint-disable max-len */
 
-const {expectThrow} = require('./utils');
+const {expectThrow} = require('../utils');
 const Lexico = artifacts.require('Lexico.sol');
 const CSCZone = artifacts.require('CSCZone.sol');
 const DetherCoreLight = artifacts.require('DetherCoreLight.sol');
 const fs = require('fs');
 const path = require("path");
-const congotree = require('../data/congotree.json');
+const congotree = require('../../data/congotree.json');
 
 const getAccounts = () => new Promise((resolve, reject) => {
   web3.eth.getAccounts((err, acc) => err ? reject(err) : resolve(acc)); // eslint-disable-line
@@ -42,7 +42,7 @@ contract('DetherCoreLight - Deploy CSC', () => {
   });
 
 
-  it.only("Addzone from country", async () => {
+  it("Addzone from country", async () => {
 
     let totalgas = 0
     let countrycode = 'CG'
@@ -93,8 +93,8 @@ contract('DetherCoreLight - Deploy CSC', () => {
     );
 
 
-    console.log('Total gas used for congo')
-    console.log(totalgas)
+    // console.log('Total gas used for congo')
+    // console.log(totalgas)
 
 
     let zoneAddress;
