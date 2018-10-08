@@ -13,6 +13,7 @@ const {
   toAsciiStripZero,
   weiToEth,
   ethToWei,
+  getAccounts,
 } = require('./utils');
 
 const {
@@ -158,10 +159,6 @@ const tellerFromContract = rawTeller => ({
   online: rawTeller[9],
   buyer: rawTeller[10],
   buyRates: rawTeller[11].toNumber() / 10,
-});
-
-const getAccounts = () => new Promise((resolve, reject) => {
-  web3.eth.getAccounts((err, acc) => err ? reject(err) : resolve(acc)); // eslint-disable-line
 });
 
 let owner;
