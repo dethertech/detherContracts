@@ -17,27 +17,28 @@ const CONTRACT_ADDRESSES = {
   },
 };
 
+// NOTE: when running 'truffle test' the migrations will also run, and if we have a 60 second
+// delay, right in the middle of the tests after 60 seconds, the next contract in this migration
+// file will be deployed. therefore comment them out until you actually want to deploy.
+
 module.exports = async (deployer, network) => {
-  // await delay(60000);
   // gas 1,161,360
   // await deployer.deploy(DetherToken, { gas: 6000000, gasPrice: 27000000000 });
 
   // gas: 4,873,314
-  await deployer.deploy(DetherCore, { gas: 6500000});
-  console.log('delay');
-  await delay(60000);
+  await deployer.deploy(DetherCore, { gas: 6500000 });
+  // await delay(60000);
+
   // gas 1,477,280
-  await deployer.deploy(DetherBank, { gas: 6500000});
-  console.log('delay');
-  await delay(60000);
+  await deployer.deploy(DetherBank, { gas: 6500000 });
+  // await delay(60000);
 
   // gas 552,780
-  await deployer.deploy(SmsCertifier, { gas: 6500000});
-  console.log('delay');
-  await delay(60000);
-  // // // gas 552,780
+  await deployer.deploy(SmsCertifier, { gas: 6500000 });
+  // await delay(60000);
+
+  // gas 552,780
   await deployer.deploy(KycCertifier, { gas: 6500000 });
-  // console.log('delay');
   // await delay(60000);
 
   switch (network) {
