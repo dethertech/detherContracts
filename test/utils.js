@@ -113,3 +113,7 @@ exports.ethToWei = num => (
 exports.getAccounts = () => new Promise((resolve, reject) => {
   web3.eth.getAccounts((err, acc) => err ? reject(err) : resolve(acc)); // eslint-disable-line
 });
+
+exports.addNumberDots = num => (
+  num.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1.')
+);
