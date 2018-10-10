@@ -40,39 +40,7 @@ contract GeoRegistry is Ownable {
     charToBitmask[bytes1("h")] = hex"00000001"; // 1
   }
 
-  mapping(bytes2 => mapping(bytes1 => bytes4)) public level_0;
-  mapping(bytes2 => mapping(bytes2 => bytes4)) public level_1;
   mapping(bytes2 => mapping(bytes3 => bytes4)) public level_2;
-
-  function updateLevel0(bytes2 _countryCode, bytes1 _letter, bytes4 _subLetters)
-    public
-    onlyOwner
-  {
-    level_0[_countryCode][_letter] = _subLetters;
-  }
-  function updateLevel0batch(bytes2 _countryCode, bytes1[] _letters, bytes4[] _subLetters)
-    public
-    onlyOwner
-  {
-    for (uint i = 0; i < _letters.length; i++) {
-      level_0[_countryCode][_letters[i]] = _subLetters[i];
-    }
-  }
-
-  function updateLevel1(bytes2 _countryCode, bytes2 _letter, bytes4 _subLetters)
-    public
-    onlyOwner
-  {
-    level_1[_countryCode][_letter] = _subLetters;
-  }
-  function updateLevel1batch(bytes2 _countryCode, bytes2[] _letters, bytes4[] _subLetters)
-    public
-    onlyOwner
-  {
-    for (uint i = 0; i < _letters.length; i++) {
-      level_1[_countryCode][_letters[i]] = _subLetters[i];
-    }
-  }
 
   function updateLevel2(bytes2 _countryCode, bytes3 _letter, bytes4 _subLetters)
     public

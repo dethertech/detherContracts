@@ -1,6 +1,6 @@
 /* eslint-env mocha */
 /* global artifacts, contract, web3, assert */
-/* eslint-disable max-len, no-await-in-loop, guard-for-in, no-restricted-syntax */
+/* eslint-disable max-len, no-await-in-loop, guard-for-in, no-restricted-syntax, object-curly-newline */
 
 const path = require('path');
 const ethUtil = require('ethereumjs-util');
@@ -10,7 +10,7 @@ const { getAccounts, addNumberDots } = require('../utils');
 
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
 
-const toLevel3Bits = (chars) => {
+const toBitMap = (chars) => {
   let res = bignum('0');
   chars.forEach((char) => {
     switch (char) {
@@ -54,45 +54,36 @@ const toLevel3Bits = (chars) => {
 
 const BATCH_SIZE = 300;
 
-const addBatch = async (geoRegistryContract, countryCode, countryMap, allKeys, level, startIdx) => {
-  const keys = allKeys.slice(startIdx, startIdx + BATCH_SIZE);
-  const values = keys.map(key => countryMap[key]);
-  const receipt = await geoRegistryContract[`updateLevel${level}batch`](web3.fromAscii(countryCode), keys.map(web3.fromAscii), values);
-  return receipt.receipt.gasUsed;
-};
-
-const addCountry = async (geoRegistryContract, countryCode, countryMap) => {
-  const keysPerLevel = Object.keys(countryMap).reduce((memo, key) => {
-    const level = key.length - 1;
-    memo[level] = [...(memo[level] || []), key]; // eslint-disable-line no-param-reassign
+const addCountry = async (geoRegistryContract, countryCode, countryFile) => {
+  const countryMap = Object.keys(countryFile).reduce((memo, level0char) => {
+    Object.keys(countryFile[level0char]).forEach((level1char) => {
+      Object.keys(countryFile[level0char][level1char]).forEach((level2char) => {
+        const level4chars = Object.keys(countryFile[level0char][level1char][level2char]);
+        memo[`${level0char}${level1char}${level2char}`] = toBitMap(level4chars); // eslint-disable-line
+      });
+    });
     return memo;
-  }, []);
+  }, {});
 
-  let gasCost = 0;
+  const keys = Object.keys(countryMap);
+
+  let countryGasCost = 0;
   let txCount = 0;
+  let mostExpensiveTrxGasCost = 0;
 
-  for (let level = 0; level < 3; level += 1) {
-    for (let batchStartIdx = 0; batchStartIdx < keysPerLevel[level].length; batchStartIdx += BATCH_SIZE) {
-      gasCost += await addBatch(geoRegistryContract, countryCode, countryMap, keysPerLevel[level], level, batchStartIdx); // eslint-disable-line no-await-in-loop
-      txCount += 1;
+  for (let batchStartIdx = 0; batchStartIdx < keys.length; batchStartIdx += BATCH_SIZE) {
+    const keysBatch = keys.slice(batchStartIdx, batchStartIdx + BATCH_SIZE);
+    const valuesBatch = keysBatch.map(key => countryMap[key]);
+    const receipt = await geoRegistryContract.updateLevel2batch(web3.fromAscii(countryCode), keysBatch.map(web3.fromAscii), valuesBatch);
+    const gasCost = receipt.receipt.gasUsed;
+    if (gasCost > mostExpensiveTrxGasCost) {
+      mostExpensiveTrxGasCost = gasCost;
     }
+    countryGasCost += gasCost;
+    txCount += 1;
   }
 
-  return { gasCost, txCount };
-};
-
-const toCountryMap = (countryFile) => {
-  const countryMap = {};
-  for (const level0char in countryFile) {
-    countryMap[`${level0char}`] = toLevel3Bits(Object.keys(countryFile[level0char]));
-    for (const level1char in countryFile[level0char]) {
-      countryMap[`${level0char}${level1char}`] = toLevel3Bits(Object.keys(countryFile[level0char][level1char]));
-      for (const level2char in countryFile[level0char][level1char]) {
-        countryMap[`${level0char}${level1char}${level2char}`] = toLevel3Bits(Object.keys(countryFile[level0char][level1char][level2char]));
-      }
-    }
-  }
-  return countryMap;
+  return { countryGasCost, mostExpensiveTrxGasCost, txCount, countryMap };
 };
 
 const countriesToTest = [
@@ -354,26 +345,26 @@ contract('GeoRegistry', () => {
     const time = process.hrtime(timerStart);
     console.log(`total time: ${pretty(time, 'ms')}`);
     console.log(`total gas cost: ${addNumberDots(totalGasCost)}`);
-    console.log(`total tx count: ${addNumberDots(totalTxCount)}\n`);
-    results.sort((a, b) => b.gasCost - a.gasCost).forEach((item) => {
-      console.log(`country:${item.countryCode} gas:${addNumberDots(item.gasCost)} txs:${item.txCount} time:${item.time}`);
+    console.log(`total tx count: ${addNumberDots(totalTxCount)}`);
+    console.log(`max batch size: ${BATCH_SIZE}\n`);
+    results.sort((a, b) => b.countryGasCost - a.countryGasCost).forEach((item) => {
+      console.log(`country:${item.countryCode} gas:${addNumberDots(item.countryGasCost)} txs:${item.txCount} time:${item.time} mostExpensiveTrx:${addNumberDots(item.mostExpensiveTrxGasCost)}`);
     });
   });
 
-  describe(`add all countries in batches (max batch size = ${BATCH_SIZE})`, () => {
+  describe.only(`add all countries in batches (max batch size = ${BATCH_SIZE})`, () => {
     countriesToTest.forEach((countryCode) => {
       it(`successfully adds country ${countryCode}`, async () => {
         const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
-        const countryMap = toCountryMap(countryFile);
         const countryTimerStart = process.hrtime();
-        const { gasCost, txCount } = await addCountry(geoRegistryContract, countryCode, countryMap);
+        const { countryGasCost, mostExpensiveTrxGasCost, txCount, countryMap } = await addCountry(geoRegistryContract, countryCode, countryFile);
         const time = process.hrtime(countryTimerStart);
-        results.push({ countryCode, gasCost, txCount, time: pretty(time, 'ms') }); // eslint-disable-line
-        totalGasCost += gasCost;
+        results.push({ countryCode, countryGasCost, mostExpensiveTrxGasCost, txCount, time: pretty(time, 'ms') }); // eslint-disable-line
+        totalGasCost += countryGasCost;
         totalTxCount += txCount;
         for (const key in countryMap) {
-          const onchainContent = await geoRegistryContract[`level_${key.length - 1}`](web3.fromAscii(countryCode), web3.fromAscii(key));
-          assert.deepStrictEqual(onchainContent, countryMap[key], `level${key.length - 1} content for key ${key} does not match expected`);
+          const onchainContent = await geoRegistryContract.level_2(web3.fromAscii(countryCode), web3.fromAscii(key));
+          assert.deepStrictEqual(onchainContent, countryMap[key], `content for key ${key} does not match expected`);
         }
       });
     });
@@ -382,8 +373,7 @@ contract('GeoRegistry', () => {
   it('zoneInsideCountry returns correct result', async () => {
     const countryCode = 'CG';
     const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
-    const countryMap = toCountryMap(countryFile);
-    await addCountry(geoRegistryContract, countryCode, countryMap);
+    await addCountry(geoRegistryContract, countryCode, countryFile);
     const countryCodeBytes = web3.fromAscii(countryCode);
 
     assert.equal(
