@@ -333,7 +333,7 @@ const countriesToTest = [
   'ZW',
 ];
 
-contract.only('GeoRegistry', () => {
+contract('GeoRegistry', () => {
   let owner;
   let geoRegistryContract;
   let timerStart;
