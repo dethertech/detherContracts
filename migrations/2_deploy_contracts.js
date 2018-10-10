@@ -44,8 +44,10 @@ module.exports = async (deployer, network) => {
   switch (network) {
     case 'develop':
       // use a fake instance to test locally using truffle develop
+      // fall through
     case 'rinkeby':
       // use a fake instance to test locally using truffle develop
+      // fall through
     case 'development':
       // use a fake instance to test locally using ganache
       // fall through
@@ -62,7 +64,7 @@ module.exports = async (deployer, network) => {
         ExchangeRateOracle,
         // pass int he address of the Maker price feed contract on the blockchain
         CONTRACT_ADDRESSES[network].mkrPriceFeed,
-        { gas: 7000000},
+        { gas: 7000000 },
       );
       break;
 
