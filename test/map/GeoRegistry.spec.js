@@ -95,6 +95,7 @@ const countriesToTest = [
   'AL',
   'AM',
   'AO',
+  'AQ',
   'AR',
   'AS',
   'AT',
@@ -156,6 +157,7 @@ const countriesToTest = [
   'FK',
   'FM',
   'FO',
+  'FR',
   'GA',
   'GB',
   'GD',
@@ -244,6 +246,7 @@ const countriesToTest = [
   'NG',
   'NI',
   'NL',
+  'NO',
   'NP',
   'NR',
   'NU',
@@ -352,7 +355,7 @@ contract('GeoRegistry', () => {
     });
   });
 
-  describe.only(`add all countries in batches (max batch size = ${BATCH_SIZE})`, () => {
+  describe(`add all countries in batches (max batch size = ${BATCH_SIZE})`, () => {
     countriesToTest.forEach((countryCode) => {
       it(`successfully adds country ${countryCode}`, async () => {
         const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
