@@ -1,5 +1,4 @@
 /* global web3, assert */
-
 exports.expectThrow = async (promise) => {
   try {
     await promise;
@@ -109,4 +108,12 @@ exports.weiToEth = bnNum => (
 
 exports.ethToWei = num => (
   web3.toWei(num, 'ether')
+);
+
+exports.getAccounts = () => new Promise((resolve, reject) => {
+  web3.eth.getAccounts((err, acc) => err ? reject(err) : resolve(acc)); // eslint-disable-line
+});
+
+exports.addNumberDots = num => (
+  num.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1.')
 );

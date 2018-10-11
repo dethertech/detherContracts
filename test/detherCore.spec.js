@@ -13,6 +13,7 @@ const {
   toAsciiStripZero,
   weiToEth,
   ethToWei,
+  getAccounts,
 } = require('./utils');
 
 const {
@@ -160,10 +161,6 @@ const tellerFromContract = rawTeller => ({
   buyRates: rawTeller[11].toNumber() / 10,
 });
 
-const getAccounts = () => new Promise((resolve, reject) => {
-  web3.eth.getAccounts((err, acc) => err ? reject(err) : resolve(acc)); // eslint-disable-line
-});
-
 let owner;
 let user1address;
 let user2address;
@@ -242,7 +239,7 @@ contract('Dether Dth', () => {
     await dether.setSellDailyLimit(2, web3.toHex(teller2.countryId), 5000, { from: cfo });
   });
 
-  contract('Add shop --', async () => {
+  contract.skip('Add shop --', async () => {
     it('should be able to bulk add shop from the same address', async () => {
       shop1.address = '0000000000000000000000000000000000000001';
 
