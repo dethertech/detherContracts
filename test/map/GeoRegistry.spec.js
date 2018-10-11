@@ -95,7 +95,6 @@ const countriesToTest = [
   'AL',
   'AM',
   'AO',
-  'AQ',
   'AR',
   'AS',
   'AT',
