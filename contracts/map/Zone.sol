@@ -2,6 +2,10 @@ pragma solidity ^0.4.22;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
+contract IDetherToken {
+  function transferFrom(address from, address to, uint256 value) public returns (bool);
+}
+
 /*
 things still to do:
 - implement release function
@@ -29,6 +33,8 @@ contract Zone {
   uint private constant MIN_STAKE = 100 ether; // DTH, which is also 18 decimals!
   uint private constant BID_PERIOD = 24 hours;
   uint private constant COOLDOWN_PERIOD = 48 hours;
+
+  IDetherToken public dth;
 
   bytes7 public geohash;
 
@@ -87,7 +93,7 @@ contract Zone {
   // ------------------------------------------------
 
   // executed by ZoneFactory.sol when this Zone does not yet exist (= not yet deployed)
-  constructor(bytes7 _geohash, address _zoneOwner, uint _dthAmount)
+  constructor(bytes7 _geohash, address _zoneOwner, uint _dthAmount, address _dth)
     internal
   {
     require(_geohash != bytes7(0), "geohash should not be 0x0");
@@ -95,6 +101,7 @@ contract Zone {
     require(_dthStake >= MIN_STAKE, "zone dth stake is less than minimum (100 DTH)");
 
     geohash = _geohash;
+    dth = IDetherToken(_dth);
 
     zoneOwner = ZoneOwner({
       addr: _zoneOwner,
@@ -421,8 +428,8 @@ contract Zone {
       lastAuction.totalBids = lastAuction.totalBids.add(bidAmount);
     }
 
-    dth.transfer(address(0), burnAmount); // burn
-    dth.transfer(address(this), bidAmount);
+    dth.transferFrom(msg.sender, address(0), burnAmount); // burn
+    dth.transferFrom(msg.sender, address(this), bidAmount);
   }
 
   // even though we use _processAuction in every "set" function, there still should be a way
@@ -450,7 +457,7 @@ contract Zone {
       staked: _dthAmount
     });
 
-    dth.transfer(address(this), _dthAmount);
+    dth.transferFrom(msg.sender, address(this), _dthAmount);
   }
 
   // user can always try to withdraw from a specific auction
