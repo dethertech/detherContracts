@@ -1,6 +1,6 @@
 pragma solidity ^0.4.22;
 
-import "./Ownable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract GeoRegistry is Ownable {
 
@@ -17,6 +17,13 @@ contract GeoRegistry is Ownable {
 
   //      countryCode       geohashFirst3 bitmaskLevel4
   mapping(bytes2 => mapping(bytes3 => bytes4)) public level_2;
+
+  // ------------------------------------------------
+  // Events
+  // ------------------------------------------------
+
+  event GeoRegistryCountryEnabled(bytes2 indexed country);
+  event GeoRegistryCountryDisabled(bytes2 indexed country);
 
   // ------------------------------------------------
   // Constructor
@@ -101,9 +108,34 @@ contract GeoRegistry is Ownable {
   }
 
   function enableCountry(bytes2 _country)
-    public
+    external
+    onlyOwner
   {
-    countryIsEnabled[_country] = true ;
+    require(!countryIsEnabled, "country already enabled");
+
+    countryIsEnabled[_country] = true;
     enabledCountries.push(_country);
+
+    emit GeoRegistryCountryEnabled(_country);
+  }
+
+  function disableCountry(bytes2 _country)
+    external
+    onlyOwner
+  {
+    require(countryIsEnabled, "country already disabled");
+
+    countryIsEnabled[_country] = false;
+
+    for (uint i = 0; i < enabledCountries.length; i++) {
+      if (enabledCountries[i] == _country) {
+        // replace the to-be-deleted country with the last country in the list
+        enabledCountries[i] = enabledCountries[enabledCountries.length - 1];
+        enabledCountries.length--;
+        break;
+      }
+    }
+
+    emit GeoRegistryCountryDisabled(_country);
   }
 }
