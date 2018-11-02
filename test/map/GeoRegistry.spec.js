@@ -326,7 +326,7 @@ const countriesToTest = [
   'ZW',
 ];
 
-contract('GeoRegistry', () => {
+contract.skip('GeoRegistry', () => {
   let owner;
   let geoRegistryContract;
   let timerStart;

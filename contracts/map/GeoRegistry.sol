@@ -1,6 +1,6 @@
 pragma solidity ^0.4.22;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract GeoRegistry is Ownable {
 
@@ -111,7 +111,7 @@ contract GeoRegistry is Ownable {
     external
     onlyOwner
   {
-    require(!countryIsEnabled, "country already enabled");
+    require(!countryIsEnabled[_country], "country already enabled");
 
     countryIsEnabled[_country] = true;
     enabledCountries.push(_country);
@@ -123,7 +123,7 @@ contract GeoRegistry is Ownable {
     external
     onlyOwner
   {
-    require(countryIsEnabled, "country already disabled");
+    require(countryIsEnabled[_country], "country already disabled");
 
     countryIsEnabled[_country] = false;
 
