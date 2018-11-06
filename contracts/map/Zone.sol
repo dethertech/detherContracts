@@ -31,7 +31,7 @@ contract Zone {
   uint private constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
   uint private constant BID_PERIOD = 24 * 1 hours;
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
-  uint private constant BURN_PERCENTAGE = 1;
+  uint private constant ENTRY_FEE_PERCENTAGE = 1;
   address private constant ADDRESS_BURN = 0xffffffffffffffffffffffffffffffffffffffff;
 
 
@@ -52,7 +52,7 @@ contract Zone {
     uint startTime;
     uint staked;
   }
-  ZoneOwner public zoneOwner;
+  ZoneOwner private zoneOwner;
 
   //
   // auction
@@ -70,9 +70,6 @@ contract Zone {
   }
   uint public currentAuctionId;
   mapping(uint => Auction) private auctionIdToAuction;
-
-  //      auctionId highestBidder
-  mapping(uint => address) public acutionHighestBidder;
 
   //      auctionId address dthInThisAuction
   mapping(uint => mapping(address => uint)) public auctionBids;
@@ -116,19 +113,20 @@ contract Zone {
     zoneOwner.startTime = now;
     zoneOwner.staked = _dthAmount;
 
+
     // create a Sentinel Auction for the user that first creates this Zone
     Auction memory sentinelAuction = Auction({
       state: AuctionState.Ended,
       startTime: now,
       endTime: now,
       highestBidder: _zoneOwner, // called by zoneFactory.createAndClaim, which passes msg.sender as _zoneOwner
-      totalBids: 0, // caller (challenger) dth stake bid
+      totalBids: _dthAmount,
       numBidders: 1,
       processed: true
     });
     auctionIdToAuction[currentAuctionId] = sentinelAuction;
 
-    auctionBids[currentAuctionId][_zoneOwner] = 0; // set to zero since the winner's bid get's transferred to zoneOwner.staked
+    auctionBids[currentAuctionId][_zoneOwner] = _dthAmount;
 
     emit ZoneCreated(address(this), _geohash, _zoneOwner, _dthAmount);
   }
@@ -142,25 +140,10 @@ contract Zone {
   function getZoneOwner()
     external
     view
-    returns (address)
+    returns (address, uint, uint)
   {
-    return zoneOwner.addr;
+    return (zoneOwner.addr, zoneOwner.startTime, zoneOwner.staked);
   }
-  function getZoneOwnerStartTime()
-    external
-    view
-    returns (uint)
-  {
-    return zoneOwner.startTime;
-  }
-  function getZoneStaked()
-    external
-    view
-    returns (uint)
-  {
-    return zoneOwner.staked;
-  }
-
 
   // if we bid 100DTH, how much will that be after the entry fee (1%) has been deducted
   function calcBidMinusEntryFee(uint _bid)
@@ -168,7 +151,7 @@ contract Zone {
     pure
     returns(uint)
   {
-    return _bid.sub(_bid.div(100));
+    return _bid.sub(_bid.div(100).mul(ENTRY_FEE_PERCENTAGE));
   }
 
   // // can a specific user place a bid
@@ -297,6 +280,16 @@ contract Zone {
   //   return false;
   // }
 
+  function auctionExists(uint _auctionId)
+    public
+    view
+    returns (bool)
+  {
+    // if aucton does not exist we should get back zero, otherwise this field
+    // will contain a block.timestamp, set whe creating an Auction, in constructor() and bid()
+    return auctionIdToAuction[_auctionId].startTime > 0;
+  }
+
   // return all fields of a specific auction
   function getAuction(uint _auctionId)
     public
@@ -327,33 +320,64 @@ contract Zone {
     return getAuction(currentAuctionId);
   }
 
-  function getAuctionEndTime(uint _auctionId)
-    public
-    view
-    returns (uint)
-  {
-    return auctionIdToAuction[_auctionId].endTime;
-  }
-
-  function getLastAuctionEndTime()
-    external
-    view
-    returns (uint)
-  {
-    return getAuctionEndTime(currentAuctionId);
-  }
-
   // ------------------------------------------------
   //
   //
-  // Setters
+  // Private Functions
   //
   //
   // ------------------------------------------------
 
   // there really is no other way to keep everything running smoothly
   // we need to run this function at the beginning of every "set" operation
-  modifier processLiveAuction() {
+  function processLiveAuctionNew() private {
+    Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
+
+    // update auction state if auction end time has passed
+    if (lastAuction.state == AuctionState.Started && now >= lastAuction.endTime) {
+      // 1. update state to Ended
+      lastAuction.state = AuctionState.Ended;
+
+      // 2. get the winning bidder address
+      address winningBidder = lastAuction.highestBidder;
+
+      // 3. get the winning bid amount
+      uint winningAmount = auctionBids[currentAuctionId][winningBidder];
+
+      // 4. reset winning bidders bid from Auction
+      auctionBids[currentAuctionId][winningBidder] = 0;
+
+      // 5. check if winning bidder is the same as current zone owner
+      if (zoneOwner.addr == winningBidder) {
+        zoneOwner.staked += winningAmount;
+      } else {
+        // winning bidder is not the same as current zone owner
+
+        // uint beginTime = zoneOwner.startTime;
+        // uint taxBeginTime = beginTime + 48 hours; // first 48 hours are tax free
+        // uint taxEndTime = lastAuction.endTime;
+        // uint taxTime = taxEndTime.sub(taxBeginTime);
+        //
+        // uint taxAmount = taxTime.mul(2).div(100); // 2%
+        // uint bidAmount = _dthAmount.sub(burnAmount); // 98%
+        // TODO: deduct harberger tax
+        zoneOwnerWithdraw[zoneOwner.addr] = zoneOwnerWithdraw[zoneOwner.addr].add(zoneOwner.staked);
+
+        // set the new zoneOwner
+        // https://github.com/trailofbits/slither/issues/70#issue-377046794
+        zoneOwner = ZoneOwner({
+          addr: lastAuction.highestBidder,
+          startTime: lastAuction.endTime,
+          staked: winningAmount
+        });
+      }
+
+      lastAuction.processed = true;
+    }
+  }
+  // there really is no other way to keep everything running smoothly
+  // we need to run this function at the beginning of every "set" operation
+  function processLiveAuction() private {
     Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
 
     // update auction state if auction end time has passed
@@ -364,7 +388,7 @@ contract Zone {
     // check to see if we need to process the auction results
     if (lastAuction.state == AuctionState.Ended && lastAuction.processed == false) {
       uint winningAmount = auctionBids[currentAuctionId][lastAuction.highestBidder];
-      lastAuction.bids[lastAuction.highestBidder] = 0;
+      auctionBids[currentAuctionId][lastAuction.highestBidder] = 0;
 
       if (zoneOwner.addr == lastAuction.highestBidder) {
         // the current zoneowner is the highest bidder
@@ -383,6 +407,7 @@ contract Zone {
         zoneOwnerWithdraw[zoneOwner.addr] = zoneOwnerWithdraw[zoneOwner.addr].add(zoneOwner.staked);
 
         // set the new zoneOwner
+        // https://github.com/trailofbits/slither/issues/70#issue-377046794
         zoneOwner = ZoneOwner({
           addr: lastAuction.highestBidder,
           startTime: lastAuction.endTime,
@@ -392,29 +417,81 @@ contract Zone {
 
       lastAuction.processed = true;
     }
+  }
 
-    _;
+  // ------------------------------------------------
+  //
+  //
+  // Public Functions
+  //
+  //
+  // ------------------------------------------------
+
+  // even though we use _processLiveAuction in every "set" function, there still should be a way
+  // to manually claim a zone after the auction ended.
+  // TODO: there is no claim function, whenever user does something like addTeller
+  // and he was the winner of the last (passed) auction, processLiveauction()
+  // will update the state to make him owner, after which his addTeller() call will succeed
+  //
+  // const getLiveZoneOwner = () => {
+  //   const zoneOwner = zoneInstance.getZoneOwner()
+  //   const lastAuction = zoneInstance.getLastAuction()
+  //   const liveZoneOwner =
+  //     (lastAuction.endTime > now && zoneOwner.addr !== lastAuction.highestBidder)
+  //       ? lastAuction.highestBidde
+  //       : zoneOwner.addr
+  //   return liveZoneOwner
+  // }
+  function claim()
+    external
+  {
+    require(now >= auctionIdToAuction[currentAuctionId].endTime, "auction endTime has not yet passed");
+    require(auctionIdToAuction[currentAuctionId].state == AuctionState.Started, "auction not in started state");
+    require(msg.sender == auctionIdToAuction[currentAuctionId].highestBidder, "can only be called by last auction highest bidder");
+
+    processLiveAuction();
+    // nothing
+  }
+
+  // user can claim empty zone --> which has no zoneowner AND for which there is no running auction
+  function claimEmptyZone(uint _dthAmount)
+    external
+  {
+    processLiveAuction();
+    require(auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "can not claim while auction is running");
+    require(zoneOwner.addr == address(0), "can only claim a zone which has no zoneowner");
+    require(dth.balanceOf(msg.sender) >= _dthAmount, "caller does not have enough dth");
+    require(_dthAmount >= MIN_STAKE, "bid needs to be at least minimum zone stake amount (100 DTH)");
+
+    zoneOwner = ZoneOwner({
+      addr: msg.sender,
+      startTime: now,
+      staked: _dthAmount
+    });
+
+    dth.transferFrom(msg.sender, address(this), _dthAmount);
   }
 
   function bid(uint _dthAmount)
     external
-    processLiveAuction()
   {
-
     require(zoneOwner.addr != address(0), "cannot bid on zone without owner, use claim()");
-    require(dth.allowance(msg.sender, address(this)) >= _dthAmount, "zone does not have high enough dth balance from sender");
-    require(dth.balanceOf(msg.sender) >= _dthAmount, "zone does not have high enough dth balance from sender");
+    require(dth.allowance(msg.sender, address(this)) >= _dthAmount, "zone does not have high enough dth allowance from sender");
+    require(dth.balanceOf(msg.sender) >= _dthAmount, "sender does not have enough dth");
+
+    processLiveAuction();
 
     Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
 
-    uint burnAmount = _dthAmount.div(100).mul(BURN_PERCENTAGE); // 1%
+    uint burnAmount = _dthAmount.div(100).mul(ENTRY_FEE_PERCENTAGE); // 1%
     uint bidAmount = _dthAmount.sub(burnAmount); // 99%
 
     if (lastAuction.state == AuctionState.Ended) {
       // lets see if we can start a new Auction
-      require(now > lastAuction.endTime.add(COOLDOWN_PERIOD), "cooldown period hasnt ended yet, cannot start new auction");
+      // TODO: what if zone was released and ha sno current zoneOwner!
       require(msg.sender != zoneOwner.addr, "zoneowner cannot start an auction");
       require(bidAmount > zoneOwner.staked, "bid needs to be higher than current zoneowner stake");
+      require(now > lastAuction.endTime.add(COOLDOWN_PERIOD), "cooldown period hasnt ended yet, cannot start new auction");
 
       // save the new Auction
       uint newAuctionId = ++currentAuctionId;
@@ -433,7 +510,7 @@ contract Zone {
 
     } else if (lastAuction.state == AuctionState.Started) {
       // there is a running auction, lets see if we can join the auction with our bid
-      require(msg.sender != lastAuction.highestBidder, "caller cannot already be highest bidder");
+      require(msg.sender != lastAuction.highestBidder, "highest bidder cannot bid");
 
       uint currentUserTotalBid = auctionBids[currentAuctionId][msg.sender];
       uint currentHighestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
@@ -459,41 +536,14 @@ contract Zone {
     dth.transferFrom(msg.sender, address(this), bidAmount);
   }
 
-  // even though we use _processLiveAuction in every "set" function, there still should be a way
-  // to manually claim a zone after the auction ended.
-  function claim()
-    external
-    processLiveAuction()
-  {
-    // nothing
-  }
-
-  // user can claim empty zone --> which has no zoneowner AND for which there is no running auction
-  function claimEmptyZone(uint _dthAmount)
-    external
-    processLiveAuction()
-  {
-    require(auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "can not claim while auction is running");
-    require(zoneOwner.addr == address(0), "can only claim a zone which has no zoneowner");
-    require(dth.balanceOf(msg.sender) >= _dthAmount, "caller does not have enough dth");
-    require(_dthAmount >= MIN_STAKE, "bid needs to be at least minimum zone stake amount (100 DTH)");
-
-    zoneOwner = ZoneOwner({
-      addr: msg.sender,
-      startTime: now,
-      staked: _dthAmount
-    });
-
-    dth.transferFrom(msg.sender, address(this), _dthAmount);
-  }
 
   // user can always try to withdraw from a specific auction
   function withdrawFromAuction(uint _auctionId)
     external
-    processLiveAuction()
   {
-
     require(_auctionId <= currentAuctionId, "auctionId does not exist");
+
+    processLiveAuction();
 
     Auction storage auction = auctionIdToAuction[_auctionId];
 
@@ -511,17 +561,18 @@ contract Zone {
   // if this function costs too much gas, the user can still withdraw using the above withdrawFromAuction(auctionId)
   function withdrawFromAllAuctions()
     external
-    processLiveAuction()
   {
+    processLiveAuction();
+
     uint withdrawAmountTotal = 0;
 
-    for (uint i = 1; i <= currentAuctionId; i++) {
-      Auction storage auction = auctionIdToAuction[i];
+    for (uint auctionId = 1; auctionId <= currentAuctionId; auctionId++) {
+      Auction storage auction = auctionIdToAuction[auctionId];
 
-      uint withdrawAmount = auction.bids[msg.sender];
+      uint withdrawAmount = auctionBids[auctionId][msg.sender];
       if (withdrawAmount == 0) continue; // go to next auction
 
-      auction.bids[msg.sender] = 0;
+      auctionBids[auctionId][msg.sender] = 0;
       auction.totalBids = auction.totalBids.sub(withdrawAmount);
 
       withdrawAmountTotal = withdrawAmountTotal.add(withdrawAmount);
@@ -535,12 +586,18 @@ contract Zone {
   // zone owner can release his zone ownership
   function release()
     external
-    processLiveAuction()
   {
+    processLiveAuction();
+
     require(msg.sender == zoneOwner.addr, "can only be called by zoneowner");
+
 
     ////////////////////////////////////////////////////////////
     // TODO
     ////////////////////////////////////////////////////////////
   }
 }
+
+
+// problems
+// -
