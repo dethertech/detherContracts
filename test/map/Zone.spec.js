@@ -164,20 +164,18 @@ contract.only('ZoneFactory + Zone', () => {
           expect(lastAuction[4], 'lastAuction.highestBidder should equal @user1').to.equal(user1);
           expect(lastAuction[5].toString(), 'lastAuction.totalBids sohuld equal input dth amount (without entry fee deduction)').to.equal(wei(MIN_ZONE_DTH_STAKE));
           expect(lastAuction[6].toNumber(), 'lastAuction.numBids should equal 1').to.equal(1);
-          expect(lastAuction[7], 'lastAuction.processed should be true').to.equal(true);
         });
 
         it('newZone.getAuction(0) returns the correct "Sentinel" Auction created on deployment of Zone contract', async () => {
+          const lastAuction = await newZone.getLastAuction();
           const auction = await newZone.getAuction(0);
-          expect(auction[0].toNumber(), 'auction.id should be zero').to.equal(0);
-          expect(auction[1].toNumber(), 'auction.state should equal Ended(=1)').to.equal(1);
-          expect(auction[2].toNumber(), 'auction.startTime should be greater than 0').to.not.equal(0);
-          expect(auction[2].toNumber(), 'auction.endTime should be greater than 0').to.not.equal(0);
-          expect(auction[2].toNumber(), 'auction.endTime should equal auction.startTime').to.equal(auction[3].toNumber());
-          expect(auction[4], 'auction.highestBidder should equal @user1').to.equal(user1);
-          expect(auction[5].toString(), 'auction.totalBids should equal input dth amount (without entry fee deduction)').to.equal(wei(MIN_ZONE_DTH_STAKE));
-          expect(auction[6].toNumber(), 'auction.numBids should equal 1').to.equal(1);
-          expect(auction[7], 'auction.processed should be true').to.equal(true);
+          expect(auction[0].toNumber(), 'auction.id should equal last auction value').to.equal(lastAuction[0].toNumber());
+          expect(auction[1].toNumber(), 'auction.state should equal last auction value').to.equal(lastAuction[1].toNumber());
+          expect(auction[2].toNumber(), 'auction.startTime should equal last auction value').to.equal(lastAuction[2].toNumber());
+          expect(auction[3].toNumber(), 'auction.endTime should equal last auction value').to.equal(lastAuction[3].toNumber());
+          expect(auction[4], 'auction.highestBidder should equal last auction value').to.equal(lastAuction[4]);
+          expect(auction[5].toString(), 'auction.totalBids should equal last auction value').to.equal(lastAuction[5].toString());
+          expect(auction[6].toNumber(), 'auction.numBids should equal 1').to.equal(lastAuction[6].toNumber());
         });
 
         // TODO: zoneowner[1] startTime
@@ -224,20 +222,18 @@ contract.only('ZoneFactory + Zone', () => {
           expect(lastAuction[4], 'lastAuction.highestBidder should equal @user1').to.equal(user1);
           expect(lastAuction[5].toString(), 'lastAuction.totalBids sohuld equal input dth amount (without entry fee deduction)').to.equal(wei(MIN_ZONE_DTH_STAKE + 1));
           expect(lastAuction[6].toNumber(), 'lastAuction.numBids should equal 1').to.equal(1);
-          expect(lastAuction[7], 'lastAuction.processed should be true').to.equal(true);
         });
 
-        it('newZone.getAuction(0) returns the correct "Sentinel" Auction created on deployment of Zone contract', async () => {
+        it('newZone.getAuction(lastauctionId) returns the same as lastAuction', async () => {
+          const lastAuction = await newZone.getLastAuction();
           const auction = await newZone.getAuction(0);
-          expect(auction[0].toNumber(), 'auction.id should be zero').to.equal(0);
-          expect(auction[1].toNumber(), 'auction.state should equal Ended(=1)').to.equal(1);
-          expect(auction[2].toNumber(), 'auction.startTime should be greater than 0').to.not.equal(0);
-          expect(auction[2].toNumber(), 'auction.endTime should be greater than 0').to.not.equal(0);
-          expect(auction[2].toNumber(), 'auction.endTime should equal auction.startTime').to.equal(auction[3].toNumber());
-          expect(auction[4], 'auction.highestBidder should equal @user1').to.equal(user1);
-          expect(auction[5].toString(), 'auction.totalBids should equal input dth amount (without entry fee deduction)').to.equal(wei(MIN_ZONE_DTH_STAKE + 1));
-          expect(auction[6].toNumber(), 'auction.numBids should equal 1').to.equal(1);
-          expect(auction[7], 'auction.processed should be true').to.equal(true);
+          expect(auction[0].toNumber(), 'auction.id should equal last auction value').to.equal(lastAuction[0].toNumber());
+          expect(auction[1].toNumber(), 'auction.state should equal last auction value').to.equal(lastAuction[1].toNumber());
+          expect(auction[2].toNumber(), 'auction.startTime should equal last auction value').to.equal(lastAuction[2].toNumber());
+          expect(auction[3].toNumber(), 'auction.endTime should equal last auction value').to.equal(lastAuction[3].toNumber());
+          expect(auction[4], 'auction.highestBidder should equal last auction value').to.equal(lastAuction[4]);
+          expect(auction[5].toString(), 'auction.totalBids should equal last auction value').to.equal(lastAuction[5].toString());
+          expect(auction[6].toNumber(), 'auction.numBids should equal 1').to.equal(lastAuction[6].toNumber());
         });
 
         // TODO: zoneowner[1] startTime
@@ -595,7 +591,6 @@ contract.only('ZoneFactory + Zone', () => {
                 expect(lastAuction[4], 'lastAuction.highestBidder should equal @user2').to.equal(user2);
                 expect(lastAuction[5].toString(), 'lastAuction.totalBids should equal input dth amount with entry fee deducted').to.equal(expectedDthMinusEntryFee.toString());
                 expect(lastAuction[6].toNumber(), 'lastAuction.numBids should equal 1').to.equal(1);
-                expect(lastAuction[7], 'lastAuction.processed should be false').to.equal(false);
               });
               describe('when Auction endTime has passed (winner and new zone owner will be @user2)', () => {
                 beforeEach(async () => {
@@ -612,7 +607,6 @@ contract.only('ZoneFactory + Zone', () => {
                     expect(lastAuction[4], 'lastAuction.highestBidder should equal @user2').to.equal(user2);
                     expect(lastAuction[5].toString(), 'lastAuction.totalBids should equal input dth amount with entry fee deducted').to.equal(expectedDthMinusEntryFee.toString());
                     expect(lastAuction[6].toNumber(), 'lastAuction.numBids should equal 1').to.equal(1);
-                    expect(lastAuction[7], 'lastAuction.processed should be false').to.equal(false);
                   });
                 });
                 describe.skip('when auction win has been claimed', () => {
@@ -632,7 +626,6 @@ contract.only('ZoneFactory + Zone', () => {
                     expect(lastAuction[4], 'lastAuction.highestBidder should equal @user2').to.equal(user2);
                     expect(lastAuction[5].toString(), 'lastAuction.totalBids should equal input dth amount with entry fee deducted').to.equal(expectedDthMinusEntryFee.toNumber());
                     expect(lastAuction[6].toNumber(), 'lastAuction.numBids should equal 1').to.equal(1);
-                    expect(lastAuction[7], 'lastAuction.processed should be false').to.equal(false);
                   });
                 });
               });

@@ -4,6 +4,23 @@ import "zeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../dth/IDetherToken.sol";
 
+/*
+things still to do:
+- implement release function
+- add tests
+- add events
+- try and get rid of the multiple auctions and just use 1 Auction (like ZoneOwner)
+- (partially) implement burn/entry fee
+- cancel bid?? (with cancel fee??)
+- implement harberger taxes
+
+main ideas:
+- _processLiveAuction is used to update the state of the contract whenever we can,
+  i see no other way to make this work. Having multiple consecutive auctions really complicates things,
+  also nobody calling claim after an auction will cause severe problems.
+  solution to all this, call _processLiveAuction at the beginning of each "set" function
+*/
+
 contract Zone {
   using SafeMath for uint;
 
@@ -136,6 +153,132 @@ contract Zone {
     return _bid.sub(_bid.div(100).mul(ENTRY_FEE_PERCENTAGE));
   }
 
+  // // can a specific user place a bid
+  // function canCallBid(address _who)
+  //   external
+  //   view
+  //   returns (bool)
+  // {
+  //   Auction memory lastAuction = auctionIdToAuction[currentAuctionId];
+  //
+  //   if (lastAuction.state == AuctionState.Started) {
+  //     // there is an auction currently running, can we place a bid in it?
+  //
+  //     if (lastAuction.highestBidder == _who) return false; // already highest bidder
+  //
+  //     return true; // we are currently not the highest bidder, so we can place new bid
+  //   }
+  //
+  //   if (lastAuction.state == AuctionState.Ended) {
+  //     // current auction has ended, but can we call bid and start a new auction?
+  //
+  //     if (lastAuction.highestBidder == _who) return false; // we won the auction and will be the new zoneOner (call claim())
+  //
+  //     if (now <= lastAuction.endTime.add(COOLDOWN_PERIOD)) return false; // still in cooldown period
+  //
+  //     return true; // we did not win the last auction AND cooldown period is over, so placing a new bid will start a new auction
+  //   }
+  // }
+  //
+  // function canCallClaim(address _who)
+  //   external
+  //   view
+  //   returns (bool)
+  // {
+  //   Auction memory onchainAuction = auctionIdToAuction[currentAuctionId];
+  //
+  //   Auction memory updatedAuction = auctionIdToAuction[currentAuctionId];
+  //
+  //   if (auctionIdToAuction[currentAuctionId].)
+  //   if (onchainAuction.state == AuctionState.Ended) {
+  //     // claiming already happened, either by _processLiveAuction() or we already called claim() ourselves
+  //     return false;
+  //   }
+  //
+  //   if (onchainAuction.state == AuctionState.Started) {
+  //     // the onchain auction state is Started
+  //
+  //     if (updatedAuction.state == AuctionState.Started) {
+  //       // the actual auction state is (still) Started
+  //
+  //       return false; // auction is still active
+  //     }
+  //
+  //     if (updatedAuction.state == AuctionState.Ended) {
+  //       // the acutal auction has Ended
+  //
+  //       if (onchainAuction.highestBidder == _who) return true; // we won the auction, we can call claim() to set ourselves as zoneOwner
+  //
+  //       return false; // we are not the one that won the auction, so we cannot claim(), only highestBidder can
+  //     }
+  //   }
+  // }
+  //
+  // function canCallClaimEmptyZone(address _who)
+  //   external
+  //   view
+  //   returns (bool)
+  // {
+  //   if (auctionIdToAuction[currentAuctionId].processed && zoneOwner.addr == address(0)) {
+  //     // the last auction was (onchain) processed (meaning its highestBidder was set as new zoneOwner)
+  //     // however current zoneOwner is set to address(0) which can only mean that the highestBidder
+  //     // "released" his zone ownership after he was made zoneOwner
+  //     return true;
+  //   }
+  //
+  //   return false;
+  // }
+  //
+  // function canCallWithdrawFromAuction(address _who, uint _auctionId)
+  //   public
+  //   view
+  //   returns (bool)
+  // {
+  //   if (_auctionId > currentAuctionId) return false; // auctionId does not exist
+  //
+  //   Auction memory auction = auctionIdToAuction[_auctionId];
+  //
+  //   return auction.state == AuctionState.Ended && // can only withdraw if auction has ended
+  //          auction.highestBidder != _who && // can only withdraw if _who is not the winner of the auction
+  //          auctionBids[_auctionId][_who] > 0; // can only withdraw if _who still has funds inside the auction
+  // }
+
+  // function getWithdrawFromAuctionAmount(address _who, uint _auctionId)
+  //   external
+  //   view
+  //   returns (uint)
+  // {
+  //   if (!canCallWithdrawFromAuction(_who, _auctionId)) return 0; // _who currently cannot call withdrawFromAuction
+  //
+  //   return auctionBids[_auctionId][_who]; // return the amount he can withdraw
+  // }
+  //
+  // function canCallWithdrawFromAllAuctions(address _who)
+  //   public
+  //   view
+  //   returns (bool)
+  // {
+  //   uint withdrawAmountTotal = 0;
+  //
+  //   // NOTE: the current (= last) auction is handled separately below
+  //   for (uint i = 1; i <= currentAuctionId - 1; i++) {
+  //     // can only be Auctions that are in state Ended, which means highestBidders bids has been reset to 0
+  //     if (auctionBids[i][_who] > 0) return true; // we found an auction from which the user can withdraw
+  //   }
+  //
+  //   Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
+  //   // the last Auction might still be Running or it is already onchain ended, or it's endTime passed just now
+  //
+  //   if (lastAuction.state == AuctionState.Ended && // last auction ended
+  //       lastAuction.highestBidder != _who && // _who is not the winner of the auction
+  //       auctionBids[currentAuctionId][_who] > 0) // who did participate and thus has funds in side the auction
+  //   {
+  //     return true;
+  //   }
+  //
+  //   return false;
+  // }
+
   function auctionExists(uint _auctionId)
     public
     view
@@ -144,14 +287,6 @@ contract Zone {
     // if aucton does not exist we should get back zero, otherwise this field
     // will contain a block.timestamp, set whe creating an Auction, in constructor() and bid()
     return auctionIdToAuction[_auctionId].startTime > 0;
-  }
-
-  function isEmpty()
-    public
-    view
-    returns (bool)
-  {
-    return zoneOwner.addr == 0;
   }
 
   // return all fields of a specific auction
@@ -227,14 +362,12 @@ contract Zone {
       if (zoneOwner.addr == winningBidder) {
         // current zone owner always has his stake amount added to all his bids
         // 5.1 calc the new zone stake amount
-        // NOTE: we never reach 0 since we take percentage as harberger tax
-        uint harbergerTaxToPay = _calcHarbergerTax(zoneOwner.lastTaxTime, now, zoneOwner.staked);
-
         zoneOwner.staked = zoneOwner.staked.add(winningAmount);
 
       // 6. winning bidder differs from current zone owner
       } else {
         // 6.1 pay back the staked DTH (minus harberger tax) to the old zone owner
+        uint previousOwnerStake = zoneOwner.staked;
         uint harbergerTaxToPay = _calcHarbergerTax(zoneOwner.lastTaxTime, now, zoneOwner.staked);
         uint amountToPayOut = zoneOwner.staked.sub(harbergerTaxToPay);
         dth.transfer(ADDRESS_BURN, harbergerTaxToPay); // burn tax
@@ -248,6 +381,49 @@ contract Zone {
       }
     }
   }
+  // there really is no other way to keep everything running smoothly
+  // we need to run this function at the beginning of every "set" operation
+  // function processLiveAuctionOld() private {
+  //   Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
+  //
+  //   // update auction state if auction end time has passed
+  //   if (lastAuction.state == AuctionState.Started && now >= lastAuction.endTime) {
+  //     lastAuction.state = AuctionState.Ended;
+  //   }
+  //
+  //   // check to see if we need to process the auction results
+  //   if (lastAuction.state == AuctionState.Ended && lastAuction.processed == false) {
+  //     uint winningAmount = auctionBids[currentAuctionId][lastAuction.highestBidder];
+  //     auctionBids[currentAuctionId][lastAuction.highestBidder] = 0;
+  //
+  //     if (zoneOwner.addr == lastAuction.highestBidder) {
+  //       // the current zoneowner is the highest bidder
+  //       zoneOwner.staked = winningAmount;
+  //     } else {
+  //       // the highest bidder is not the same as the current zone owner
+  //
+  //       // uint beginTime = zoneOwner.startTime;
+  //       // uint taxBeginTime = beginTime + 48 hours; // first 48 hours are tax free
+  //       // uint taxEndTime = lastAuction.endTime;
+  //       // uint taxTime = taxEndTime.sub(taxBeginTime);
+  //       //
+  //       // uint taxAmount = taxTime.mul(2).div(100); // 2%
+  //       // uint bidAmount = _dthAmount.sub(burnAmount); // 98%
+  //       // TODO: deduct harberger tax
+  //       zoneOwnerWithdraw[zoneOwner.addr] = zoneOwnerWithdraw[zoneOwner.addr].add(zoneOwner.staked);
+  //
+  //       // set the new zoneOwner
+  //       // https://github.com/trailofbits/slither/issues/70#issue-377046794
+  //       zoneOwner = ZoneOwner({
+  //         addr: lastAuction.highestBidder,
+  //         startTime: lastAuction.endTime,
+  //         staked: winningAmount
+  //       });
+  //     }
+  //
+  //     lastAuction.processed = true;
+  //   }
+  // }
 
   // ------------------------------------------------
   //
@@ -288,8 +464,8 @@ contract Zone {
     external
   {
     processLiveAuction();
-    require(isEmpty(), "can only claim a zone which has no owner");
     require(auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "can not claim while auction is running");
+    require(zoneOwner.addr == address(0), "can only claim a zone which has no zoneowner");
     require(dth.balanceOf(msg.sender) >= _dthAmount, "caller does not have enough dth");
     require(_dthAmount >= MIN_STAKE, "bid needs to be at least minimum zone stake amount (100 DTH)");
 
