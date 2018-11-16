@@ -1,11 +1,37 @@
 pragma solidity ^0.4.22;
 
-import 'zeppelin-solidity/contracts/ownership/Ownable.sol';
+import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
 contract GeoRegistry is Ownable {
+
+  // ------------------------------------------------
+  // Variables (Getters)
+  // ------------------------------------------------
+
+  //      geohashChar bitmask
   mapping(bytes1 => bytes4) internal charToBitmask;
 
-  constructor() {
+  //      countryCode isEnabled
+  mapping(bytes2 => bool) public countryIsEnabled;
+  bytes2[] public enabledCountries;
+
+  //      countryCode       geohashFirst3 bitmaskLevel4
+  mapping(bytes2 => mapping(bytes3 => bytes4)) public level_2;
+
+  // ------------------------------------------------
+  // Events
+  // ------------------------------------------------
+
+  event GeoRegistryCountryEnabled(bytes2 indexed country);
+  event GeoRegistryCountryDisabled(bytes2 indexed country);
+
+  // ------------------------------------------------
+  // Constructor
+  // ------------------------------------------------
+
+  constructor()
+    public
+  {
     charToBitmask[bytes1("v")] = hex"80000000"; // 2147483648
     charToBitmask[bytes1("y")] = hex"40000000"; // 1073741824
     charToBitmask[bytes1("z")] = hex"20000000"; // 536870912
@@ -40,22 +66,9 @@ contract GeoRegistry is Ownable {
     charToBitmask[bytes1("h")] = hex"00000001"; // 1
   }
 
-  mapping(bytes2 => mapping(bytes3 => bytes4)) public level_2;
-
-  function updateLevel2(bytes2 _countryCode, bytes3 _letter, bytes4 _subLetters)
-    public
-    onlyOwner
-  {
-    level_2[_countryCode][_letter] = _subLetters;
-  }
-  function updateLevel2batch(bytes2 _countryCode, bytes3[] _letters, bytes4[] _subLetters)
-    public
-    onlyOwner
-  {
-    for (uint i = 0; i < _letters.length; i++) {
-      level_2[_countryCode][_letters[i]] = _subLetters[i];
-    }
-  }
+  // ------------------------------------------------
+  // Getters
+  // ------------------------------------------------
 
   function zoneInsideCountry(bytes2 _countryCode, bytes7 _zone)
     public
@@ -73,5 +86,56 @@ contract GeoRegistry is Ownable {
     } else {
       return false;
     }
+  }
+
+  // ------------------------------------------------
+  // Setters
+  // ------------------------------------------------
+
+  function updateLevel2(bytes2 _countryCode, bytes3 _letter, bytes4 _subLetters)
+    public
+    onlyOwner
+  {
+    level_2[_countryCode][_letter] = _subLetters;
+  }
+  function updateLevel2batch(bytes2 _countryCode, bytes3[] _letters, bytes4[] _subLetters)
+    public
+    onlyOwner
+  {
+    for (uint i = 0; i < _letters.length; i++) {
+      level_2[_countryCode][_letters[i]] = _subLetters[i];
+    }
+  }
+
+  function enableCountry(bytes2 _country)
+    external
+    onlyOwner
+  {
+    require(!countryIsEnabled[_country], "country already enabled");
+
+    countryIsEnabled[_country] = true;
+    enabledCountries.push(_country);
+
+    emit GeoRegistryCountryEnabled(_country);
+  }
+
+  function disableCountry(bytes2 _country)
+    external
+    onlyOwner
+  {
+    require(countryIsEnabled[_country], "country already disabled");
+
+    countryIsEnabled[_country] = false;
+
+    for (uint i = 0; i < enabledCountries.length; i++) {
+      if (enabledCountries[i] == _country) {
+        // replace the to-be-deleted country with the last country in the list
+        enabledCountries[i] = enabledCountries[enabledCountries.length - 1];
+        enabledCountries.length--;
+        break;
+      }
+    }
+
+    emit GeoRegistryCountryDisabled(_country);
   }
 }
