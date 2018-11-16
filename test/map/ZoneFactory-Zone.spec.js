@@ -138,7 +138,7 @@ contract.only('ZoneFactory + Zone', () => {
   before(async () => {
     ROOT_STATE = await saveState();
     // ROOT_TIME = await getLastBlockTimestamp();
-    ([owner, user1, user2, user3] = await getAccounts());
+    ([owner, user1, user2, user3] = await getAccounts(web3));
   });
 
   beforeEach(async () => {
@@ -509,7 +509,7 @@ contract.only('ZoneFactory + Zone', () => {
             expect(lastAuction[1].toNumber(), 'lastAuction.state should equal Ended(=1)').to.equal(1);
             expect(lastAuction[2].toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
             expect(lastAuction[2].toNumber(), 'lastAuction.endTime should equal auction.startTime').to.equal(lastAuction[3].toNumber());
-            expect(lastAuction[4], 'lastAuction.highestBidder should equal @user1').to.equal(user1);
+            expect(lastAuction[4], 'lastAuction.highestBidder should equal @user1').to.equal(user1.toLowerCase());
           });
           describe('when Zone cooldown period ended', () => {
             beforeEach(async () => {
@@ -525,7 +525,7 @@ contract.only('ZoneFactory + Zone', () => {
                 expect(lastAuction[1].toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
                 expect(lastAuction[2].toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
                 expect(lastAuction[3].gt(lastAuction[2]), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                expect(lastAuction[4], 'lastAuction.highestBidder should equal @user2').to.equal(user2);
+                expect(lastAuction[4], 'lastAuction.highestBidder should equal @user2').to.equal(user2.toLowerCase());
               });
               describe('when @user1 (current zone owner) places a counter bid', () => {
                 beforeEach(async () => {
@@ -537,7 +537,7 @@ contract.only('ZoneFactory + Zone', () => {
                   expect(lastAuction[1].toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
                   expect(lastAuction[2].toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
                   expect(lastAuction[3].gt(lastAuction[2]), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                  expect(lastAuction[4], 'lastAuction.highestBidder should equal @user1').to.equal(user1);
+                  expect(lastAuction[4], 'lastAuction.highestBidder should equal @user1').to.equal(user1.toLowerCase());
                 });
                 describe('when @user2 (challenger1) places a counter bid', () => {
                   beforeEach(async () => {
@@ -549,7 +549,7 @@ contract.only('ZoneFactory + Zone', () => {
                     expect(lastAuction[1].toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
                     expect(lastAuction[2].toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
                     expect(lastAuction[3].gt(lastAuction[2]), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                    expect(lastAuction[4], 'lastAuction.highestBidder should equal @user2').to.equal(user2);
+                    expect(lastAuction[4], 'lastAuction.highestBidder should equal @user2').to.equal(user2.toLowerCase());
                   });
                   describe('when Auction endTime has passed (winner and new zone owner will be @user2)', () => {
                     beforeEach(async () => {
@@ -569,7 +569,7 @@ contract.only('ZoneFactory + Zone', () => {
                           expect(lastAuction[1].toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
                           expect(lastAuction[2].toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
                           expect(lastAuction[3].gt(lastAuction[2]), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                          expect(lastAuction[4], 'lastAuction.highestBidder should equal @user3').to.equal(user3);
+                          expect(lastAuction[4], 'lastAuction.highestBidder should equal @user3').to.equal(user3.toLowerCase());
                         });
                       });
                     });

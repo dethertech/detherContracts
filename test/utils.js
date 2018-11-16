@@ -1,3 +1,4 @@
+
 /* global web3, assert */
 exports.expectThrow = async (promise) => {
   try {
@@ -98,19 +99,19 @@ exports.intTobytes = (intVal) => {
   return result;
 };
 
-exports.toAsciiStripZero = str => (
-  web3.toAscii(str).replace(/\0/g, '')
-);
+// exports.toAsciiStripZero = str => (
+//   web3.toAscii(str).replace(/\0/g, '')
+// );
+//
+// exports.weiToEth = bnNum => (
+//   web3.fromWei(bnNum, 'ether')
+// );
+//
+// exports.ethToWei = num => (
+//   web3.toWei(num, 'ether')
+// );
 
-exports.weiToEth = bnNum => (
-  web3.fromWei(bnNum, 'ether')
-);
-
-exports.ethToWei = num => (
-  web3.toWei(num, 'ether')
-);
-
-exports.getAccounts = () => new Promise((resolve, reject) => {
+exports.getAccounts = web3 => new Promise((resolve, reject) => {
   web3.eth.getAccounts((err, acc) => err ? reject(err) : resolve(acc)); // eslint-disable-line
 });
 
