@@ -74,7 +74,7 @@ contract ZoneFactory is Ownable {
   // ------------------------------------------------
 
   // ERC223 magic
-  function tokenFallback(address _from, uint _value, bytes _data)
+  function tokenFallback(address _from, uint _value, bytes _data) // GAS COST 2.072.132
     // createAndClaim
     public
   {
@@ -92,7 +92,7 @@ contract ZoneFactory is Ownable {
 
     // TOOD: add check that country is enabled?
     require(geohash != bytes7(0), "geohash cannot be 0x0");
-    require(geohashToZone[geohash] == address(0), "cannot create existing zone");
+    require(geohashToZone[geohash] == address(0), "zone already exists");
 
     // create/deploy the new zone
     geohashToZone[geohash] = new Zone(geohash, sender, dthAmount, address(dth));
