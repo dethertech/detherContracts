@@ -2,14 +2,33 @@ pragma solidity ^0.4.22;
 
 import "zeppelin-solidity/contracts/ownership/Ownable.sol";
 
+import "../core/IControl.sol";
+
 contract GeoRegistry is Ownable {
 
   // ------------------------------------------------
-  // Variables (Getters)
+  //
+  // Variables Private
+  //
   // ------------------------------------------------
 
+  // set once in constructor()
   //      geohashChar bitmask
-  mapping(bytes1 => bytes4) internal charToBitmask;
+  mapping(bytes1 => bytes4) private charToBitmask;
+  //
+  // mapping(bytes2 => bool) private validGeohashChars;
+
+  // ------------------------------------------------
+  //
+  // Variables Public
+  //
+  // ------------------------------------------------
+
+  IControl public control;
+
+  // mapping for limiting the sell amount for tellers, per tier
+  //      countryCode        tier    usdDailyLimit
+  mapping(bytes2 => mapping (uint => uint)) public countryTierDailyLimit;
 
   //      countryCode isEnabled
   mapping(bytes2 => bool) public countryIsEnabled;
@@ -19,19 +38,26 @@ contract GeoRegistry is Ownable {
   mapping(bytes2 => mapping(bytes3 => bytes4)) public level_2;
 
   // ------------------------------------------------
+  //
   // Events
+  //
   // ------------------------------------------------
 
   event GeoRegistryCountryEnabled(bytes2 indexed country);
   event GeoRegistryCountryDisabled(bytes2 indexed country);
 
   // ------------------------------------------------
+  //
   // Constructor
+  //
   // ------------------------------------------------
 
-  constructor()
+  constructor(address _control)
     public
   {
+    IControl control = IControl(_control);
+
+    // TODO: improve below code? https://medium.com/@imolfar/bitwise-operations-and-bit-manipulation-in-solidity-ethereum-1751f3d2e216
     charToBitmask[bytes1("v")] = hex"80000000"; // 2147483648
     charToBitmask[bytes1("y")] = hex"40000000"; // 1073741824
     charToBitmask[bytes1("z")] = hex"20000000"; // 536870912
@@ -67,8 +93,40 @@ contract GeoRegistry is Ownable {
   }
 
   // ------------------------------------------------
-  // Getters
+  //
+  // Functions Getters
+  //
   // ------------------------------------------------
+
+  function toBytes1(bytes _bytes, uint _start)
+    private
+    pure
+    returns (bytes1) {
+      require(_bytes.length >= (_start + 1), " not long enough");
+      bytes1 tempBytes1;
+
+      assembly {
+          tempBytes1 := mload(add(add(_bytes, 0x20), _start))
+      }
+
+      return tempBytes1;
+  }
+
+  function validGeohashChars(bytes _bytes, uint _start)
+    public
+    returns (bool)
+  {
+    if (_start > (_bytes.length - 1)) {
+      return false;
+    }
+    for (uint i = _start; i < _bytes.length; i += 1) {
+      // find the first occurence of a byte which is not valid geohash character
+      if (charToBitmask[toBytes1(_bytes, i)] == bytes4(0)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
   function zoneInsideCountry(bytes2 _countryCode, bytes7 _zone)
     public
@@ -89,19 +147,31 @@ contract GeoRegistry is Ownable {
   }
 
   // ------------------------------------------------
-  // Setters
+  //
+  // Functions Setters Public
+  //
   // ------------------------------------------------
+
+  function setCountrySellDailyLimit(uint _tier, bytes2 _countryCode, uint _limitUsd)
+    public
+  {
+    // can exec while paused
+    require(control.isCEO(msg.sender), "caller needs to be CEO");
+    countryTierDailyLimit[_countryCode][_tier] = _limitUsd;
+  }
 
   function updateLevel2(bytes2 _countryCode, bytes3 _letter, bytes4 _subLetters)
     public
-    onlyOwner
   {
+    // can exec while paused
+    require(control.isCEO(msg.sender), "caller needs to be CEO");
     level_2[_countryCode][_letter] = _subLetters;
   }
   function updateLevel2batch(bytes2 _countryCode, bytes3[] _letters, bytes4[] _subLetters)
     public
-    onlyOwner
   {
+    // can exec while paused
+    require(control.isCEO(msg.sender), "caller needs to be CEO");
     for (uint i = 0; i < _letters.length; i++) {
       level_2[_countryCode][_letters[i]] = _subLetters[i];
     }
@@ -109,8 +179,9 @@ contract GeoRegistry is Ownable {
 
   function enableCountry(bytes2 _country)
     external
-    onlyOwner
   {
+    // can exec while paused
+    require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(!countryIsEnabled[_country], "country already enabled");
 
     countryIsEnabled[_country] = true;
@@ -121,8 +192,9 @@ contract GeoRegistry is Ownable {
 
   function disableCountry(bytes2 _country)
     external
-    onlyOwner
   {
+    // can exec while paused
+    require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(countryIsEnabled[_country], "country already disabled");
 
     countryIsEnabled[_country] = false;

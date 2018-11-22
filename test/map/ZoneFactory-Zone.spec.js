@@ -3,12 +3,18 @@
 /* eslint-disable max-len, no-multi-spaces */
 
 const DetherToken = artifacts.require('DetherToken.sol');
+const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle.sol');
+const SmsCertifier = artifacts.require('SmsCertifier.sol');
+const KycCertifier = artifacts.require('KycCertifier.sol');
+const Users = artifacts.require('Users.sol');
+const GeoRegistry = artifacts.require('GeoRegistry.sol');
 const ZoneFactory = artifacts.require('ZoneFactory.sol');
 const Zone = artifacts.require('Zone.sol');
 
 const Web3 = require('web3');
 
 const { getAccounts } = require('../utils');
+const { addCountry } = require('./geo_utils');
 
 const web3 = new Web3('http://localhost:8545');
 
@@ -19,6 +25,7 @@ const BYTES7_ZERO = '00000000000000';
 
 const MIN_ZONE_DTH_STAKE = 100;
 const VALID_GEOHASH = web3.utils.asciiToHex('kr0ttse');
+const INVALID_GEOHASH = web3.utils.asciiToHex('krtttse');
 
 const forgeErrorMessage = str => `VM Exception while processing transaction: revert ${str}`;
 const forgeErrorMessage2 = str => `Returned error: VM Exception while processing transaction: revert ${str}`;
@@ -88,11 +95,11 @@ const expectRevert2 = async (fn, errMsg) => {
 };
 
 
-const createDthZoneCreateData = (zoneFactoryAddr, bid, geohash) => {
+const createDthZoneCreateData = (zoneFactoryAddr, bid, countryCode, geohash) => {
   const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
   const params = web3.eth.abi.encodeParameters(
     ['address', 'uint256', 'bytes'],
-    [zoneFactoryAddr, wei(bid), `0x40${geohash.slice(2)}`],
+    [zoneFactoryAddr, wei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}`],
   );
   return [fnSig, params.slice(2)].join('');
 };
@@ -121,39 +128,62 @@ const createDthZoneTopUpData = (zoneAddr, dthAmount) => {
   return [fnSig, params.slice(2)].join('');
 };
 
+const COUNTRY_CG = 'CG';
+
 contract.only('ZoneFactory + Zone', () => {
   let owner;
   let user1;
   let user2;
   let user3;
 
+  let __rootState__; // eslint-disable-line no-underscore-dangle
 
-  let ROOT_STATE;
-  // let ROOT_TIME;
-
-  // let zoneInstance;
+  let smsInstance;
+  let kycInstance;
   let dthInstance;
+  let priceInstance;
+  let usersInstance;
+  let geoInstance;
   let zoneFactoryInstance;
 
   before(async () => {
-    ROOT_STATE = await saveState();
+    __rootState__ = await saveState();
     // ROOT_TIME = await getLastBlockTimestamp();
     ([owner, user1, user2, user3] = await getAccounts(web3));
   });
 
   beforeEach(async () => {
-    await revertState(ROOT_STATE); // to go back to real time
+    await revertState(__rootState__); // to go back to real time
+
     dthInstance = await DetherToken.new({ from: owner });
-    zoneFactoryInstance = await ZoneFactory.new(dthInstance.address, { from: owner });
-    // await dthInstance.mint(user1, wei(1000), { from: owner });
+    smsInstance = await SmsCertifier.new({ from: owner });
+    kycInstance = await KycCertifier.new({ from: owner });
+    priceInstance = await FakeExchangeRateOracle.new({ from: owner });
+    geoInstance = await GeoRegistry.new({ from: owner });
+
+    usersInstance = await Users.new(
+      priceInstance.address,
+      geoInstance.address,
+      smsInstance.address,
+      kycInstance.address,
+      { from: owner },
+    );
+
+    zoneFactoryInstance = await ZoneFactory.new(
+      dthInstance.address,
+      geoInstance.address,
+      usersInstance.address,
+      { from: owner },
+    );
   });
 
-  const createZone = async (from, dthAmount, geohash) => {
+  const createZone = async (from, dthAmount, countryCode, geohash) => {
+    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, wei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
       to: dthInstance.address,
-      data: createDthZoneCreateData(zoneFactoryInstance.address, dthAmount, geohash),
+      data: createDthZoneCreateData(zoneFactoryInstance.address, dthAmount, web3.utils.asciiToHex(countryCode), geohash),
       value: 0,
       gas: 4700000,
     });
@@ -162,6 +192,7 @@ contract.only('ZoneFactory + Zone', () => {
   };
 
   const placeBid = async (from, dthAmount, zoneAddress) => {
+    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, wei(dthAmount), { from: owner });
     await web3.eth.sendTransaction({
       from,
@@ -173,6 +204,7 @@ contract.only('ZoneFactory + Zone', () => {
   };
 
   const claimFreeZone = async (from, dthAmount, zoneAddress) => {
+    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, wei(dthAmount), { from: owner });
     await web3.eth.sendTransaction({
       from,
@@ -184,6 +216,7 @@ contract.only('ZoneFactory + Zone', () => {
   };
 
   const topUp = async (from, dthAmount, zoneAddress) => {
+    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, wei(dthAmount), { from: owner });
     await web3.eth.sendTransaction({
       from,
@@ -194,29 +227,51 @@ contract.only('ZoneFactory + Zone', () => {
     });
   };
 
+  const enableAndLoadCountry = async (countryCode) => {
+    await addCountry(web3, geoInstance, countryCode, 300);
+    await geoInstance.enableCountry(countryCode);
+  };
+
   describe('>>> deploying a Zone', () => {
-    describe('ZoneFactory.createAndClaim(bytes7 _geohash, uint _dthAmount)', () => {
-      it('[error] -- creating a zone with geohash 0x0', async () => {
+    describe.only('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
+      it('[error] -- country is disabled', async () => {
         await expectRevert2(
-          createZone(user1, MIN_ZONE_DTH_STAKE, BYTES7_ZERO),
-          'createAndClaim expect 8 bytes as _data',
+          createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH),
+          'country is disabled',
+        );
+      });
+      it('[error] -- creating a zone with geohash 0x0', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await expectRevert2(
+          createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, BYTES7_ZERO),
+          'createAndClaim expect 10 bytes as _data',
+        );
+      });
+      it('[error] -- zone is not inside country', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await expectRevert2(
+          createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, INVALID_GEOHASH),
+          'zone is not inside country',
         );
       });
       it('[error] -- zone already exists', async () => {
-        await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await expectRevert2(
-          createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH),
+          createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH),
           'zone already exists',
         );
       });
       it(`[error] -- creating a zone with dthAmount minimum - 1 (${MIN_ZONE_DTH_STAKE - 1} DTH)`, async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
         await expectRevert2(
-          createZone(user1, MIN_ZONE_DTH_STAKE - 1, VALID_GEOHASH),
+          createZone(user1, MIN_ZONE_DTH_STAKE - 1, COUNTRY_CG, VALID_GEOHASH),
           'zone dth stake shoulld be at least minimum (100DTH)',
         );
       });
       it(`[success] ++ creating a zone with dthAmount minimum (${MIN_ZONE_DTH_STAKE} DTH)`, async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         const user1DthBalance = await dthInstance.balanceOf(user1);
         const zoneFactoryDthBalance = await dthInstance.balanceOf(zoneFactoryInstance.address);
         const newZoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
@@ -225,7 +280,8 @@ contract.only('ZoneFactory + Zone', () => {
         expect(newZoneDthBalance.toString(), 'zone balance should equal stake amount').to.equal(wei(MIN_ZONE_DTH_STAKE));
       });
       it(`[success] ++ deploying a zone with dthAmount minimum + 1 (${MIN_ZONE_DTH_STAKE + 1} DTH)`, async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE + 1, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE + 1, COUNTRY_CG, VALID_GEOHASH);
         const user1DthBalance = await dthInstance.balanceOf(user1);
         const zoneFactoryDthBalance = await dthInstance.balanceOf(zoneFactoryInstance.address);
         const newZoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
@@ -238,16 +294,26 @@ contract.only('ZoneFactory + Zone', () => {
 
   describe('>>> Zone Actions', () => {
     describe('[ERC223] Zone.claimFreeZone(address _from, uint _dthAmount)', () => {
+      it('[error] -- country is disabled', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
+        await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+        await expectRevert2(
+          claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
+          'country is disabled',
+        );
+      });
       it('[error] -- cannot claim zone which has an owner', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await expectRevert2(
           claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
           'can not claim zone with owner',
         );
       });
-
       it('[error] -- cannot claim free zone for minimum stake - 1', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await timeTravel(COOLDOWN_PERIOD + 1);
         await zoneInstance.release({ from: user1 });
         await expectRevert2(
@@ -256,7 +322,8 @@ contract.only('ZoneFactory + Zone', () => {
         );
       });
       it('[success] -- can claim free zone for minimum stake', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await timeTravel(COOLDOWN_PERIOD + 1);
         await zoneInstance.release({ from: user1 });
         await claimFreeZone(user1, MIN_ZONE_DTH_STAKE, zoneInstance.address);
@@ -269,13 +336,9 @@ contract.only('ZoneFactory + Zone', () => {
 
         beforeEach(async () => {
           // create a zone with a zone owner
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+          await enableAndLoadCountry(COUNTRY_CG);
+          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         });
-        // i[error] -- t('[error] zone currently has no owner', async () => {
-        //   // await dthInstance.approve(zoneInstance, wei(1000), { from: user2 });
-        //   // TODO: when release() is implemented
-        //   return Promise.resolve();
-        // });
         it('[error] -- @user2 (challenger1) cooldown period has not yet ended', async () => {
           await expectRevert2(
             placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address),
@@ -421,6 +484,37 @@ contract.only('ZoneFactory + Zone', () => {
     });
 
     describe('Zone.release()', () => {
+      it('[error] -- there is no zone owner', async () => {
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await zoneInstance.release({ from: user1 });
+        await expectRevert(
+          zoneInstance.release({ from: user1 }),
+          'zone has no owner',
+        );
+      });
+      it('[error] -- caller is not the zone owner', async () => {
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await expectRevert(
+          zoneInstance.release({ from: user2 }),
+          'caller is not zone owner',
+        );
+      });
+      it('[error] -- can not release while running auction', async () => {
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await timeTravel(COOLDOWN_PERIOD + 1);
+        await placeBid(user2, 110, zoneInstance.address);
+        await expectRevert(
+          zoneInstance.release({ from: user1 }),
+          'cannot release while auction running',
+        );
+      });
+      it('[successs] -- zone owner can release if there is no running auction', async () => {
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await zoneInstance.release({ from: user1 });
+      });
+    });
+
+    describe('Zone.addTeller(bytes10 _position, int8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings)', () => {
       it('[error] -- there is no zone owner', async () => {
         const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
         await zoneInstance.release({ from: user1 });

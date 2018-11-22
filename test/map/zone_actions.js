@@ -9,7 +9,6 @@ const getLiveZoneOwner = async () => { // pas in a timestamp (in seconds)
 
   const lastAuction = await zoneInstance.getLastAuction();
 
-  if ()
   const liveZoneOwner =
     (lastAuction[endTimeIdx].toNumber() > now
      && zoneOwnerAddr !== lastAuction[highestBidderIdx])

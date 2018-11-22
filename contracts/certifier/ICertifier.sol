@@ -1,6 +1,6 @@
-//! The SMS-verification contract
+//! Certifier contract, taken from ethcore/sms-verification
 //!
-//! Copyright 2017 Gavin Wood, Parity Technologies Ltd.
+//! Copyright 2016 Gavin Wood, Parity Technologies Ltd.
 //!
 //! Licensed under the Apache License, Version 2.0 (the "License");
 //! you may not use this file except in compliance with the License.
@@ -14,18 +14,13 @@
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
 //
-// NOTE: added parent ICertifier to SmsCertifier contract
+// NOTE: updated contract name from Certifier to ICertifier
 //
 
 pragma solidity ^0.4.24;
 
-import "./Certifier.sol";
-
-contract KycCertifier is Certifier {
-	constructor(address _control)
-		Certifier(_control)
-		public
-	{
-
-	}
+contract ICertifier {
+	event Confirmed(address indexed who);
+	event Revoked(address indexed who);
+	function certified(address _who) view public returns (bool);
 }
