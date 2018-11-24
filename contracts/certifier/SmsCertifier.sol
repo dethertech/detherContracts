@@ -19,11 +19,11 @@
 
 pragma solidity ^0.4.24;
 
-import "./Certifier.sol";
+import "./CertifierBase.sol";
 
-contract SmsCertifier is Certifier {
+contract SmsCertifier is CertifierBase {
 	constructor(address _control)
-		Certifier(_control)
+		CertifierBase(_control)
 		public
 	{}
 }

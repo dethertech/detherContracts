@@ -3,6 +3,7 @@
 /* eslint-disable max-len, no-multi-spaces */
 
 const DetherToken = artifacts.require('DetherToken.sol');
+const Control = artifacts.require('Control.sol');
 const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle.sol');
 const SmsCertifier = artifacts.require('SmsCertifier.sol');
 const KycCertifier = artifacts.require('KycCertifier.sol');
@@ -138,6 +139,7 @@ contract.only('ZoneFactory + Zone', () => {
 
   let __rootState__; // eslint-disable-line no-underscore-dangle
 
+  let controlInstance;
   let smsInstance;
   let kycInstance;
   let dthInstance;
@@ -156,16 +158,18 @@ contract.only('ZoneFactory + Zone', () => {
     await revertState(__rootState__); // to go back to real time
 
     dthInstance = await DetherToken.new({ from: owner });
-    smsInstance = await SmsCertifier.new({ from: owner });
-    kycInstance = await KycCertifier.new({ from: owner });
-    priceInstance = await FakeExchangeRateOracle.new({ from: owner });
-    geoInstance = await GeoRegistry.new({ from: owner });
+    priceInstance = await FakeExchangeRateOracle.new({ from: owner }); // TODO: let CEO update oracle?
+    controlInstance = await Control.new({ from: owner });
+    smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
+    kycInstance = await KycCertifier.new(controlInstance.address, { from: owner });
+    geoInstance = await GeoRegistry.new(controlInstance.address, { from: owner });
 
     usersInstance = await Users.new(
       priceInstance.address,
       geoInstance.address,
       smsInstance.address,
       kycInstance.address,
+      controlInstance.address,
       { from: owner },
     );
 
@@ -173,8 +177,11 @@ contract.only('ZoneFactory + Zone', () => {
       dthInstance.address,
       geoInstance.address,
       usersInstance.address,
+      controlInstance.address,
       { from: owner },
     );
+
+    await smsInstance.addDelegate(owner, { from: owner });
   });
 
   const createZone = async (from, dthAmount, countryCode, geohash) => {
@@ -228,12 +235,12 @@ contract.only('ZoneFactory + Zone', () => {
   };
 
   const enableAndLoadCountry = async (countryCode) => {
-    await addCountry(web3, geoInstance, countryCode, 300);
-    await geoInstance.enableCountry(countryCode);
+    await addCountry(owner, web3, geoInstance, countryCode, 300);
+    await geoInstance.enableCountry(countryCode, { from: owner });
   };
 
   describe('>>> deploying a Zone', () => {
-    describe.only('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
+    describe('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
       it('[error] -- country is disabled', async () => {
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH),
@@ -297,6 +304,7 @@ contract.only('ZoneFactory + Zone', () => {
       it('[error] -- country is disabled', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
+        await zoneInstance.release({ from: user1 });
         await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
         await expectRevert2(
           claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
@@ -361,6 +369,13 @@ contract.only('ZoneFactory + Zone', () => {
               'bid is lower than current zone stake',
             );
           });
+          it('[error] -- @user2 country is disabled', async () => {
+            await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+            await expectRevert2(
+              placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address),
+              'country is disabled',
+            );
+          });
           it('[success] ++ @user2 (challenger1) can start auction if bid higher than current', async () => {
             await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
             const user2DthBalance = await dthInstance.balanceOf(user2);
@@ -389,6 +404,20 @@ contract.only('ZoneFactory + Zone', () => {
               await expectRevert2(
                 placeBid(user3, MIN_ZONE_DTH_STAKE + 5, zoneInstance.address),
                 'bid is less than current highest',
+              );
+            });
+            it('[error] -- @user1 country is disabled', async () => {
+              await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+              await expectRevert2(
+                placeBid(user1, 20, zoneInstance.address),
+                'country is disabled',
+              );
+            });
+            it('[error] -- @user3 country is disabled', async () => {
+              await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+              await expectRevert2(
+                placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address),
+                'country is disabled',
               );
             });
             it('[success] ++ @user1 (current zone owner) can overbid challenger1', async () => {
@@ -432,6 +461,20 @@ contract.only('ZoneFactory + Zone', () => {
                   'highest bidder cannot bid',
                 );
               });
+              it('[error] -- @user1 country is disabled', async () => {
+                await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+                await expectRevert2(
+                  placeBid(user1, 25, zoneInstance.address),
+                  'country is disabled',
+                );
+              });
+              it('[error] -- @user2 country is disabled', async () => {
+                await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+                await expectRevert2(
+                  placeBid(user2, 10, zoneInstance.address),
+                  'country is disabled',
+                );
+              });
               it('[success] ++ @user1 (current zone owner) can overbid challenger2', async () => {
                 await placeBid(user1, 25, zoneInstance.address);
                 const user1DthBalance = await dthInstance.balanceOf(user1);
@@ -453,8 +496,18 @@ contract.only('ZoneFactory + Zone', () => {
     });
 
     describe('[ERC223] Zone.topUp(address _from, uint _dthAmount)', () => {
+      it('[error] -- country is disabled', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
+        await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+        await expectRevert2(
+          topUp(user1, 10, zoneInstance.address),
+          'country is disabled',
+        );
+      });
       it('[error] -- there is no zone owner', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await zoneInstance.release({ from: user1 });
         await expectRevert2(
           topUp(user1, 10, zoneInstance.address),
@@ -462,14 +515,16 @@ contract.only('ZoneFactory + Zone', () => {
         );
       });
       it('[error] -- caller is not the zone owner', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await expectRevert2(
           topUp(user2, 20, zoneInstance.address),
           'caller is not zone owner',
         );
       });
       it('[error] -- can not topUp while running auction', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await timeTravel(COOLDOWN_PERIOD + 1);
         await placeBid(user2, 110, zoneInstance.address);
         await expectRevert2(
@@ -478,14 +533,25 @@ contract.only('ZoneFactory + Zone', () => {
         );
       });
       it('[successs] -- zone owner can top up if there is no running auction', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await topUp(user1, 10, zoneInstance.address);
       });
     });
 
     describe('Zone.release()', () => {
+      it('[error] -- country is disabled', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
+        await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+        await expectRevert(
+          zoneInstance.release({ from: user1 }),
+          'country is disabled',
+        );
+      });
       it('[error] -- there is no zone owner', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await zoneInstance.release({ from: user1 });
         await expectRevert(
           zoneInstance.release({ from: user1 }),
@@ -493,14 +559,16 @@ contract.only('ZoneFactory + Zone', () => {
         );
       });
       it('[error] -- caller is not the zone owner', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await expectRevert(
           zoneInstance.release({ from: user2 }),
           'caller is not zone owner',
         );
       });
       it('[error] -- can not release while running auction', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await timeTravel(COOLDOWN_PERIOD + 1);
         await placeBid(user2, 110, zoneInstance.address);
         await expectRevert(
@@ -509,39 +577,31 @@ contract.only('ZoneFactory + Zone', () => {
         );
       });
       it('[successs] -- zone owner can release if there is no running auction', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
         await zoneInstance.release({ from: user1 });
       });
     });
 
-    describe('Zone.addTeller(bytes10 _position, int8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings)', () => {
-      it('[error] -- there is no zone owner', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
-        await zoneInstance.release({ from: user1 });
-        await expectRevert(
-          zoneInstance.release({ from: user1 }),
-          'zone has no owner',
-        );
+    describe('Zone.withdrawFromAuction(uint _auctionId)', () => {
+      it('TODO', () => true);
+    });
+    describe('Zone.withdrawFromAuctions(uint[] _auctionIds)', () => {
+      it('TODO', () => true);
+    });
+    describe('Zone.withdrawFromAllAuctions()', () => {
+      it('TODO', () => true);
+    });
+
+    describe('TELLER', () => {
+      describe('Zone.addTeller(bytes10 _position, int8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings)', () => {
+        it('TODO', () => true);
       });
-      it('[error] -- caller is not the zone owner', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
-        await expectRevert(
-          zoneInstance.release({ from: user2 }),
-          'caller is not zone owner',
-        );
+      describe('Zone.addFunds(uint _amount)', () => {
+        it('TODO', () => true);
       });
-      it('[error] -- can not release while running auction', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
-        await timeTravel(COOLDOWN_PERIOD + 1);
-        await placeBid(user2, 110, zoneInstance.address);
-        await expectRevert(
-          zoneInstance.release({ from: user1 }),
-          'cannot release while auction running',
-        );
-      });
-      it('[successs] -- zone owner can release if there is no running auction', async () => {
-        const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
-        await zoneInstance.release({ from: user1 });
+      describe('Zone.sellEth(address _to, uint _amount)', () => {
+        it('TODO', () => true);
       });
     });
   });
@@ -551,7 +611,8 @@ contract.only('ZoneFactory + Zone', () => {
       let zoneInstance;
 
       beforeEach(async () => {
-        zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+        await enableAndLoadCountry(COUNTRY_CG);
+        zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
       });
       describe('Zone.calcEntryFee(uint _bid)', () => {
         it('returns correct result for 100 dth', async () => {
@@ -595,7 +656,8 @@ contract.only('ZoneFactory + Zone', () => {
           let zoneInstance;
 
           beforeEach(async () => {
-            zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, VALID_GEOHASH);
+            await enableAndLoadCountry(COUNTRY_CG);
+            zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_GEOHASH);
           });
           it('returns correct Auction 0 Sentinel values', async () => {
             const lastAuction = await zoneInstance.getLastAuction();

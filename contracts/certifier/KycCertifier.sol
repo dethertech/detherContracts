@@ -19,11 +19,11 @@
 
 pragma solidity ^0.4.24;
 
-import "./Certifier.sol";
+import "./CertifierBase.sol";
 
-contract KycCertifier is Certifier {
+contract KycCertifier is CertifierBase {
 	constructor(address _control)
-		Certifier(_control)
+		CertifierBase(_control)
 		public
 	{
 

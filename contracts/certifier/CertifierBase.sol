@@ -22,7 +22,7 @@ pragma solidity ^0.4.24;
 import "../core/IControl.sol";
 import "./ICertifier.sol";
 
-contract Certifier is ICertifier {
+contract CertifierBase is ICertifier {
 	// ------------------------------------------------
 	//
 	// Structs
@@ -85,12 +85,11 @@ contract Certifier is ICertifier {
 	//
 	// ------------------------------------------------
 
-	function addDelegate(address _delegate, bytes32 _who)
+	function addDelegate(address _delegate)
 		public
 	{
 		require(control.isCEO(msg.sender), "caller needs to be CEO");
 		delegate[_delegate].active = true;
-		delegate[_delegate].meta['who'] = _who;
 	}
 
 	function removeDelegate(address _delegate)

@@ -45,7 +45,7 @@ const toBitMap = (chars) => {
   return ethUtil.bufferToHex(ethUtil.setLengthLeft(res.toNumber(), 4));
 };
 
-const addCountry = async (web3, geoRegistryContract, countryCode, batchSize) => {
+const addCountry = async (from, web3, geoRegistryContract, countryCode, batchSize) => {
   const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
   const countryMap = Object.keys(countryFile).reduce((memo, level0char) => {
     Object.keys(countryFile[level0char]).forEach((level1char) => {
@@ -66,7 +66,7 @@ const addCountry = async (web3, geoRegistryContract, countryCode, batchSize) => 
   for (let batchStartIdx = 0; batchStartIdx < keys.length; batchStartIdx += batchSize) {
     const keysBatch = keys.slice(batchStartIdx, batchStartIdx + batchSize);
     const valuesBatch = keysBatch.map(key => countryMap[key]);
-    const receipt = await geoRegistryContract.updateLevel2batch(web3.utils.asciiToHex(countryCode), keysBatch.map(web3.utils.asciiToHex), valuesBatch);
+    const receipt = await geoRegistryContract.updateLevel2batch(web3.utils.asciiToHex(countryCode), keysBatch.map(web3.utils.asciiToHex), valuesBatch, { from });
     const gasCost = receipt.receipt.gasUsed;
     if (gasCost > mostExpensiveTrxGasCost) {
       mostExpensiveTrxGasCost = gasCost;

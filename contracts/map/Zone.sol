@@ -99,6 +99,7 @@ contract Zone is ERC223ReceivingContract {
   bytes7 public geohash;
 
   mapping(address => uint) public withdrawableDth;
+  mapping(address => uint) public withdrawableEth;
 
   uint public currentAuctionId;
 
@@ -448,6 +449,8 @@ contract Zone is ERC223ReceivingContract {
   function _bid(address _sender, uint _dthAmount)
     private
   {
+    require(geo.countryIsEnabled(country), "country is disabled");
+
     _processState();
 
     // if there is no auction, and the zone owner does not have enough balance to pay
@@ -524,6 +527,8 @@ contract Zone is ERC223ReceivingContract {
   function _claimFreeZone(address _sender, uint _dthAmount)
     private
   {
+    require(geo.countryIsEnabled(country), "country is disabled");
+
     _processState();
 
     require(zoneOwner.addr == address(0), "can not claim zone with owner");
@@ -540,6 +545,8 @@ contract Zone is ERC223ReceivingContract {
   function _topUp(address _sender, uint _dthAmount)
     private
   {
+    require(geo.countryIsEnabled(country), "country is disabled");
+
     _processState();
 
     require(zoneOwner.addr != address(0), "zone has no owner");
@@ -598,6 +605,7 @@ contract Zone is ERC223ReceivingContract {
     external
   {
     require(control.paused() == false, "contract is paused");
+    require(geo.countryIsEnabled(country), "country is disabled");
 
     // zone owner could be removed if he does not have enough balance to pay his taxes
     _processState();
@@ -645,20 +653,20 @@ contract Zone is ERC223ReceivingContract {
   }
 
   /// @notice withdraw from a given list of auction ids
-  function withdrawFromAuctions(uint[] auctionIds)
+  function withdrawFromAuctions(uint[] _auctionIds)
     external
   {
     // require(control.paused() == false, "contract is paused");
     _processState();
 
-    require(auctionIds.length > 0, "auctionIds list is empty");
+    require(_auctionIds.length > 0, "auctionIds list is empty");
     // auction 0 cannot be withdrawn from, therefore max length is currentAuctionId - 1
-    require(auctionIds.length < (currentAuctionId - 1), "auctionIds list is longer than allowed");
+    require(_auctionIds.length < (currentAuctionId - 1), "auctionIds list is longer than allowed");
 
     uint withdrawAmountTotal = 0;
 
-    for (uint idx = 0; idx < auctionIds.length; idx++) {
-      uint auctionId = auctionIds[idx];
+    for (uint idx = 0; idx < _auctionIds.length; idx++) {
+      uint auctionId = _auctionIds[idx];
       require(auctionId > 0 && auctionId <= currentAuctionId, "invalid auctionId");
       if (auctionId == currentAuctionId && auctionIdToAuction[auctionId].state == AuctionState.Started) {
         // cannot withdraw from running auction
@@ -758,12 +766,13 @@ contract Zone is ERC223ReceivingContract {
     emit ZoneUpdatedTeller(msg.sender);
   }
 
-  // from escrow
-  function addFunds(address _to, uint _amount)
+  // called by Teller, adding ETH to Teller funds
+  function addFunds()
     external
     payable
   {
     require(control.paused() == false, "contract is paused");
+    require(geo.countryIsEnabled(country), "country is disabled");
     require(msg.value > 0, "no eth send with call");
 
     _processState();
@@ -771,25 +780,31 @@ contract Zone is ERC223ReceivingContract {
     require(msg.sender == zoneOwner.addr, "only zoneOwner can add funds");
     require(teller.currencyId != 0, "not yet added teller info");
 
+    // register ETH sent to this contract
     funds[msg.sender] = funds[msg.sender].add(msg.value);
   }
 
-  // from escrow
+  // called by Teller, sending ETH from Zone to _to
   function sellEth(address _to, uint _amount)
     external
   {
     require(control.paused() == false, "contract is paused");
+    require(geo.countryIsEnabled(country), "country is disabled");
+
+    require(msg.sender != _to, "sender cannot also be to");
+    require(users.getUserTier(msg.sender) > 0, "sender needs to be teller");
+
+    _processState();
+
     require(msg.sender == zoneOwner.addr, "can only be called by zone owner");
     require(teller.currencyId != 0, "zone is no teller");
-    require(users.getUserTier(msg.sender) > 0, "sender needs to be teller");
-    require(msg.sender != _to, "sender cannot also be to");
+
     require(funds[msg.sender] >= _amount, "cannot sell more than in funds");
 
+    // subtract the amount of ETH we are gonna send from this contract to _to
     funds[msg.sender] = funds[msg.sender].sub(_amount);
 
-    users.updateDailySold(country, msg.sender, _amount); // MIGHT THROW
-    users.updateLoyaltyPoints(msg.sender, _to, _amount);
-
-    _to.transfer(_amount);
+    users.updateDailySold(country, msg.sender, _amount); // MIGHT THROW if exceeds daily limit
+    users.updateLoyaltyPoints(msg.sender, _to, _amount); // won't throw
   }
 }

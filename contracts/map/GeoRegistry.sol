@@ -55,7 +55,7 @@ contract GeoRegistry is Ownable {
   constructor(address _control)
     public
   {
-    IControl control = IControl(_control);
+    control = IControl(_control);
 
     // TODO: improve below code? https://medium.com/@imolfar/bitwise-operations-and-bit-manipulation-in-solidity-ethereum-1751f3d2e216
     charToBitmask[bytes1("v")] = hex"80000000"; // 2147483648
@@ -170,6 +170,7 @@ contract GeoRegistry is Ownable {
   function updateLevel2batch(bytes2 _countryCode, bytes3[] _letters, bytes4[] _subLetters)
     public
   {
+
     // can exec while paused
     require(control.isCEO(msg.sender), "caller needs to be CEO");
     for (uint i = 0; i < _letters.length; i++) {
