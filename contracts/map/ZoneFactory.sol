@@ -1,6 +1,6 @@
-pragma solidity ^0.4.22;
+pragma solidity ^0.4.24;
 
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "../dth/IDetherToken.sol";
 import "../core/IUsers.sol";
@@ -21,6 +21,7 @@ contract ZoneFactory is Ownable {
   //      geohash   zoneContractAddress or 0x0 if it doesnt exist
   // TODO: now we can use computeCSC() to get CSC, do we need it? not really
   mapping(bytes7 => address) public geohashToZone;
+  mapping(address => bytes7) public zoneToGeohash;
 
   IDetherToken public dth;
   IGeoRegistry public geo;
@@ -122,14 +123,22 @@ contract ZoneFactory is Ownable {
   //
   // ------------------------------------------------
 
+  function updateUserDailySold(bytes2 _countryCode, address _from, address _to, uint _amount)
+    external
+  {
+    require(zoneToGeohash[msg.sender] != bytes7(0), "can only be called by a registered zone");
+
+    users.updateDailySold(_countryCode, _from, _to, _amount);
+  }
+
   // ERC223 magic
-  function tokenFallback(address _from, uint _value, bytes _data) // GAS COST 2.072.132
+  function tokenFallback(address _from, uint _value, bytes _data) // GAS COST +/- 3.763.729
     public
   {
-    require(control.paused() == false, "contract is paused");
     require(msg.sender == address(dth), "can only be called by dth contract");
 
-    require(_data.length == 10, "createAndClaim expect 10 bytes as _data");
+    require(control.paused() == false, "contract is paused");
+    require(_data.length == 10, "createAndClaim expects 10 bytes as data");
 
     // we only expect 1 function to be called, createAndClaim, encoded as bytes1(0x40)
     require(toBytes1(_data, 0) == bytes1(0x40), "incorrect first byte in data, expected 0x40");
@@ -141,7 +150,6 @@ contract ZoneFactory is Ownable {
     bytes7 geohash = toBytes7(_data, 3);
 
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(geohash != bytes7(0), "geohash cannot be 0x0");
     require(geo.zoneInsideCountry(country, geohash), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
     require(users.getUserTier(sender) > 0, "user not certified");
@@ -149,8 +157,10 @@ contract ZoneFactory is Ownable {
     // create/deploy the new zone
     geohashToZone[geohash] = new Zone(
       country, geohash, sender, dthAmount,
-      address(dth), address(geo), address(users), address(control)
+      address(dth), address(geo), address(users), address(control), address(this)
     );
+
+    zoneToGeohash[geohashToZone[geohash]] = geohash;
 
     // send all dth through to the new Zone contract
     dth.transfer(geohashToZone[geohash], dthAmount, hex"40");

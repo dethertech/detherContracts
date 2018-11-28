@@ -55,8 +55,8 @@ contract CertifierBase is ICertifier {
   //
   // ------------------------------------------------
 
-	event Confirmed(address indexed who);
-	event Revoked(address indexed who);
+	event CertifierConfirmed(address indexed who);
+	event CertifierRevoked(address indexed who);
 
 	// ------------------------------------------------
   //
@@ -104,7 +104,7 @@ contract CertifierBase is ICertifier {
 		only_delegate(msg.sender)
 	{
 		certs[_who].active = true;
-		emit Confirmed(_who);
+		emit CertifierConfirmed(_who);
 	}
 	function revoke(address _who)
 		public
@@ -112,7 +112,7 @@ contract CertifierBase is ICertifier {
 		only_certified(_who)
 	{
 		certs[_who].active = false;
-		emit Revoked(_who);
+		emit CertifierRevoked(_who);
 	}
 
 	// ------------------------------------------------

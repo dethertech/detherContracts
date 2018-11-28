@@ -1,10 +1,8 @@
-pragma solidity ^0.4.22;
-
-import "zeppelin-solidity/contracts/ownership/Ownable.sol";
+pragma solidity ^0.4.24;
 
 import "../core/IControl.sol";
 
-contract GeoRegistry is Ownable {
+contract GeoRegistry {
 
   // ------------------------------------------------
   //
@@ -152,7 +150,7 @@ contract GeoRegistry is Ownable {
   //
   // ------------------------------------------------
 
-  function setCountrySellDailyLimit(uint _tier, bytes2 _countryCode, uint _limitUsd)
+  function setCountryTierDailyLimit(bytes2 _countryCode, uint _tier, uint _limitUsd)
     public
   {
     // can exec while paused
