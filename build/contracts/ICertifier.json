@@ -1,5 +1,5 @@
 {
-  "contractName": "Certifier",
+  "contractName": "ICertifier",
   "abi": [
     {
       "anonymous": false,
@@ -49,28 +49,28 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "//! Certifier contract, taken from ethcore/sms-verification\n//!\n//! Copyright 2016 Gavin Wood, Parity Technologies Ltd.\n//!\n//! Licensed under the Apache License, Version 2.0 (the \"License\");\n//! you may not use this file except in compliance with the License.\n//! You may obtain a copy of the License at\n//!\n//!     http://www.apache.org/licenses/LICENSE-2.0\n//!\n//! Unless required by applicable law or agreed to in writing, software\n//! distributed under the License is distributed on an \"AS IS\" BASIS,\n//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n//! See the License for the specific language governing permissions and\n//! limitations under the License.\n\npragma solidity ^0.4.17;\n\ncontract Certifier {\n\tevent Confirmed(address indexed who);\n\tevent Revoked(address indexed who);\n\tfunction certified(address _who) view public returns (bool);\n}\n",
-  "sourcePath": "/Users/mehdi/code/dether/detherContracts/contracts/certifier/Certifier.sol",
+  "source": "//! Certifier contract, taken from ethcore/sms-verification\n//!\n//! Copyright 2016 Gavin Wood, Parity Technologies Ltd.\n//!\n//! Licensed under the Apache License, Version 2.0 (the \"License\");\n//! you may not use this file except in compliance with the License.\n//! You may obtain a copy of the License at\n//!\n//!     http://www.apache.org/licenses/LICENSE-2.0\n//!\n//! Unless required by applicable law or agreed to in writing, software\n//! distributed under the License is distributed on an \"AS IS\" BASIS,\n//! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n//! See the License for the specific language governing permissions and\n//! limitations under the License.\n//\n// NOTE: updated contract name from Certifier to ICertifier\n//\n\npragma solidity ^0.4.24;\n\ncontract ICertifier {\n\tevent Confirmed(address indexed who);\n\tevent Revoked(address indexed who);\n\tfunction certified(address _who) view public returns (bool);\n}\n",
+  "sourcePath": "/Users/trip/Projects/detherContracts/contracts/certifier/ICertifier.sol",
   "ast": {
-    "absolutePath": "/Users/mehdi/code/dether/detherContracts/contracts/certifier/Certifier.sol",
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/certifier/ICertifier.sol",
     "exportedSymbols": {
-      "Certifier": [
-        2934
+      "ICertifier": [
+        321
       ]
     },
-    "id": 2935,
+    "id": 322,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2918,
+        "id": 305,
         "literals": [
           "solidity",
           "^",
           "0.4",
-          ".17"
+          ".24"
         ],
         "nodeType": "PragmaDirective",
-        "src": "691:24:3"
+        "src": "757:24:2"
       },
       {
         "baseContracts": [],
@@ -78,31 +78,31 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 2934,
+        "id": 321,
         "linearizedBaseContracts": [
-          2934
+          321
         ],
-        "name": "Certifier",
+        "name": "ICertifier",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "anonymous": false,
             "documentation": null,
-            "id": 2922,
+            "id": 309,
             "name": "Confirmed",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 2921,
+              "id": 308,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2920,
+                  "id": 307,
                   "indexed": true,
                   "name": "who",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2922,
-                  "src": "755:19:3",
+                  "scope": 309,
+                  "src": "822:19:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -110,10 +110,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2919,
+                    "id": 306,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "755:7:3",
+                    "src": "822:7:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -123,28 +123,28 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "754:21:3"
+              "src": "821:21:2"
             },
-            "src": "739:37:3"
+            "src": "806:37:2"
           },
           {
             "anonymous": false,
             "documentation": null,
-            "id": 2926,
+            "id": 313,
             "name": "Revoked",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 2925,
+              "id": 312,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2924,
+                  "id": 311,
                   "indexed": true,
                   "name": "who",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2926,
-                  "src": "792:19:3",
+                  "scope": 313,
+                  "src": "859:19:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -152,10 +152,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2923,
+                    "id": 310,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "792:7:3",
+                    "src": "859:7:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -165,14 +165,14 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "791:21:3"
+              "src": "858:21:2"
             },
-            "src": "778:35:3"
+            "src": "845:35:2"
           },
           {
             "body": null,
             "documentation": null,
-            "id": 2933,
+            "id": 320,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -180,16 +180,16 @@
             "name": "certified",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2929,
+              "id": 316,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2928,
+                  "id": 315,
                   "name": "_who",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2933,
-                  "src": "834:12:3",
+                  "scope": 320,
+                  "src": "901:12:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -197,10 +197,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2927,
+                    "id": 314,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "834:7:3",
+                    "src": "901:7:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -210,20 +210,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "833:14:3"
+              "src": "900:14:2"
             },
             "payable": false,
             "returnParameters": {
-              "id": 2932,
+              "id": 319,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2931,
+                  "id": 318,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2933,
-                  "src": "869:4:3",
+                  "scope": 320,
+                  "src": "936:4:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -231,10 +231,10 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 2930,
+                    "id": 317,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
-                    "src": "869:4:3",
+                    "src": "936:4:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
@@ -244,41 +244,41 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "868:6:3"
+              "src": "935:6:2"
             },
-            "scope": 2934,
-            "src": "815:60:3",
+            "scope": 321,
+            "src": "882:60:2",
             "stateMutability": "view",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 2935,
-        "src": "717:160:3"
+        "scope": 322,
+        "src": "783:161:2"
       }
     ],
-    "src": "691:187:3"
+    "src": "757:188:2"
   },
   "legacyAST": {
-    "absolutePath": "/Users/mehdi/code/dether/detherContracts/contracts/certifier/Certifier.sol",
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/certifier/ICertifier.sol",
     "exportedSymbols": {
-      "Certifier": [
-        2934
+      "ICertifier": [
+        321
       ]
     },
-    "id": 2935,
+    "id": 322,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2918,
+        "id": 305,
         "literals": [
           "solidity",
           "^",
           "0.4",
-          ".17"
+          ".24"
         ],
         "nodeType": "PragmaDirective",
-        "src": "691:24:3"
+        "src": "757:24:2"
       },
       {
         "baseContracts": [],
@@ -286,31 +286,31 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 2934,
+        "id": 321,
         "linearizedBaseContracts": [
-          2934
+          321
         ],
-        "name": "Certifier",
+        "name": "ICertifier",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "anonymous": false,
             "documentation": null,
-            "id": 2922,
+            "id": 309,
             "name": "Confirmed",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 2921,
+              "id": 308,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2920,
+                  "id": 307,
                   "indexed": true,
                   "name": "who",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2922,
-                  "src": "755:19:3",
+                  "scope": 309,
+                  "src": "822:19:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -318,10 +318,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2919,
+                    "id": 306,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "755:7:3",
+                    "src": "822:7:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -331,28 +331,28 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "754:21:3"
+              "src": "821:21:2"
             },
-            "src": "739:37:3"
+            "src": "806:37:2"
           },
           {
             "anonymous": false,
             "documentation": null,
-            "id": 2926,
+            "id": 313,
             "name": "Revoked",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 2925,
+              "id": 312,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2924,
+                  "id": 311,
                   "indexed": true,
                   "name": "who",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2926,
-                  "src": "792:19:3",
+                  "scope": 313,
+                  "src": "859:19:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -360,10 +360,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2923,
+                    "id": 310,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "792:7:3",
+                    "src": "859:7:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -373,14 +373,14 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "791:21:3"
+              "src": "858:21:2"
             },
-            "src": "778:35:3"
+            "src": "845:35:2"
           },
           {
             "body": null,
             "documentation": null,
-            "id": 2933,
+            "id": 320,
             "implemented": false,
             "isConstructor": false,
             "isDeclaredConst": true,
@@ -388,16 +388,16 @@
             "name": "certified",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2929,
+              "id": 316,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2928,
+                  "id": 315,
                   "name": "_who",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2933,
-                  "src": "834:12:3",
+                  "scope": 320,
+                  "src": "901:12:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -405,10 +405,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2927,
+                    "id": 314,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "834:7:3",
+                    "src": "901:7:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -418,20 +418,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "833:14:3"
+              "src": "900:14:2"
             },
             "payable": false,
             "returnParameters": {
-              "id": 2932,
+              "id": 319,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2931,
+                  "id": 318,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2933,
-                  "src": "869:4:3",
+                  "scope": 320,
+                  "src": "936:4:2",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -439,10 +439,10 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 2930,
+                    "id": 317,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
-                    "src": "869:4:3",
+                    "src": "936:4:2",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bool",
                       "typeString": "bool"
@@ -452,26 +452,26 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "868:6:3"
+              "src": "935:6:2"
             },
-            "scope": 2934,
-            "src": "815:60:3",
+            "scope": 321,
+            "src": "882:60:2",
             "stateMutability": "view",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 2935,
-        "src": "717:160:3"
+        "scope": 322,
+        "src": "783:161:2"
       }
     ],
-    "src": "691:187:3"
+    "src": "757:188:2"
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.23+commit.124ca40d.Emscripten.clang"
+    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "2.0.0",
-  "updatedAt": "2018-08-07T12:59:14.211Z"
+  "schemaVersion": "2.0.1",
+  "updatedAt": "2018-11-28T16:15:51.915Z"
 }

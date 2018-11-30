@@ -13,10 +13,13 @@
 //! WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //! See the License for the specific language governing permissions and
 //! limitations under the License.
+//
+// NOTE: updated contract name from Certifier to ICertifier
+//
 
-pragma solidity ^0.4.17;
+pragma solidity ^0.4.24;
 
-contract Certifier {
+contract ICertifier {
 	event Confirmed(address indexed who);
 	event Revoked(address indexed who);
 	function certified(address _who) view public returns (bool);
