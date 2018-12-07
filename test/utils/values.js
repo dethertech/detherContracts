@@ -1,0 +1,47 @@
+const BYTES7_ZERO = '00000000000000';
+const BYTES16_ZERO = '0x00000000000000000000000000000000';
+const BYTES32_ZERO = '0x0000000000000000000000000000000000000000000000000000000000000000';
+const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
+const ADDRESS_BURN = '0xffffffffffffffffffffffffffffffffffffffff';
+
+const COUNTRY_CG = 'CG';
+const VALID_CG_ZONE_GEOHASH = 'krcztse'; // krcz is in CG
+const INVALID_CG_ZONE_GEOHASH = 'krcttse'; // krct is not in CG
+const NONEXISTING_CG_ZONE_GEOHASH = 'krcatse'; // krca, a is not a valid geohash char
+const VALID_CG_SHOP_GEOHASH = 'krcztseeeeee'; // krcz is in CG
+const VALID_CG_SHOP_GEOHASH_2 = 'krcytseeeeee'; // krcy is alo in CG
+const INVALID_CG_SHOP_GEOHASH = 'krcatseeeeee'; // krca, a is not a valid geohash char
+const NONEXISTING_CG_SHOP_GEOHASH = 'krcttseeeeee'; // krct is not in CG
+
+const CG_SHOP_LICENSE_PRICE = 42;
+const MIN_ZONE_DTH_STAKE = 100;
+
+const ONE_HOUR = 60 * 60;
+const ONE_DAY = ONE_HOUR * 24;
+const BID_PERIOD = ONE_DAY;
+const COOLDOWN_PERIOD = ONE_DAY * 2;
+
+module.exports = {
+  BYTES7_ZERO,
+  BYTES16_ZERO,
+  BYTES32_ZERO,
+  ADDRESS_ZERO,
+  ADDRESS_BURN,
+
+  COUNTRY_CG,
+  VALID_CG_ZONE_GEOHASH,
+  INVALID_CG_ZONE_GEOHASH,
+  NONEXISTING_CG_ZONE_GEOHASH,
+  VALID_CG_SHOP_GEOHASH,
+  VALID_CG_SHOP_GEOHASH_2,
+  INVALID_CG_SHOP_GEOHASH,
+  NONEXISTING_CG_SHOP_GEOHASH,
+
+  MIN_ZONE_DTH_STAKE,
+  CG_SHOP_LICENSE_PRICE,
+
+  ONE_HOUR,
+  ONE_DAY,
+  BID_PERIOD,
+  COOLDOWN_PERIOD,
+};

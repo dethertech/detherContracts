@@ -6,8 +6,9 @@ const path = require('path');
 const pretty = require('pretty-time');
 const Web3 = require('web3');
 
-const { getAccounts, addNumberDots } = require('../utils');
-const { addCountry } = require('./geo_utils');
+const { addNumberDots } = require('../utils/output');
+const { getAccounts } = require('../utils/accounts');
+const { addCountry } = require('../utils/geo');
 
 const Control = artifacts.require('Control.sol');
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
@@ -290,7 +291,7 @@ contract('GeoRegistry', () => {
   });
 
   describe(`add all countries in batches (max batch size = ${BATCH_SIZE})`, () => {
-    countriesToTest.forEach((countryCode) => {
+    ['NL'].forEach((countryCode) => {
       it(`successfully adds country ${countryCode}`, async () => {
         const countryTimerStart = process.hrtime();
         const { countryGasCost, mostExpensiveTrxGasCost, txCount, countryMap } = await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);

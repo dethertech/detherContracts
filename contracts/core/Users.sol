@@ -35,10 +35,10 @@ contract Users is DateTime {
   mapping(address => uint) public volumeSell;
   mapping(address => uint) public nbTrade;
 
-  // store a mapping with per day/month/year a uint256 containing the wei sold amount on that date
+  // per country, per user, per day, keep track of amount of eth sold (since we have max limits per country)
   //
-  //      user               day               month             year      weiSold
-  mapping(address => mapping(uint16 => mapping(uint16 => mapping(uint16 => uint256)))) ethSellsUserToday;
+  //      country           user               day               month             year      weiSold
+  mapping(bytes2 => mapping(address => mapping(uint16 => mapping(uint16 => mapping(uint16 => uint256))))) ethSellsUserToday;
 
   // ------------------------------------------------
   //
@@ -77,9 +77,9 @@ contract Users is DateTime {
     uint sellDailyLimitUsd = geo.countryTierDailyLimit(_countryCode, getUserTier(_from));
     uint sellDailyLimitEth = priceOracle.getWeiPriceOneUsd().mul(sellDailyLimitUsd);
     _DateTime memory dateNow = parseTimestamp(block.timestamp);
-    uint newSoldTodayEth = ethSellsUserToday[_from][dateNow.day][dateNow.month][dateNow.year].add(_amount);
+    uint newSoldTodayEth = ethSellsUserToday[_countryCode][_from][dateNow.day][dateNow.month][dateNow.year].add(_amount);
     require(newSoldTodayEth <= sellDailyLimitEth, "exceeded daily sell limit");
-    ethSellsUserToday[_from][dateNow.day][dateNow.month][dateNow.year] = newSoldTodayEth;
+    ethSellsUserToday[_countryCode][_from][dateNow.day][dateNow.month][dateNow.year] = newSoldTodayEth;
 
     volumeBuy[_to] = volumeBuy[_to].add(_amount);
     volumeSell[_from] = volumeSell[_from].add(_amount);
@@ -100,5 +100,14 @@ contract Users is DateTime {
     foundTier = 0;
     if (kycCertifier.certified(_who)) foundTier = 2;
     else if (smsCertifier.certified(_who)) foundTier = 1;
+  }
+
+  function getDateInfo(uint timestamp)
+    external
+    pure
+    returns (uint16, uint16, uint16)
+  {
+    _DateTime memory date = parseTimestamp(timestamp);
+    return (date.day, date.month, date.year);
   }
 }
