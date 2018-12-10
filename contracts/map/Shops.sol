@@ -8,7 +8,7 @@ import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
 
 // https://github.com/kleros/kleros-interaction/blob/master/contracts/standard/arbitration/CentralizedArbitrator.sol
-// https://github.com/ethereum/EIPs/issues/1497 
+//  https://github.com/ethereum/EIPs/issues/1497 
 // emit
 contract Shops {
 
@@ -43,7 +43,7 @@ contract Shops {
   // ------------------------------------------------
 
   struct Shop {
-    bytes12 position;  // 10 char geohash for location of teller
+    bytes12 position; // 12 char geohash for location of teller
     bytes16 category;
     bytes16 name;
     bytes32 description;
@@ -78,7 +78,7 @@ contract Shops {
 
   // ------------------------------------------------
   //
-  // Functions Getters
+  // Functions Getters Public
   //
   // ------------------------------------------------
 
@@ -227,36 +227,6 @@ contract Shops {
     licensePrice[_countryCode] = _priceDth;
   }
 
-  function addShop(bytes2 _countryCode, bytes _position, bytes16 _category, bytes16 _name, bytes32 _description, bytes16 _opening)
-    external
-  {
-    require(control.paused() == false, "contract is paused");
-    require(geo.countryIsEnabled(_countryCode), "country is disabled");
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
-
-    // TODO: can one address own multiple shops? for now we say NO it cannot
-    require(addressToShop[msg.sender].position == bytes12(0), "caller already has shop");
-
-    require(_position.length == 12, "expected position to be 10 bytes");
-    require(positionToAddress[toBytes12(_position, 0)] == address(0), "shop already exists at position");
-
-    require(geo.validGeohashChars(_position), "invalid geohash characters in position");
-    require(geo.zoneInsideCountry(_countryCode, toBytes4(_position, 0)), "zone is not inside country");
-
-    bytes7 zoneGeohash = toBytes7(_position, 0);
-    bytes12 tellerGeoHash = toBytes12(_position, 0);
-
-    Shop storage shop = addressToShop[msg.sender];
-    shop.position = tellerGeoHash;
-    shop.category = _category;
-    shop.name = _name;
-    shop.description = _description;
-    shop.opening = _opening;
-
-    positionToAddress[tellerGeoHash] = msg.sender;
-    zoneToShopAddresses[zoneGeohash].push(msg.sender);
-    // emit ShopCreated(msg.sender);
-  }
   function tokenFallback(address _from, uint _value, bytes _data)
     public
   {
@@ -264,12 +234,14 @@ contract Shops {
 
     require(control.paused() == false, "contract is paused");
 
-    require(_data.length == 95, "addShop expects 96 bytes as data");
+    require(_data.length == 95, "addShop expects 95 bytes as data");
 
     address sender = _from;
     uint dthAmount = _value;
 
     bytes1 fn = toBytes1(_data, 0);
+    require(fn == bytes1(0x30), "incorrect first byte in data, expected 0x30");
+
     bytes2 country = toBytes2(_data, 1);
     bytes12 position = toBytes12(_data, 3);
     bytes16 category = toBytes16(_data, 15);
@@ -277,7 +249,6 @@ contract Shops {
     bytes32 description = toBytes32(_data, 47);
     bytes16 opening = toBytes16(_data, 79);
 
-    require(fn == bytes1(0x30), "incorrect first byte in data, expected 0x30");
     require(geo.countryIsEnabled(country), "country is disabled");
     require(users.getUserTier(sender) > 0, "user not certified");
     require(addressToShop[sender].position == bytes12(0), "caller already has shop");
@@ -289,19 +260,23 @@ contract Shops {
 
     bytes7 zoneGeohash = bytes7(position);
 
-    Shop storage shop = addressToShop[msg.sender];
+    Shop storage shop = addressToShop[sender];
     shop.position = position;
     shop.category = category;
     shop.name = name;
     shop.description = description;
     shop.opening = opening;
 
-    positionToAddress[position] = msg.sender;
-    zoneToShopAddresses[zoneGeohash].push(msg.sender);
+    positionToAddress[position] = sender;
+    zoneToShopAddresses[zoneGeohash].push(sender);
   }
+
   function removeShop(bytes12 _position)
     external
   {
+    require(control.paused() == false, "contract is paused");
+    require(users.getUserTier(msg.sender) > 0, "user not certified");
+
     require(_position != bytes12(0), "position cannot be bytes12(0)");
     require(addressToShop[msg.sender].position == _position, "caller does not own shop at position");
 
@@ -311,7 +286,7 @@ contract Shops {
 
     address[] storage zoneShopAddresses = zoneToShopAddresses[bytes7(_position)];
 
-    // it's safe to do a loop, the numberof geohash12 in any geohash7 is less than the max uint value
+    // it's safe to do a loop, the number of geohash12 in any geohash7 (33.554.432) is less than the max uint value
     for (uint i = 0; i < zoneShopAddresses.length; i += 1) {
       address zoneShopAddress = zoneShopAddresses[i];
       if (zoneShopAddress == msg.sender) {

@@ -18,15 +18,20 @@ const { addCountry } = require('../utils/geo');
 const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
 const { ethToWei, asciiToHex, remove0x } = require('../utils/convert');
 const {
-  BYTES16_ZERO, BYTES32_ZERO, COUNTRY_CG, VALID_CG_SHOP_GEOHASH, VALID_CG_SHOP_GEOHASH_2,
-  INVALID_CG_SHOP_GEOHASH, NONEXISTING_CG_SHOP_GEOHASH, CG_SHOP_LICENSE_PRICE,
+  BYTES12_ZERO, BYTES16_ZERO, BYTES32_ZERO, COUNTRY_CG, VALID_CG_SHOP_GEOHASH,
+  VALID_CG_SHOP_GEOHASH_2, INVALID_CG_SHOP_GEOHASH, NONEXISTING_CG_SHOP_GEOHASH,
+  CG_SHOP_LICENSE_PRICE,
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
 
-const createDthShopCreateData = (shopsAddr, dthAmount, shopData) => {
+const createDthShopCreateDataBytes = (fnByte, shopData) => (
+  `${fnByte}${Object.keys(shopData).map(k => remove0x(shopData[k])).join('')}`
+);
+
+const createDthShopCreateData = (shopsAddr, dthAmount, shopData, fnByte) => {
   const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
-  const data = `0x30${Object.keys(shopData).map(k => remove0x(shopData[k])).join('')}`;
+  const data = createDthShopCreateDataBytes(fnByte, shopData);
   const params = web3.eth.abi.encodeParameters(
     ['address', 'uint256', 'bytes'],
     [shopsAddr, ethToWei(dthAmount), data],
@@ -34,11 +39,11 @@ const createDthShopCreateData = (shopsAddr, dthAmount, shopData) => {
   return [fnSig, params.slice(2)].join('');
 };
 
-const sendDthShopCreate = async (from, to, recipient, dthAmount, shopData) => {
+const sendDthShopCreate = async (from, to, recipient, dthAmount, shopData, fnByte = '0x30') => {
   const tx = await web3.eth.sendTransaction({
     from,
     to,
-    data: createDthShopCreateData(recipient, dthAmount, shopData),
+    data: createDthShopCreateData(recipient, dthAmount, shopData, fnByte),
     value: 0,
     gas: 4700000,
   });
@@ -101,7 +106,35 @@ contract.only('Shops', () => {
   };
 
   describe('Setters', () => {
+    describe('setLicensePrice(bytes2 _countryCode, uint _priceDth)', () => {
+      it('[error] -- can only be called by CEO', async () => {
+        await expectRevert(
+          shopsInstance.setLicensePrice(asciiToHex(COUNTRY_CG), CG_SHOP_LICENSE_PRICE, { from: user1 }),
+          'can only be called by CEO',
+        );
+      });
+      it('[success]', async () => {
+        await shopsInstance.setLicensePrice(asciiToHex(COUNTRY_CG), CG_SHOP_LICENSE_PRICE, { from: owner });
+      });
+    });
     describe('addShop(bytes2 _countryCode, bytes _position, bytes16 _category, bytes16 _name, bytes32 _description, bytes16 _opening)', () => {
+      it('[error] -- can only be called by dth contract', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        const addShopData = createDthShopCreateDataBytes('0x30', {
+          country: asciiToHex(COUNTRY_CG),
+          position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+          category: BYTES16_ZERO,
+          name: BYTES16_ZERO,
+          description: BYTES32_ZERO,
+          opening: BYTES16_ZERO,
+        });
+        await expectRevert(
+          shopsInstance.tokenFallback(user1, ethToWei(CG_SHOP_LICENSE_PRICE), addShopData, { from: user1 }),
+          'can only be called by dth contract',
+        );
+      });
       it('[error] -- global pause enabled', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await smsInstance.certify(user1, { from: owner });
@@ -119,9 +152,48 @@ contract.only('Shops', () => {
               description: BYTES32_ZERO,
               opening: BYTES16_ZERO,
             },
-            { from: user1 },
           ),
           'contract is paused',
+        );
+      });
+      it('[error] -- bytes arg does not have length 95', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await expectRevert2(
+          sendDthShopCreate(
+            user1, dthInstance.address, shopsInstance.address,
+            CG_SHOP_LICENSE_PRICE,
+            {
+              country: asciiToHex(COUNTRY_CG),
+              position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+              category: BYTES16_ZERO,
+              name: BYTES32_ZERO, // <-- should be bytes16(0)
+              description: BYTES32_ZERO,
+              opening: BYTES16_ZERO,
+            },
+          ),
+          'addShop expects 95 bytes as data',
+        );
+      });
+      it('[error] -- first byte is not 0x30', async () => {
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await expectRevert2(
+          sendDthShopCreate(
+            user1, dthInstance.address, shopsInstance.address,
+            CG_SHOP_LICENSE_PRICE,
+            {
+              country: asciiToHex(COUNTRY_CG),
+              position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+              category: BYTES16_ZERO,
+              name: BYTES16_ZERO,
+              description: BYTES32_ZERO,
+              opening: BYTES16_ZERO,
+            },
+            '0x99', // <-- incorrect fn byte, should be 0x30
+          ),
+          'incorrect first byte in data, expected 0x30',
         );
       });
       it('[error] -- country disabled', async () => {
@@ -139,12 +211,11 @@ contract.only('Shops', () => {
               description: BYTES32_ZERO,
               opening: BYTES16_ZERO,
             },
-            { from: user1 },
           ),
           'country is disabled',
         );
       });
-      it('[error] -- user not registered', async () => {
+      it('[error] -- user not certified', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
         await expectRevert2(
@@ -159,7 +230,6 @@ contract.only('Shops', () => {
               description: BYTES32_ZERO,
               opening: BYTES16_ZERO,
             },
-            { from: user1 },
           ),
           'user not certified',
         );
@@ -167,28 +237,7 @@ contract.only('Shops', () => {
       it('[error] -- user already has shop', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await shopsInstance.addShop(asciiToHex(COUNTRY_CG), asciiToHex(VALID_CG_SHOP_GEOHASH), BYTES16_ZERO, BYTES16_ZERO, BYTES32_ZERO, BYTES16_ZERO, { from: user1 });
-        await expectRevert2(
-          sendDthShopCreate(
-            user1, dthInstance.address, shopsInstance.address,
-            CG_SHOP_LICENSE_PRICE,
-            {
-              country: asciiToHex(COUNTRY_CG),
-              position: asciiToHex(VALID_CG_SHOP_GEOHASH_2),
-              category: BYTES16_ZERO,
-              name: BYTES16_ZERO,
-              description: BYTES32_ZERO,
-              opening: BYTES16_ZERO,
-            },
-            { from: user1 },
-          ),
-          'caller already has shop',
-        );
-      });
-      it('[error] -- there already is a shop at this geohash12', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
+
         await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
         await sendDthShopCreate(
           user1, dthInstance.address, shopsInstance.address,
@@ -201,7 +250,41 @@ contract.only('Shops', () => {
             description: BYTES32_ZERO,
             opening: BYTES16_ZERO,
           },
-          { from: user1 },
+        );
+
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await expectRevert2(
+          sendDthShopCreate(
+            user1, dthInstance.address, shopsInstance.address,
+            CG_SHOP_LICENSE_PRICE,
+            {
+              country: asciiToHex(COUNTRY_CG),
+              position: asciiToHex(VALID_CG_SHOP_GEOHASH_2),
+              category: BYTES16_ZERO,
+              name: BYTES16_ZERO,
+              description: BYTES32_ZERO,
+              opening: BYTES16_ZERO,
+            },
+          ),
+          'caller already has shop',
+        );
+      });
+      it('[error] -- there already is a shop at this geohash12', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
         );
 
         await smsInstance.certify(user2, { from: owner });
@@ -218,7 +301,6 @@ contract.only('Shops', () => {
               description: BYTES32_ZERO,
               opening: BYTES16_ZERO,
             },
-            { from: user2 },
           ),
           'shop already exists at position',
         );
@@ -239,7 +321,6 @@ contract.only('Shops', () => {
               description: BYTES32_ZERO,
               opening: BYTES16_ZERO,
             },
-            { from: user1 },
           ),
           'invalid geohash characters in position',
         );
@@ -260,7 +341,6 @@ contract.only('Shops', () => {
               description: BYTES32_ZERO,
               opening: BYTES16_ZERO,
             },
-            { from: user1 },
           ),
           'zone is not inside country',
         );
@@ -281,7 +361,6 @@ contract.only('Shops', () => {
               description: BYTES32_ZERO,
               opening: BYTES16_ZERO,
             },
-            { from: user1 },
           ),
           'send dth is less than shop license price',
         );
@@ -301,13 +380,106 @@ contract.only('Shops', () => {
             description: BYTES32_ZERO,
             opening: BYTES16_ZERO,
           },
-          { from: user1 },
         );
       });
     });
 
     describe('removeShop(bytes12 _position)', () => {
+      it('[error] -- contract is paused', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
 
+        await controlInstance.pause({ from: owner });
+
+        await expectRevert(
+          shopsInstance.removeShop(asciiToHex(VALID_CG_SHOP_GEOHASH), { from: user1 }),
+          'contract is paused',
+        );
+      });
+      it('[error] -- user not certified', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        await smsInstance.revoke(user1, { from: owner });
+        await expectRevert(
+          shopsInstance.removeShop(asciiToHex(VALID_CG_SHOP_GEOHASH), { from: user1 }),
+          'user not certified',
+        );
+      });
+      it('[error] -- position is bytes12(0)', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+
+        await expectRevert(
+          shopsInstance.removeShop(BYTES12_ZERO, { from: user1 }),
+          'position cannot be bytes12(0)',
+        );
+      });
+      it('[error] -- caller does not own shop', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        await smsInstance.certify(user2, { from: owner });
+        await expectRevert(
+          shopsInstance.removeShop(asciiToHex(VALID_CG_SHOP_GEOHASH), { from: user2 }),
+          'caller does not own shop at position',
+        );
+      });
+      it('[success]', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        await shopsInstance.removeShop(asciiToHex(VALID_CG_SHOP_GEOHASH), { from: user1 });
+      });
     });
   });
 
