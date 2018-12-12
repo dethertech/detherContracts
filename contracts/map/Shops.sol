@@ -1,40 +1,33 @@
 pragma solidity ^0.4.24;
 
+import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
 import "../dth/IDetherToken.sol";
 import "../core/IUsers.sol";
 import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
+import "../kleros/IArbitrable.sol";
+import "../kleros/Arbitrator.sol";
 
-// https://github.com/kleros/kleros-interaction/blob/master/contracts/standard/arbitration/CentralizedArbitrator.sol
-//  https://github.com/ethereum/EIPs/issues/1497 
-// emit
-contract Shops {
-
+contract Shops is IArbitrable {
   // ------------------------------------------------
   //
-  // Variables Public
+  // Libraries
   //
   // ------------------------------------------------
 
-  //      geohash   shopOwnerAddresss
-  mapping(bytes12 => address) public positionToAddress;
-  mapping(bytes7 => address[]) public zoneToShopAddresses;
-  mapping(bytes2 => uint) public licensePrice;
-
-  IDetherToken public dth;
-  IGeoRegistry public geo;
-  IUsers public users;
-  IControl public control;
+  using SafeMath for uint;
 
   // ------------------------------------------------
   //
-  // Variables Private
+  // Enums
   //
   // ------------------------------------------------
 
-  mapping(address => Shop) private addressToShop;
+  enum Party {Shop, Challenger}
+  enum RulingOptions {NoRuling, ShopWins, ChallengerWins}
+  // enum DisputeStatus {Waiting, Appealable, Solved} // copied from Arbitrator.sol
 
   // ------------------------------------------------
   //
@@ -48,6 +41,68 @@ contract Shops {
     bytes16 name;
     bytes32 description;
     bytes16 opening;
+    uint staked;
+    bool hasDispute;
+    uint disputeID;
+  }
+
+  struct ShopDispute {
+    address shop;
+    address challenger;
+    uint disputeType;
+    RulingOptions ruling;
+    // status, taken from arbitrator.getDisputeStatus()
+  }
+
+  // ------------------------------------------------
+  //
+  // Variables Public
+  //
+  // ------------------------------------------------
+
+  // links to other contracts
+  IDetherToken public dth;
+  IGeoRegistry public geo;
+  IUsers public users;
+  IControl public control;
+  Arbitrator public arbitrator; // <-- kleros
+
+  // kleros related
+  string public constant RULING_OPTIONS = "Shop wins;Challenger wins";
+  uint8 public constant AMOUNT_OF_CHOICES = 2;
+  bytes public arbitratorExtraData;
+  string[] public disputeTypes;
+
+  //      countryCode priceDTH
+  mapping(bytes2 =>   uint) public countryLicensePrice;
+
+  //      geohash12   shopAddress
+  mapping(bytes12 =>  address) public positionToShopAddress;
+
+  //      geohash7    shopAddresses
+  mapping(bytes7 =>   address[]) public zoneToShopAddresses;
+
+  // ------------------------------------------------
+  //
+  // Variables Private
+  //
+  // ------------------------------------------------
+
+  //      shopAddress shopStruct
+  mapping(address =>  Shop) private shopAddressToShop;
+
+  //      disputeId disputeStruct
+  mapping(uint =>   ShopDispute) private disputeIdToDispute;
+
+  // ------------------------------------------------
+  //
+  // Modifiers
+  //
+  // ------------------------------------------------
+
+  modifier onlyArbitrator {
+    require(msg.sender == address(arbitrator), "Can only be called by the arbitrator.");
+    _;
   }
 
   // ------------------------------------------------
@@ -62,18 +117,23 @@ contract Shops {
   //
   // ------------------------------------------------
 
-  constructor(address _dth, address _geo, address _users, address _control)
+  constructor(address _dth, address _geo, address _users, address _control, address _arbitrator, bytes _arbitratorExtraData)
     public
   {
     require(_dth != address(0), "dth address cannot be 0x0");
     require(_geo != address(0), "geo address cannot be 0x0");
     require(_users != address(0), "users address cannot be 0x0");
     require(_control != address(0), "control address cannot be 0x0");
+    require(_arbitrator != address(0), "arbitrator cannot be 0x0");
 
     dth = IDetherToken(_dth);
     geo = IGeoRegistry(_geo);
     users = IUsers(_users);
     control = IControl(_control);
+
+    // kleros
+    arbitrator = Arbitrator(_arbitrator);
+    arbitratorExtraData = _arbitratorExtraData;
   }
 
   // ------------------------------------------------
@@ -82,33 +142,35 @@ contract Shops {
   //
   // ------------------------------------------------
 
-
   function getShopByAddr(address _addr)
     public
     view
-    returns (bytes12, bytes16, bytes16, bytes32, bytes16)
+    returns (bytes12, bytes16, bytes16, bytes32, bytes16, uint, bool, uint)
   {
-    Shop memory shop = addressToShop[_addr];
+    Shop memory shop = shopAddressToShop[_addr];
 
     return (
       shop.position,
       shop.category,
       shop.name,
       shop.description,
-      shop.opening
+      shop.opening,
+      shop.staked,
+      shop.hasDispute,
+      shop.disputeID
     );
   }
 
-  function getShopByPosition(bytes12 _position)
+  function getShopByPos(bytes12 _position)
     external
     view
-    returns (bytes12, bytes16, bytes16, bytes32, bytes16)
+    returns (bytes12, bytes16, bytes16, bytes32, bytes16, uint, bool, uint)
   {
-    address shopAddr = positionToAddress[_position];
+    address shopAddr = positionToShopAddress[_position];
     return getShopByAddr(shopAddr);
   }
 
-  function getShopsInZone(bytes7 _zoneGeohash)
+  function getShopAddressesInZone(bytes7 _zoneGeohash)
     external
     view
     returns (address[] memory)
@@ -220,11 +282,11 @@ contract Shops {
   //
   // ------------------------------------------------
 
-  function setLicensePrice(bytes2 _countryCode, uint _priceDth)
+  function setCountryLicensePrice(bytes2 _countryCode, uint _priceDTH)
     external
   {
     require(control.isCEO(msg.sender), "can only be called by CEO");
-    licensePrice[_countryCode] = _priceDth;
+    countryLicensePrice[_countryCode] = _priceDTH;
   }
 
   function tokenFallback(address _from, uint _value, bytes _data)
@@ -251,24 +313,29 @@ contract Shops {
 
     require(geo.countryIsEnabled(country), "country is disabled");
     require(users.getUserTier(sender) > 0, "user not certified");
-    require(addressToShop[sender].position == bytes12(0), "caller already has shop");
-    require(positionToAddress[position] == address(0), "shop already exists at position");
+    require(shopAddressToShop[sender].position == bytes12(0), "caller already has shop");
+    require(positionToShopAddress[position] == address(0), "shop already exists at position");
     require(geo.validGeohashChars12(position), "invalid geohash characters in position");
     require(geo.zoneInsideCountry(country, bytes4(position)), "zone is not inside country");
 
-    require(_value >= licensePrice[country], "send dth is less than shop license price");
+    require(_value >= countryLicensePrice[country], "send dth is less than shop license price");
 
-    bytes7 zoneGeohash = bytes7(position);
-
-    Shop storage shop = addressToShop[sender];
-    shop.position = position;
+    // create new entry in storage
+    Shop storage shop = shopAddressToShop[sender];
+    shop.position = position; // a 12 character geohash
     shop.category = category;
     shop.name = name;
     shop.description = description;
     shop.opening = opening;
+    shop.staked = dthAmount;
+    shop.hasDispute = false;
+    shop.disputeID = 0; // dispute could have id 0..
 
-    positionToAddress[position] = sender;
-    zoneToShopAddresses[zoneGeohash].push(sender);
+    // so we can get a shop based on its position
+    positionToShopAddress[position] = sender;
+
+    // a zone is a 7 character geohash, we keep track of all shops in a given zone
+    zoneToShopAddresses[bytes7(position)].push(sender);
   }
 
   function removeShop(bytes12 _position)
@@ -276,17 +343,22 @@ contract Shops {
   {
     require(control.paused() == false, "contract is paused");
     require(users.getUserTier(msg.sender) > 0, "user not certified");
+    // if country is disabled, user can still remove his shop!
 
     require(_position != bytes12(0), "position cannot be bytes12(0)");
-    require(addressToShop[msg.sender].position == _position, "caller does not own shop at position");
+    require(shopAddressToShop[msg.sender].position == _position, "caller does not own shop at position");
 
-    delete addressToShop[msg.sender];
+    require(shopAddressToShop[msg.sender].hasDispute == false, "cannot remove shop while in dispute");
 
-    positionToAddress[_position] = address(0);
+    // should work since the struct contains no dynamic variables
+    delete shopAddressToShop[msg.sender];
 
-    address[] storage zoneShopAddresses = zoneToShopAddresses[bytes7(_position)];
+    positionToShopAddress[_position] = address(0);
 
     // it's safe to do a loop, the number of geohash12 in any geohash7 (33.554.432) is less than the max uint value
+    // however we would like to NOT loop,
+    // TODO: get rid of the loop by tracking the index of each shop address
+    address[] storage zoneShopAddresses = zoneToShopAddresses[bytes7(_position)];
     for (uint i = 0; i < zoneShopAddresses.length; i += 1) {
       address zoneShopAddress = zoneShopAddresses[i];
       if (zoneShopAddress == msg.sender) {
@@ -296,5 +368,131 @@ contract Shops {
         break; // done
       }
     }
+  }
+
+  //
+  //
+  //
+  //
+  // Kleros Dispute Arbitration
+  //
+  //
+  //
+  //
+
+  // so we can add new types of dispute in the future
+  function addDisputeType(string _disputeTypeLink)
+    external
+  {
+    require(control.isCEO(msg.sender), "can only be called by CEO");
+    require(bytes(_disputeTypeLink).length > 0, "dispute type link is empty");
+
+    uint disputeTypeId = disputeTypes.push(_disputeTypeLink) - 1;
+
+    emit MetaEvidence(disputeTypeId, _disputeTypeLink);
+  }
+
+  function getDisputeCreateCost()
+    public
+    view
+    returns (uint)
+  {
+    return arbitrator.arbitrationCost(arbitratorExtraData) * 2;
+  }
+
+  function getDisputeAppealCost(uint _disputeID)
+    public
+    view
+    returns (uint)
+  {
+    return arbitrator.appealCost(_disputeID, arbitratorExtraData);
+  }
+
+  function getDispute(uint _disputeID)
+    external
+    returns (address, address, uint, uint, uint)
+  {
+    ShopDispute memory dispute = disputeIdToDispute[_disputeID];
+    Arbitrator.DisputeStatus disputeStatus = arbitrator.disputeStatus(_disputeID);
+
+    return (
+      dispute.shop,
+      dispute.challenger,
+      dispute.disputeType,
+      uint(dispute.ruling),
+      uint(disputeStatus) // from arbitrator contract
+    );
+  }
+
+  // called by somebody who wants to start a dispute with a shop
+  function createDispute(bytes12 _position, uint _disputeTypeId, string _evidenceLink)
+    public
+    payable
+  {
+    require(control.paused() == false, "contract is paused");
+    require(users.getUserTier(msg.sender) > 0, "user not certified");
+
+    require(_disputeTypeId < disputeTypes.length, "dispute type does not exist");
+    require(bytes(_evidenceLink).length > 0, "evidence link is empty");
+
+    require(positionToShopAddress[_position] != address(0), "no shop at that position");
+    require(shopAddressToShop[msg.sender].position != _position, "shop owner cannot start dispute on own shop");
+    require(shopAddressToShop[positionToShopAddress[_position]].hasDispute == false, "shop already has a dispute");
+
+    uint arbitrationCost = getDisputeCreateCost();
+    require(msg.value >= arbitrationCost, "sent eth is lower than arbitration cost");
+
+    uint disputeID = arbitrator.createDispute.value(arbitrationCost)(AMOUNT_OF_CHOICES, arbitratorExtraData);
+
+    // create new Dispute
+    ShopDispute storage dispute = disputeIdToDispute[disputeID];
+    dispute.challenger = msg.sender;
+    dispute.shop = positionToShopAddress[_position];
+    dispute.disputeType = _disputeTypeId;
+    dispute.ruling = RulingOptions.NoRuling;
+
+    emit Dispute(arbitrator, disputeID, _disputeTypeId);
+    emit Evidence(arbitrator, disputeID, msg.sender, _evidenceLink);
+
+    uint excessEth = arbitrationCost.sub(msg.value);
+    if (excessEth > 0) msg.sender.transfer(excessEth);
+  }
+
+  function appealDispute(uint _disputeID)
+    external
+    payable
+  {
+    // TODO
+  }
+
+  function executeRuling(uint _disputeID, uint _ruling)
+    private
+  {
+    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
+
+    Shop storage shop = shopAddressToShop[dispute.shop];
+
+    dispute.ruling = RulingOptions(_ruling);
+  }
+
+  function finalizeDispute(uint _disputeID)
+    external
+  {
+    // called by challenger or shop owner (whoever won dispute)
+
+    // uint shopDthStake = shop.staked;
+    // shop.staked = 0;
+    //
+    // // send shop staked DTH to challenger
+    // dth.transfer(dispute.challenger, shopDthStake);
+  }
+
+  function rule(uint _disputeID, uint _ruling)
+    public
+    onlyArbitrator
+  {
+    emit Ruling(Arbitrator(msg.sender), _disputeID, _ruling);
+
+    executeRuling(_disputeID,_ruling);
   }
 }

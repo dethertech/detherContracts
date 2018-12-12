@@ -10,6 +10,7 @@ const KycCertifier = artifacts.require('KycCertifier.sol');
 const Users = artifacts.require('Users.sol');
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
 const Shops = artifacts.require('Shops.sol');
+const CentralizedArbitrator = artifacts.require('CentralizedArbitrator.sol')
 
 const Web3 = require('web3');
 
@@ -20,7 +21,7 @@ const { ethToWei, asciiToHex, remove0x } = require('../utils/convert');
 const {
   BYTES12_ZERO, BYTES16_ZERO, BYTES32_ZERO, COUNTRY_CG, VALID_CG_SHOP_GEOHASH,
   VALID_CG_SHOP_GEOHASH_2, INVALID_CG_SHOP_GEOHASH, NONEXISTING_CG_SHOP_GEOHASH,
-  CG_SHOP_LICENSE_PRICE,
+  CG_SHOP_LICENSE_PRICE, KLEROS_ARBITRATION_PRICE,
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
@@ -65,6 +66,7 @@ contract.only('Shops', () => {
   let usersInstance;
   let geoInstance;
   let shopsInstance;
+  let arbitratorInstance;
 
   before(async () => {
     // ROOT_TIME = await getLastBlockTimestamp();
@@ -89,15 +91,19 @@ contract.only('Shops', () => {
     );
     await smsInstance.addDelegate(owner, { from: owner });
 
+    arbitratorInstance = await CentralizedArbitrator.new(ethToWei(KLEROS_ARBITRATION_PRICE), { from: owner });
+
     shopsInstance = await Shops.new(
       dthInstance.address,
       geoInstance.address,
       usersInstance.address,
       controlInstance.address,
+      arbitratorInstance.address,
+      '0x0', // kleros extraData
       { from: owner },
     );
 
-    shopsInstance.setLicensePrice(asciiToHex(COUNTRY_CG), ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+    shopsInstance.setCountryLicensePrice(asciiToHex(COUNTRY_CG), ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
   });
 
   const enableAndLoadCountry = async (countryCode) => {
@@ -106,15 +112,15 @@ contract.only('Shops', () => {
   };
 
   describe('Setters', () => {
-    describe('setLicensePrice(bytes2 _countryCode, uint _priceDth)', () => {
+    describe('setCountryLicensePrice(bytes2 _countryCode, uint _priceDth)', () => {
       it('[error] -- can only be called by CEO', async () => {
         await expectRevert(
-          shopsInstance.setLicensePrice(asciiToHex(COUNTRY_CG), CG_SHOP_LICENSE_PRICE, { from: user1 }),
+          shopsInstance.setCountryLicensePrice(asciiToHex(COUNTRY_CG), CG_SHOP_LICENSE_PRICE, { from: user1 }),
           'can only be called by CEO',
         );
       });
       it('[success]', async () => {
-        await shopsInstance.setLicensePrice(asciiToHex(COUNTRY_CG), CG_SHOP_LICENSE_PRICE, { from: owner });
+        await shopsInstance.setCountryLicensePrice(asciiToHex(COUNTRY_CG), CG_SHOP_LICENSE_PRICE, { from: owner });
       });
     });
     describe('addShop(bytes2 _countryCode, bytes _position, bytes16 _category, bytes16 _name, bytes32 _description, bytes16 _opening)', () => {

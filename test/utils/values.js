@@ -22,6 +22,8 @@ const ONE_DAY = ONE_HOUR * 24;
 const BID_PERIOD = ONE_DAY;
 const COOLDOWN_PERIOD = ONE_DAY * 2;
 
+const KLEROS_ARBITRATION_PRICE = 1;
+
 module.exports = {
   BYTES7_ZERO,
   BYTES12_ZERO,
@@ -46,4 +48,6 @@ module.exports = {
   ONE_DAY,
   BID_PERIOD,
   COOLDOWN_PERIOD,
+
+  KLEROS_ARBITRATION_PRICE,
 };
