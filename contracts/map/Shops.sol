@@ -405,22 +405,27 @@ contract Shops is IArbitrable {
     view
     returns (uint)
   {
-    return arbitrator.appealCost(_disputeID, arbitratorExtraData);
+    uint a = arbitrator.appealCost(_disputeID, arbitratorExtraData);
+
+    return a;
   }
 
   function getDispute(uint _disputeID)
     external
+    view
     returns (address, address, uint, uint, uint)
   {
     ShopDispute memory dispute = disputeIdToDispute[_disputeID];
+
+    RulingOptions disputeRuling = RulingOptions(arbitrator.currentRuling(_disputeID));
     Arbitrator.DisputeStatus disputeStatus = arbitrator.disputeStatus(_disputeID);
 
     return (
       dispute.shop,
       dispute.challenger,
       dispute.disputeType,
-      uint(dispute.ruling),
-      uint(disputeStatus) // from arbitrator contract
+      uint(disputeRuling), // from arbitrator contract
+      uint(disputeStatus)  // from arbitrator contract
     );
   }
 
@@ -435,9 +440,11 @@ contract Shops is IArbitrable {
     require(_disputeTypeId < disputeTypes.length, "dispute type does not exist");
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
 
-    require(positionToShopAddress[_position] != address(0), "no shop at that position");
+    address shopAddress = positionToShopAddress[_position];
+
+    require(shopAddress != address(0), "no shop at that position");
     require(shopAddressToShop[msg.sender].position != _position, "shop owner cannot start dispute on own shop");
-    require(shopAddressToShop[positionToShopAddress[_position]].hasDispute == false, "shop already has a dispute");
+    require(shopAddressToShop[shopAddress].hasDispute == false, "shop already has a dispute");
 
     uint arbitrationCost = getDisputeCreateCost();
     require(msg.value >= arbitrationCost, "sent eth is lower than arbitration cost");
@@ -447,9 +454,13 @@ contract Shops is IArbitrable {
     // create new Dispute
     ShopDispute storage dispute = disputeIdToDispute[disputeID];
     dispute.challenger = msg.sender;
-    dispute.shop = positionToShopAddress[_position];
+    dispute.shop = shopAddress;
     dispute.disputeType = _disputeTypeId;
     dispute.ruling = RulingOptions.NoRuling;
+
+    Shop storage shop = shopAddressToShop[shopAddress];
+    shop.hasDispute = true;
+    shop.disputeID = disputeID;
 
     emit Dispute(arbitrator, disputeID, _disputeTypeId);
     emit Evidence(arbitrator, disputeID, msg.sender, _evidenceLink);
@@ -458,21 +469,43 @@ contract Shops is IArbitrable {
     if (excessEth > 0) msg.sender.transfer(excessEth);
   }
 
-  function appealDispute(uint _disputeID)
+  function appealDispute(uint _disputeID, string _evidenceLink)
     external
     payable
   {
-    // TODO
+    require(control.paused() == false, "contract is paused");
+    require(users.getUserTier(msg.sender) > 0, "user not certified");
+
+    require(bytes(_evidenceLink).length > 0, "evidence link is empty");
+
+    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
+    require(dispute.shop != address(0), "dispute does not exist");
+    require(arbitrator.disputeStatus(_disputeID) == Arbitrator.DisputeStatus.Appealable, "dispute is not appealable");
+
+    RulingOptions currentRuling = RulingOptions(arbitrator.currentRuling(_disputeID));
+    if (currentRuling == RulingOptions.ShopWins) {
+      require(msg.sender == dispute.challenger, "shop ruled to win, only challenger can appeal");
+    } else if (currentRuling == RulingOptions.ChallengerWins) {
+      require(msg.sender == dispute.shop, "challenger ruled to win, only shop can appeal");
+    } else {
+      require(msg.sender == dispute.challenger, "no ruling given, only challenger can appeal");
+    }
+
+    uint appealCost = arbitrator.appealCost(_disputeID, arbitratorExtraData);
+    require(msg.value >= appealCost, "sent eth is lower than appeal cost");
+
+    arbitrator.appeal.value(appealCost)(_disputeID, arbitratorExtraData);
+
+    emit Evidence(arbitrator, _disputeID, msg.sender, _evidenceLink);
+
+    uint excessEth = appealCost.sub(msg.value);
+    if (excessEth > 0) msg.sender.transfer(excessEth);
   }
 
   function executeRuling(uint _disputeID, uint _ruling)
     private
   {
-    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
-
-    Shop storage shop = shopAddressToShop[dispute.shop];
-
-    dispute.ruling = RulingOptions(_ruling);
+    disputeIdToDispute[_disputeID].ruling = RulingOptions(_ruling);
   }
 
   function finalizeDispute(uint _disputeID)
