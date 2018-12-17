@@ -82,7 +82,6 @@ contract('ZoneFactory + Zone', () => {
 
   before(async () => {
     __rootState__ = await timeTravel.saveState();
-    // ROOT_TIME = await getLastBlockTimestamp();
     ([owner, user1, user2, user3, user4] = await getAccounts(web3));
   });
 
@@ -120,7 +119,7 @@ contract('ZoneFactory + Zone', () => {
     const tx = await web3.eth.sendTransaction({
       from,
       to: dthInstance.address,
-      data: createDthZoneCreateData(zoneFactoryInstance.address, dthAmount, asciiToHex(countryCode), geohash),
+      data: createDthZoneCreateData(zoneFactoryInstance.address, dthAmount, asciiToHex(countryCode), asciiToHex(geohash)),
       value: 0,
       gas: 4700000,
     });
@@ -223,7 +222,7 @@ contract('ZoneFactory + Zone', () => {
         const tx = await web3.eth.sendTransaction({
           from: user1,
           to: dthInstance.address,
-          data: createDthZoneCreateData(zoneFactoryInstance.address, MIN_ZONE_DTH_STAKE, asciiToHex(COUNTRY_CG), VALID_CG_ZONE_GEOHASH),
+          data: createDthZoneCreateData(zoneFactoryInstance.address, MIN_ZONE_DTH_STAKE, asciiToHex(COUNTRY_CG), asciiToHex(VALID_CG_ZONE_GEOHASH)),
           value: 0,
           gas: 4700000,
         });
@@ -896,7 +895,7 @@ contract('ZoneFactory + Zone', () => {
     });
 
     describe('TELLER', () => {
-      const VALID_POSITION = asciiToHex('kr0ttsebcd');
+      const VALID_POSITION = asciiToHex('krcztsebcd');
       const VALID_CURRENCY_ID = '1';
       const VALID_MESSENGER = asciiToHex('my_telegram_nick');
       const VALID_SELLRATE = '177'; // 1.77%
@@ -938,13 +937,13 @@ contract('ZoneFactory + Zone', () => {
         });
         it('[error] -- position is 9 bytes (instead of expected 10)', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('kr0ttsebc'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebc'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
         it('[error] -- position is 11 bytes (instead of expected 10)', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('kr0ttsebcde'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebcde'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
@@ -957,7 +956,7 @@ contract('ZoneFactory + Zone', () => {
         it('[error] -- position last 3 chars contain invalid geohash char', async () => {
           await expectRevert(
             // a is not a valid geohash char
-            zoneInstance.addTeller(asciiToHex('kr0ttsebca'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebca'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
             'invalid position geohash characters',
           );
         });

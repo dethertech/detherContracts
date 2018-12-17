@@ -51,7 +51,7 @@ contract Shops is IArbitrable {
     address challenger;
     uint disputeType;
     RulingOptions ruling;
-    // status, taken from arbitrator.getDisputeStatus()
+    Arbitrator.DisputeStatus status;
   }
 
   // ------------------------------------------------
@@ -387,9 +387,9 @@ contract Shops is IArbitrable {
     require(control.isCEO(msg.sender), "can only be called by CEO");
     require(bytes(_disputeTypeLink).length > 0, "dispute type link is empty");
 
-    uint disputeTypeId = disputeTypes.push(_disputeTypeLink) - 1;
+    uint metaEvidenceId = disputeTypes.push(_disputeTypeLink) - 1;
 
-    emit MetaEvidence(disputeTypeId, _disputeTypeLink);
+    emit MetaEvidence(metaEvidenceId, _disputeTypeLink);
   }
 
   function getDisputeCreateCost()
@@ -410,38 +410,66 @@ contract Shops is IArbitrable {
     return a;
   }
 
+  function getDisputeStatus(uint _disputeID)
+    private
+    returns (Arbitrator.DisputeStatus disputeStatus)
+  {
+    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
+
+    if (dispute.status == Arbitrator.DisputeStatus.Solved) {
+      // rule() in this contract was called, it set status to Solved and set the final Ruling
+      disputeStatus = dispute.status;
+    } else {
+      // dispute is not yet finalized, get current values from arbitrator contract
+      disputeStatus = arbitrator.disputeStatus(_disputeID); // returns Arbitrator.DisputeStatus
+    }
+  }
+
+  function getDisputeRuling(uint _disputeID)
+    private
+    returns (RulingOptions disputeRuling)
+  {
+    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
+
+    if (dispute.status == Arbitrator.DisputeStatus.Solved) {
+      // rule() in this contract was called, it set status to Solved and set the final Ruling
+      disputeRuling = dispute.ruling;
+    } else {
+      // dispute is not yet finalized, get current values from arbitrator contract
+      disputeRuling = RulingOptions(arbitrator.currentRuling(_disputeID));
+    }
+  }
+
   function getDispute(uint _disputeID)
-    external
+    public
     view
     returns (address, address, uint, uint, uint)
   {
     ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
-    RulingOptions disputeRuling = RulingOptions(arbitrator.currentRuling(_disputeID));
-    Arbitrator.DisputeStatus disputeStatus = arbitrator.disputeStatus(_disputeID);
-
     return (
       dispute.shop,
       dispute.challenger,
       dispute.disputeType,
-      uint(disputeRuling), // from arbitrator contract
-      uint(disputeStatus)  // from arbitrator contract
+
+      // from arbitrator contract or this contract if finalized
+      uint(getDisputeRuling(_disputeID)),
+      uint(getDisputeStatus(_disputeID))
     );
   }
 
   // called by somebody who wants to start a dispute with a shop
-  function createDispute(bytes12 _position, uint _disputeTypeId, string _evidenceLink)
+  function createDispute(bytes12 _position, uint _metaEvidenceId, string _evidenceLink)
     public
     payable
   {
     require(control.paused() == false, "contract is paused");
     require(users.getUserTier(msg.sender) > 0, "user not certified");
 
-    require(_disputeTypeId < disputeTypes.length, "dispute type does not exist");
+    require(_metaEvidenceId < disputeTypes.length, "dispute type does not exist");
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
 
     address shopAddress = positionToShopAddress[_position];
-
     require(shopAddress != address(0), "no shop at that position");
     require(shopAddressToShop[msg.sender].position != _position, "shop owner cannot start dispute on own shop");
     require(shopAddressToShop[shopAddress].hasDispute == false, "shop already has a dispute");
@@ -455,19 +483,21 @@ contract Shops is IArbitrable {
     ShopDispute storage dispute = disputeIdToDispute[disputeID];
     dispute.challenger = msg.sender;
     dispute.shop = shopAddress;
-    dispute.disputeType = _disputeTypeId;
+    dispute.disputeType = _metaEvidenceId;
     dispute.ruling = RulingOptions.NoRuling;
+    dispute.status = Arbitrator.DisputeStatus.Waiting;
 
     Shop storage shop = shopAddressToShop[shopAddress];
-    shop.hasDispute = true;
+    shop.hasDispute = true; // disputeID could theoretically be zero, so we need this to know if a dispute exists
     shop.disputeID = disputeID;
 
-    emit Dispute(arbitrator, disputeID, _disputeTypeId);
+    emit Dispute(arbitrator, disputeID, _metaEvidenceId);
     emit Evidence(arbitrator, disputeID, msg.sender, _evidenceLink);
 
     uint excessEth = arbitrationCost.sub(msg.value);
     if (excessEth > 0) msg.sender.transfer(excessEth);
   }
+
 
   function appealDispute(uint _disputeID, string _evidenceLink)
     external
@@ -480,9 +510,9 @@ contract Shops is IArbitrable {
 
     ShopDispute storage dispute = disputeIdToDispute[_disputeID];
     require(dispute.shop != address(0), "dispute does not exist");
-    require(arbitrator.disputeStatus(_disputeID) == Arbitrator.DisputeStatus.Appealable, "dispute is not appealable");
+    require(getDisputeStatus(_disputeID) == Arbitrator.DisputeStatus.Appealable, "dispute is not appealable");
 
-    RulingOptions currentRuling = RulingOptions(arbitrator.currentRuling(_disputeID));
+    RulingOptions currentRuling = getDisputeRuling(_disputeID);
     if (currentRuling == RulingOptions.ShopWins) {
       require(msg.sender == dispute.challenger, "shop ruled to win, only challenger can appeal");
     } else if (currentRuling == RulingOptions.ChallengerWins) {
@@ -502,24 +532,12 @@ contract Shops is IArbitrable {
     if (excessEth > 0) msg.sender.transfer(excessEth);
   }
 
+  // called by rule() which is called by Kleros Arbitrator contract
   function executeRuling(uint _disputeID, uint _ruling)
     private
   {
     disputeIdToDispute[_disputeID].ruling = RulingOptions(_ruling);
   }
-
-  function finalizeDispute(uint _disputeID)
-    external
-  {
-    // called by challenger or shop owner (whoever won dispute)
-
-    // uint shopDthStake = shop.staked;
-    // shop.staked = 0;
-    //
-    // // send shop staked DTH to challenger
-    // dth.transfer(dispute.challenger, shopDthStake);
-  }
-
   function rule(uint _disputeID, uint _ruling)
     public
     onlyArbitrator
