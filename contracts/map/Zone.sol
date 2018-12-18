@@ -55,14 +55,15 @@ contract Zone is ERC223ReceivingContract {
   }
 
   struct Teller {
-    uint8 currencyId;   // 1 - 100 , see README
+    uint8 currencyId;  // 1 - 100 , see README
     bytes16 messenger; // telegrame nickname
     bytes10 position;  // 10 char geohash for location of teller
-    bytes1 settings;    // bitmask containing up to 8 boolean settings (only 2 used currently: isSeller, isBuyer)
+    bytes1 settings;   // bitmask containing up to 8 boolean settings (only 2 used currently: isSeller, isBuyer)
     // TODO: wouldn't it be wiser to use uint256, to make all calculations cost less
     int16 buyRate;     // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     int16 sellRate;    // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     // 256 bits in total
+    address referrer;
   }
 
   // ------------------------------------------------
@@ -74,8 +75,9 @@ contract Zone is ERC223ReceivingContract {
   uint private constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
   uint private constant BID_PERIOD = 24 * 1 hours;
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
-  uint private constant ENTRY_FEE_PERCENTAGE = 1;
-  uint private constant TAX_PERCENTAGE = 1;
+  uint private constant ENTRY_FEE_PERCENTAGE = 1; // 1%
+  uint private constant TAX_PERCENTAGE = 1; // 1%
+  uint private constant REFERRER_FEE_PERCENTAGE = 1; // 0.1%
   address private constant ADDRESS_BURN = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
   ZoneOwner private zoneOwner;
@@ -214,6 +216,14 @@ contract Zone is ERC223ReceivingContract {
     bidAmount = _value.sub(burnAmount); // 99%
   }
 
+  function calcReferrerFee(uint _value)
+    public
+    view
+    returns (uint referrerAmount)
+  {
+    referrerAmount = _value.div(1000).mul(REFERRER_FEE_PERCENTAGE); // 0.1%
+  }
+
   function auctionExists(uint _auctionId)
     external
     view
@@ -273,7 +283,7 @@ contract Zone is ERC223ReceivingContract {
   function getTeller()
     external
     view
-    returns (uint8, bytes16, bytes10, bytes1, int16, int16, uint)
+    returns (uint8, bytes16, bytes10, bytes1, int16, int16, uint, address)
   {
     return (
       teller.currencyId,
@@ -282,7 +292,8 @@ contract Zone is ERC223ReceivingContract {
       teller.settings,
       teller.buyRate,
       teller.sellRate,
-      funds[zoneOwner.addr]
+      funds[zoneOwner.addr],
+      teller.referrer
     );
   }
 
@@ -706,17 +717,23 @@ contract Zone is ERC223ReceivingContract {
     dth.transfer(msg.sender, withdrawAmountTotal);
   }
 
-  function prevZoneOwnerWithdraw()
+  function withdrawDth()
     external
   {
     uint dthWithdraw = withdrawableDth[msg.sender];
-    uint ethWithdraw = withdrawableEth[msg.sender];
-    require(dthWithdraw > 0 || ethWithdraw > 0, "nothing to withdraw");
+    require(dthWithdraw > 0, "nothing to withdraw");
 
     if (dthWithdraw > 0) {
       withdrawableDth[msg.sender] = 0;
       dth.transfer(msg.sender, dthWithdraw);
     }
+  }
+
+  function withdrawEth()
+    external
+  {
+    uint ethWithdraw = withdrawableEth[msg.sender];
+    require(ethWithdraw > 0, "nothing to withdraw");
 
     if (ethWithdraw > 0) {
       withdrawableEth[msg.sender] = 0;
@@ -736,7 +753,7 @@ contract Zone is ERC223ReceivingContract {
   // NOTE: we could just require only last 3 bytes of a bytes10 geohash, since
   // the first 7 bytes will be the geohash of this zone. But by requiring the full geohash
   // we can mkae more sure the user is talking to the right zone
-  function addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings) // GAS COST +/- 75.301
+  function addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings, address _referrer) // GAS COST +/- 75.301
     external
   {
     require(control.paused() == false, "contract is paused");
@@ -771,6 +788,7 @@ contract Zone is ERC223ReceivingContract {
     teller.sellRate = _sellRate;
     teller.position = toBytes10(_position, 0);
     teller.settings = _settings;
+    teller.referrer = _referrer;
 
     emit ZoneUpdatedTeller(msg.sender);
   }
@@ -809,11 +827,18 @@ contract Zone is ERC223ReceivingContract {
     require(msg.sender == zoneOwner.addr, "can only be called by zone owner");
     require(teller.currencyId != 0, "not yet added teller info");
 
-    require(funds[msg.sender] >= _amount, "cannot sell more than in funds");
-
-    // subtract the amount of ETH we are gonna send from this contract to _to
-    funds[msg.sender] = funds[msg.sender].sub(_amount);
+    if (teller.referrer != address(0)) { // need to pay referrer fee
+      uint referrerAmount = calcReferrerFee(_amount);
+      require(funds[msg.sender] >= _amount + referrerAmount, "not enough funds to sell eth amount plus pay referrer fee");
+      funds[msg.sender] = funds[msg.sender].sub(_amount + referrerAmount);
+      withdrawableEth[teller.referrer] = withdrawableEth[teller.referrer].add(referrerAmount);
+    } else {
+      require(funds[msg.sender] >= _amount, "cannot sell more than in funds");
+      funds[msg.sender] = funds[msg.sender].sub(_amount);
+    }
 
     zoneFactory.updateUserDailySold(country, msg.sender, _to, _amount); // MIGHT THROW if exceeds daily limit
+
+    _to.transfer(_amount);
   }
 }
