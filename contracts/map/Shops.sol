@@ -178,6 +178,14 @@ contract Shops is IArbitrable {
     return zoneToShopAddresses[_zoneGeohash];
   }
 
+  function shopByAddrExists(address shopAddress)
+    external
+    view
+    returns (bool)
+  {
+    return shopAddressToShop[shopAddress].position != bytes12(0);
+  }
+
   // ------------------------------------------------
   //
   // Functions Getters Private
@@ -338,6 +346,30 @@ contract Shops is IArbitrable {
     zoneToShopAddresses[bytes7(position)].push(sender);
   }
 
+  function deleteShop(address shopAddress)
+    private
+  {
+    bytes12 position = shopAddressToShop[shopAddress].position;
+
+    delete shopAddressToShop[shopAddress];
+
+    positionToShopAddress[position] = address(0);
+
+    // it's safe to do a loop, the number of geohash12 in any geohash7 (33.554.432) is less than the max uint value
+    // however we would like to NOT loop,
+    // TODO: get rid of the loop by tracking the index of each shop address
+    address[] storage zoneShopAddresses = zoneToShopAddresses[bytes7(position)];
+    for (uint i = 0; i < zoneShopAddresses.length; i += 1) {
+      address zoneShopAddress = zoneShopAddresses[i];
+      if (zoneShopAddress == shopAddress) {
+        address lastShopAddress = zoneShopAddresses[zoneShopAddresses.length - 1];
+        zoneShopAddresses[i] = lastShopAddress;
+        zoneShopAddresses.length--;
+        break; // done
+      }
+    }
+  }
+
   function removeShop(bytes12 _position)
     external
   {
@@ -350,24 +382,11 @@ contract Shops is IArbitrable {
 
     require(shopAddressToShop[msg.sender].hasDispute == false, "cannot remove shop while in dispute");
 
-    // should work since the struct contains no dynamic variables
-    delete shopAddressToShop[msg.sender];
+    uint shopStake = shopAddressToShop[msg.sender].staked;
 
-    positionToShopAddress[_position] = address(0);
+    deleteShop(msg.sender);
 
-    // it's safe to do a loop, the number of geohash12 in any geohash7 (33.554.432) is less than the max uint value
-    // however we would like to NOT loop,
-    // TODO: get rid of the loop by tracking the index of each shop address
-    address[] storage zoneShopAddresses = zoneToShopAddresses[bytes7(_position)];
-    for (uint i = 0; i < zoneShopAddresses.length; i += 1) {
-      address zoneShopAddress = zoneShopAddresses[i];
-      if (zoneShopAddress == msg.sender) {
-        address lastShopAddress = zoneShopAddresses[zoneShopAddresses.length - 1];
-        zoneShopAddresses[i] = lastShopAddress;
-        zoneShopAddresses.length--;
-        break; // done
-      }
-    }
+    dth.transfer(msg.sender, shopStake);
   }
 
   //
@@ -532,11 +551,40 @@ contract Shops is IArbitrable {
     if (excessEth > 0) msg.sender.transfer(excessEth);
   }
 
+  function deleteDispute(uint _disputeID)
+    private
+  {
+    delete disputeIdToDispute[_disputeID];
+  }
+
   // called by rule() which is called by Kleros Arbitrator contract
   function executeRuling(uint _disputeID, uint _ruling)
     private
   {
-    disputeIdToDispute[_disputeID].ruling = RulingOptions(_ruling);
+    RulingOptions finalRuling = RulingOptions(_ruling);
+
+    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
+    Shop storage shop = shopAddressToShop[dispute.shop];
+
+    if (finalRuling == RulingOptions.ShopWins) {
+      shop.hasDispute = false;
+      shop.disputeID = 0;
+
+      deleteDispute(_disputeID);
+    } else if (finalRuling == RulingOptions.ChallengerWins) {
+      uint shopStake = shop.staked;
+      address challenger = dispute.challenger;
+
+      deleteShop(dispute.shop);
+      deleteDispute(_disputeID);
+
+      dth.transfer(challenger, shopStake);
+    } else if (finalRuling == RulingOptions.NoRuling) {
+      shop.hasDispute = false;
+      shop.disputeID = 0;
+
+      deleteDispute(_disputeID);
+    }
   }
   function rule(uint _disputeID, uint _ruling)
     public
