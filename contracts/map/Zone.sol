@@ -8,6 +8,7 @@ import "../core/IUsers.sol";
 import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
 import "./IZoneFactory.sol";
+// import "./IZone.sol"; TODO
 
 contract Zone is ERC223ReceivingContract {
   // ------------------------------------------------
@@ -242,16 +243,21 @@ contract Zone is ERC223ReceivingContract {
   function getAuction(uint _auctionId)
     public
     view
-    returns (uint, uint, uint, uint, address)
+    returns (uint, uint, uint, uint, address, uint)
   {
     Auction memory auction = auctionIdToAuction[_auctionId];
+
+    uint highestBid = auctionBids[_auctionId][auction.highestBidder];
+    // for current zone owner his existing zone stake is added to his bid
+    if (auction.highestBidder == zoneOwner.addr) highestBid = highestBid.add(zoneOwner.staked);
 
     return (
       _auctionId,
       uint(auction.state),
       auction.startTime,
       auction.endTime,
-      auction.highestBidder
+      auction.highestBidder,
+      highestBid
     );
   }
 
@@ -259,7 +265,7 @@ contract Zone is ERC223ReceivingContract {
   function getLastAuction()
     external
     view
-    returns (uint, uint, uint, uint, address)
+    returns (uint, uint, uint, uint, address, uint)
   {
     return getAuction(currentAuctionId);
   }
@@ -267,7 +273,7 @@ contract Zone is ERC223ReceivingContract {
   function getTeller()
     external
     view
-    returns (uint8, bytes16, bytes10, bytes1, int16, int16)
+    returns (uint8, bytes16, bytes10, bytes1, int16, int16, uint)
   {
     return (
       teller.currencyId,
@@ -275,7 +281,8 @@ contract Zone is ERC223ReceivingContract {
       teller.position,
       teller.settings,
       teller.buyRate,
-      teller.sellRate
+      teller.sellRate,
+      funds[zoneOwner.addr]
     );
   }
 
@@ -737,7 +744,7 @@ contract Zone is ERC223ReceivingContract {
     require(users.getUserTier(msg.sender) > 0, "user not certified");
     require(_position.length == 10, "expected position to be 10 bytes");
     require(toBytes7(_position, 0) == geohash, "position is not inside this zone");
-    require(geo.validGeohashChars(_position, 7), "invalid position geohash characters");
+    require(geo.validGeohashChars(_position), "invalid position geohash characters");
 
     require(_currencyId >= 1 && _currencyId <= 100, "currency id must be in range 1-100");
     // _messenger can be 0x0 if he has no telegram

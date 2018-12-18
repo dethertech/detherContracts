@@ -28,6 +28,9 @@ contract GeoRegistry {
   //      countryCode        tier    usdDailyLimit
   mapping(bytes2 => mapping (uint => uint)) public countryTierDailyLimit;
 
+  //      countryCode licensePriceUSD
+  mapping(bytes2 => uint) public shopLicensePrice;
+
   //      countryCode isEnabled
   mapping(bytes2 => bool) public countryIsEnabled;
   bytes2[] public enabledCountries;
@@ -92,32 +95,53 @@ contract GeoRegistry {
 
   // ------------------------------------------------
   //
-  // Functions Getters
+  // Functions Private Getters
   //
   // ------------------------------------------------
 
   function toBytes1(bytes _bytes, uint _start)
     private
     pure
-    returns (bytes1) {
-      require(_bytes.length >= (_start + 1), " not long enough");
-      bytes1 tempBytes1;
+    returns (bytes1)
+  {
+    require(_bytes.length >= (_start + 1), " not long enough");
+    bytes1 tempBytes1;
 
-      assembly {
-          tempBytes1 := mload(add(add(_bytes, 0x20), _start))
-      }
+    assembly {
+        tempBytes1 := mload(add(add(_bytes, 0x20), _start))
+    }
 
-      return tempBytes1;
+    return tempBytes1;
   }
 
-  function validGeohashChars(bytes _bytes, uint _start)
+  function toBytes3(bytes _bytes, uint _start)
+    private
+    pure
+    returns (bytes3)
+  {
+    require(_bytes.length >= (_start + 3), " not long enough");
+    bytes3 tempBytes3;
+
+    assembly {
+        tempBytes3 := mload(add(add(_bytes, 0x20), _start))
+    }
+
+    return tempBytes3;
+  }
+
+  // ------------------------------------------------
+  //
+  // Functions Public Getters
+  //
+  // ------------------------------------------------
+
+  function validGeohashChars(bytes _bytes)
     public
     returns (bool)
   {
-    if (_start > (_bytes.length - 1)) {
-      return false;
-    }
-    for (uint i = _start; i < _bytes.length; i += 1) {
+    require(_bytes.length > 0, "_bytes geohash chars is empty array");
+
+    for (uint i = 0; i < _bytes.length; i += 1) {
       // find the first occurence of a byte which is not valid geohash character
       if (charToBitmask[toBytes1(_bytes, i)] == bytes4(0)) {
         return false;
@@ -125,8 +149,21 @@ contract GeoRegistry {
     }
     return true;
   }
+  function validGeohashChars12(bytes12 _bytes)
+    public
+    returns (bool)
+  {
+    for (uint i = 0; i < 12; i += 1) {
+      // find the first occurence of a byte which is not valid geohash character
+      if (charToBitmask[bytes1(_bytes[i])] == bytes4(0)) {
+        return false;
+      }
+    }
+    return true;
+  }
 
-  function zoneInsideCountry(bytes2 _countryCode, bytes7 _zone)
+  // @NOTE: _zone can be any length of bytes
+  function zoneInsideCountry(bytes2 _countryCode, bytes4 _zone)
     public
     view
     returns (bool)
@@ -135,9 +172,9 @@ contract GeoRegistry {
     bytes4 level3bits = level_2[_countryCode][level2key];
 
     bytes1 fourthByte = bytes1(_zone[3]);
-    bytes4 bitPosMask = charToBitmask[fourthByte];
+    bytes4 fourthByteBitPosMask = charToBitmask[fourthByte];
 
-    if (level3bits & bitPosMask != 0) {
+    if (level3bits & fourthByteBitPosMask != 0) {
       return true;
     } else {
       return false;
