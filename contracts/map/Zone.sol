@@ -57,7 +57,7 @@ contract Zone is ERC223ReceivingContract {
   struct Teller {
     uint8 currencyId;  // 1 - 100 , see README
     bytes16 messenger; // telegrame nickname
-    bytes10 position;  // 10 char geohash for location of teller
+    bytes12 position;  // 12 char geohash for location of teller
     bytes1 settings;   // bitmask containing up to 8 boolean settings (only 2 used currently: isSeller, isBuyer)
     // TODO: wouldn't it be wiser to use uint256, to make all calculations cost less
     int16 buyRate;     // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
@@ -283,7 +283,7 @@ contract Zone is ERC223ReceivingContract {
   function getTeller()
     external
     view
-    returns (uint8, bytes16, bytes10, bytes1, int16, int16, uint, address)
+    returns (uint8, bytes16, bytes12, bytes1, int16, int16, uint, address)
   {
     return (
       teller.currencyId,
@@ -329,18 +329,18 @@ contract Zone is ERC223ReceivingContract {
 
       return tempBytes7;
   }
-  function toBytes10(bytes _bytes, uint _start)
+  function toBytes12(bytes _bytes, uint _start)
     private
     pure
-    returns (bytes10) {
-      require(_bytes.length >= (_start + 10), " not long enough");
-      bytes10 tempBytes10;
+    returns (bytes12) {
+      require(_bytes.length >= (_start + 12), " not long enough");
+      bytes12 tempBytes12;
 
       assembly {
-          tempBytes10 := mload(add(add(_bytes, 0x20), _start))
+          tempBytes12 := mload(add(add(_bytes, 0x20), _start))
       }
 
-      return tempBytes10;
+      return tempBytes12;
   }
 
   // ------------------------------------------------
@@ -745,7 +745,7 @@ contract Zone is ERC223ReceivingContract {
   /////////////
 
 
-  // NOTE: we could just require only last 3 bytes of a bytes10 geohash, since
+  // NOTE: we could just require only last 5 bytes of a bytes12 geohash, since
   // the first 7 bytes will be the geohash of this zone. But by requiring the full geohash
   // we can mkae more sure the user is talking to the right zone
   function addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings, address _referrer) // GAS COST +/- 75.301
@@ -753,7 +753,7 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(_position.length == 10, "expected position to be 10 bytes");
+    require(_position.length == 12, "expected position to be 10 bytes");
     require(toBytes7(_position, 0) == geohash, "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
 
