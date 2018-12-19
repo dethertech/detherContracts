@@ -349,6 +349,33 @@ contract Zone is ERC223ReceivingContract {
   //
   // ------------------------------------------------
 
+  function _removeZoneOwner()
+    private
+  {
+    delete commentsFree[zoneOwner.addr];
+    delete commentsCertified[zoneOwner.addr];
+
+    zoneOwner.addr = address(0);
+    zoneOwner.startTime = 0;
+    zoneOwner.staked = 0;
+    zoneOwner.balance = 0;
+    zoneOwner.lastTaxTime = 0;
+  }
+
+  function _removeTeller()
+    private
+  {
+    // we dont remove comments here, so that if zoneowner readds or repositions his teller,
+    // his comments still exist.
+    teller.currencyId = 0;
+    teller.messenger = bytes16(0);
+    teller.position = bytes12(0);
+    teller.settings = bytes1(0);
+    teller.buyRate = 0;
+    teller.sellRate = 0;
+    teller.referrer = address(0);
+  }
+
   function _handleTaxPayment()
     private
   {
@@ -386,18 +413,12 @@ contract Zone is ERC223ReceivingContract {
       uint taxDebt = taxAmount.sub(zoneOwner.balance); // TODO: what to do with debt, just forget about it?
       taxAmount = zoneOwner.balance;
 
-      address prevOwnerAddr = zoneOwner.addr;
-
-      // reset zone owner to nobody, somebody can now call claimFreeZone() with 100DTH
-      zoneOwner.addr = address(0);
-      zoneOwner.startTime = 0;
-      zoneOwner.staked = 0;
-      zoneOwner.balance = 0;
-      zoneOwner.lastTaxTime = 0;
-
       emit ZoneOwnerTaxesPaid(zoneOwner.addr, taxStartTime, taxEndTime, taxAmount);
       emit ZoneOwnerForeClosed(zoneOwner.addr, zoneOwner.startTime, taxEndTime, taxableAmount, taxDebt);
-      emit ZoneOwnerUpdated(address(this), prevOwnerAddr, zoneOwner.addr);
+
+      // reset zone owner to nobody, somebody can now call claimFreeZone() with 100DTH
+      _removeZoneOwner();
+      _removeTeller();
     } else {
       // zone onwer has enough balance to pay his harberger taxes
 
@@ -459,6 +480,8 @@ contract Zone is ERC223ReceivingContract {
       uint ethAmount = funds[prevOwnerAddr];
       funds[prevOwnerAddr] = 0;
       withdrawableEth[prevOwnerAddr] = withdrawableEth[prevOwnerAddr].add(ethAmount);
+
+      _removeTeller();
 
       emit ZoneOwnerUpdated(address(this), prevOwnerAddr, winningBidder);
     }
@@ -643,11 +666,8 @@ contract Zone is ERC223ReceivingContract {
 
     uint ownerBalance = zoneOwner.balance;
 
-    zoneOwner.addr = address(0);
-    zoneOwner.startTime = 0; // we dont really need startTime, lastTaxTime initially is startTime
-    zoneOwner.staked = 0;
-    zoneOwner.balance = 0;
-    zoneOwner.lastTaxTime = 0;
+    _removeZoneOwner();
+    _removeTeller();
 
     // if msg.sender is a contract, the DTH ERC223 contract will try to call tokenFallback
     // on msg.sender, this could lead to a reentrancy. But we prevent this by resetting
@@ -780,11 +800,23 @@ contract Zone is ERC223ReceivingContract {
     teller.messenger = _messenger;
     teller.buyRate = _buyRate;
     teller.sellRate = _sellRate;
-    teller.position = toBytes10(_position, 0);
+    teller.position = toBytes12(_position, 0);
     teller.settings = _settings;
     teller.referrer = _referrer;
 
     emit ZoneUpdatedTeller(msg.sender);
+  }
+
+  function removeTeller()
+    external
+  {
+    require(control.paused() == false, "contract is paused");
+
+    _processState();
+
+    require(msg.sender == zoneOwner.addr, "only zone owner can add teller info");
+
+    _removeTeller();
   }
 
   // called by Teller, adding ETH to Teller funds
