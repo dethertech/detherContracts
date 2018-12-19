@@ -114,7 +114,6 @@ contract('ZoneFactory + Zone', () => {
   });
 
   const createZone = async (from, dthAmount, countryCode, geohash) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -128,7 +127,6 @@ contract('ZoneFactory + Zone', () => {
   };
 
   const placeBid = async (from, dthAmount, zoneAddress) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -141,7 +139,6 @@ contract('ZoneFactory + Zone', () => {
   };
 
   const claimFreeZone = async (from, dthAmount, zoneAddress) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -154,7 +151,6 @@ contract('ZoneFactory + Zone', () => {
   };
 
   const topUp = async (from, dthAmount, zoneAddress) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -217,7 +213,6 @@ contract('ZoneFactory + Zone', () => {
       });
       it(`[success] ++ creating a zone with dthAmount minimum (${MIN_ZONE_DTH_STAKE} DTH)`, async () => {
         await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
         await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
         const tx = await web3.eth.sendTransaction({
           from: user1,
@@ -518,7 +513,6 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- caller is not the zone owner', async () => {
-          await smsInstance.certify(user2, { from: owner });
           await expectRevert(
             zoneInstance.release({ from: user2 }),
             'caller is not zone owner',
@@ -639,27 +633,6 @@ contract('ZoneFactory + Zone', () => {
           await expectRevert(
             zoneInstance.withdrawFromAuctions(['1'], { from: user3 }),
             'contract is paused',
-          );
-        });
-        it('[error] -- user not certified', async () => {
-          // auction 1
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // loser
-          await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-          // auction 2
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user1, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // loser
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-
-          await smsInstance.revoke(user3, { from: owner });
-
-          await expectRevert(
-            zoneInstance.withdrawFromAuctions(['1'], { from: user3 }),
-            'user not certified',
           );
         });
         it('[error] -- empty auctionIds list arg', async () => {
@@ -922,13 +895,6 @@ contract('ZoneFactory + Zone', () => {
             'country is disabled',
           );
         });
-        it('[error] -- user not certified', async () => {
-          await smsInstance.revoke(user1, { from: owner });
-          await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
-            'user not certified',
-          );
-        });
         it('[error] -- position is empty bytes array', async () => {
           await expectRevert(
             zoneInstance.addTeller('0x', VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
@@ -1009,7 +975,6 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- caller is not zone owner', async () => {
-          await smsInstance.certify(user2, { from: owner });
           await expectRevert(
             zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user2 }),
             'only zone owner can add teller info',
@@ -1046,14 +1011,6 @@ contract('ZoneFactory + Zone', () => {
             'country is disabled',
           );
         });
-        it('[error] -- user not certified', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          await smsInstance.revoke(user1, { from: owner });
-          await expectRevert(
-            zoneInstance.addFunds({ from: user1, value: ethToWei(100) }),
-            'user not certified',
-          );
-        });
         it('[error] -- no eth send with call', async () => {
           await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await expectRevert(
@@ -1063,7 +1020,6 @@ contract('ZoneFactory + Zone', () => {
         });
         it('[error] -- called by not-zoneowner', async () => {
           await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          await smsInstance.certify(user2, { from: owner });
           await expectRevert(
             zoneInstance.addFunds({ from: user2, value: ethToWei(100) }),
             'only zoneOwner can add funds',
@@ -1086,7 +1042,7 @@ contract('ZoneFactory + Zone', () => {
         beforeEach(async () => {
           await enableAndLoadCountry(COUNTRY_CG);
           zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '1', '1000', { from: owner });
+          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
         });
         it('[error] -- global pause is enabled', async () => {
           await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
@@ -1104,15 +1060,6 @@ contract('ZoneFactory + Zone', () => {
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1), { from: user1 }),
             'country is disabled',
-          );
-        });
-        it('[error] -- user not certified', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await smsInstance.revoke(user1, { from: owner });
-          await expectRevert(
-            zoneInstance.sellEth(user3, ethToWei(1), { from: user1 }),
-            'user not certified',
           );
         });
         it('[error] -- sender is also to', async () => {
@@ -1134,7 +1081,6 @@ contract('ZoneFactory + Zone', () => {
         it('[error] -- caller is not zoneowner', async () => {
           await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await smsInstance.certify(user2, { from: owner });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1), { from: user2 }),
             'can only be called by zone owner',

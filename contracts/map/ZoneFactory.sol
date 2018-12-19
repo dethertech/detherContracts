@@ -190,8 +190,7 @@ contract ZoneFactory is Ownable {
     require(geo.countryIsEnabled(country), "country is disabled");
     require(geo.zoneInsideCountry(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
-    require(users.getUserTier(sender) > 0, "user not certified");
-
+    
     // create/deploy the new zone
     geohashToZone[geohash] = new Zone(
       country, geohash, sender, dthAmount,

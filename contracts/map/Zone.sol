@@ -614,8 +614,6 @@ contract Zone is ERC223ReceivingContract {
       return; // just retun success
     }
 
-    require(users.getUserTier(_from) > 0, "user not certified");
-
     _processState();
 
     if (func == bytes1(0x41)) { // claimFreeZone
@@ -634,7 +632,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     // allow also when country is disabled, otherwise no way for zone owner to get their eth/dth back
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
 
     // zone owner could be removed if he does not have enough balance to pay his taxes
     _processState();
@@ -667,7 +664,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     // even when country is disabled, otherwise users cannot withdraw their bids
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
 
     require(_auctionId <= currentAuctionId, "auctionId does not exist");
 
@@ -688,7 +684,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     // even when country is disabled, can withdraw
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
 
     _processState();
 
@@ -758,7 +753,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
     require(_position.length == 10, "expected position to be 10 bytes");
     require(toBytes7(_position, 0) == geohash, "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
@@ -800,7 +794,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
     require(msg.value > 0, "no eth send with call");
 
     _processState();
@@ -818,7 +811,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
     require(msg.sender != _to, "sender cannot also be to");
     require(_amount > 0, "amount to sell cannot be zero");
 
