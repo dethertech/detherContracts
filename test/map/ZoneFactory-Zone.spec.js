@@ -19,9 +19,10 @@ const { getAccounts } = require('../utils/accounts');
 const { addCountry } = require('../utils/geo');
 const { ethToWei, asciiToHex, toBN } = require('../utils/convert');
 const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
+const { getRandomBytes32 } = require('../utils/ipfs');
 const {
   BYTES7_ZERO, VALID_CG_ZONE_GEOHASH, INVALID_CG_ZONE_GEOHASH, MIN_ZONE_DTH_STAKE,
-  ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD, ADDRESS_ZERO,
+  ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD, ADDRESS_ZERO, BYTES32_ZERO,
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
@@ -1141,6 +1142,123 @@ contract('ZoneFactory + Zone', () => {
           expect(buyerBalanceBefore.add(toBN(ethToWei(1))).eq(buyerBalanceAfter)).to.equal(true);
           expect(referrerWithdrawableEth.eq(toBN(ethToWei(0.001)))).to.equal(true);
           // console.log('sell eth gas used:', addNumberDots(tx.receipt.gasUsed));
+        });
+      });
+      describe('Zone.addComment(bytes32 _commentHash)', () => {
+        let zoneInstance;
+        beforeEach(async () => {
+          await enableAndLoadCountry(COUNTRY_CG);
+          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        });
+        it('[error] -- global pause is enabled', async () => {
+          await controlInstance.pause({ from: owner });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'contract is paused',
+          );
+        });
+        it('[error] -- country is disabled', async () => {
+          await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'country is disabled',
+          );
+        });
+        it('[error] -- comment hash is empty', async () => {
+          await expectRevert(
+            zoneInstance.addComment(BYTES32_ZERO, { from: user2 }),
+            'comment hash cannot be 0x0',
+          );
+        });
+        it('[error] -- zone has no owner', async () => {
+          await zoneInstance.release({ from: user1 });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without owner',
+          );
+        });
+        it('[error] -- zone has no teller', async () => {
+          await zoneInstance.removeTeller({ from: user1 });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without teller',
+          );
+        });
+        it('[error] -- zone owner cannot comment himself', async () => {
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user1 }),
+            'zone owner cannot comment on himself',
+          );
+        });
+        it('[success]', async () => {
+          await zoneInstance.addComment(getRandomBytes32(), { from: user2 });
+        });
+      });
+      describe('Zone.addCertifiedComment(bytes32 _commentHash)', () => {
+        let zoneInstance;
+        beforeEach(async () => {
+          await enableAndLoadCountry(COUNTRY_CG);
+          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+          await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
+        });
+        it('[error] -- global pause is enabled', async () => {
+          await controlInstance.pause({ from: owner });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'contract is paused',
+          );
+        });
+        it('[error] -- country is disabled', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'country is disabled',
+          );
+        });
+        it('[error] -- comment hash is empty', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(BYTES32_ZERO, { from: user2 }),
+            'comment hash cannot be 0x0',
+          );
+        });
+        it('[error] -- zone has no owner', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await zoneInstance.release({ from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without owner',
+          );
+        });
+        it('[error] -- zone has no teller', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await zoneInstance.removeTeller({ from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without teller',
+          );
+        });
+        it('[error] -- zone owner cannot comment himself', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user1 }),
+            'zone owner cannot comment on himself',
+          );
+        });
+        it('[error] -- user did not trade with teller yet (1 trade = 1 comment)', async () => {
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'user not allowed to place a certified comment',
+          );
+        });
+        it('[success]', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
         });
       });
     });

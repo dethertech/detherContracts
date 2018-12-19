@@ -114,6 +114,11 @@ contract Zone is ERC223ReceivingContract {
   //(prev)zoneOwner          ethAmount
   mapping(address => uint) public funds;
 
+  mapping(address => mapping(address => uint)) public canPlaceCertifiedComment;
+
+  mapping(address => bytes32[]) public commentsFree;
+  mapping(address => bytes32[]) public commentsCertified;
+
   // ------------------------------------------------
   //
   // Events
@@ -295,6 +300,20 @@ contract Zone is ERC223ReceivingContract {
       funds[zoneOwner.addr],
       teller.referrer
     );
+  }
+
+  function getCertifiedComments()
+    external
+    returns (bytes32[])
+  {
+    return commentsCertified[zoneOwner.addr];
+  }
+
+  function getComments()
+    external
+    returns (bytes32[])
+  {
+    return commentsFree[zoneOwner.addr];
   }
 
   // ------------------------------------------------
@@ -863,6 +882,43 @@ contract Zone is ERC223ReceivingContract {
 
     zoneFactory.updateUserDailySold(country, msg.sender, _to, _amount); // MIGHT THROW if exceeds daily limit
 
+    canPlaceCertifiedComment[zoneOwner.addr][_to]++;
+
     _to.transfer(_amount);
+  }
+
+  function addCertifiedComment(bytes32 _commentHash)
+    external
+  {
+    require(control.paused() == false, "contract is paused");
+    require(geo.countryIsEnabled(country), "country is disabled");
+    require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
+
+    _processState();
+
+    require(zoneOwner.addr != address(0), "cannot comment on zone without owner");
+    require(teller.position != bytes12(0), "cannot comment on zone without teller");
+    require(msg.sender != zoneOwner.addr, "zone owner cannot comment on himself");
+
+    require(canPlaceCertifiedComment[zoneOwner.addr][msg.sender] > 0, "user not allowed to place a certified comment");
+    canPlaceCertifiedComment[zoneOwner.addr][msg.sender]--;
+
+    commentsCertified[zoneOwner.addr].push(_commentHash);
+  }
+
+  function addComment(bytes32 _commentHash)
+    external
+  {
+    require(control.paused() == false, "contract is paused");
+    require(geo.countryIsEnabled(country), "country is disabled");
+    require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
+
+    _processState();
+
+    require(zoneOwner.addr != address(0), "cannot comment on zone without owner");
+    require(teller.position != bytes12(0), "cannot comment on zone without teller");
+    require(msg.sender != zoneOwner.addr, "zone owner cannot comment on himself");
+
+    commentsFree[zoneOwner.addr].push(_commentHash);
   }
 }
