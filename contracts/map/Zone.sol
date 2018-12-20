@@ -181,8 +181,6 @@ contract Zone is ERC223ReceivingContract {
     });
     auctionIdToAuction[currentAuctionId] = sentinelAuction;
 
-    auctionBids[currentAuctionId][_zoneOwner] = _dthAmount;
-
     emit ZoneCreated(address(this), _countryCode, _geohash, _dthAmount);
     emit ZoneOwnerUpdated(address(this), address(0), _zoneOwner);
   }
@@ -304,6 +302,7 @@ contract Zone is ERC223ReceivingContract {
 
   function getCertifiedComments()
     external
+    view
     returns (bytes32[])
   {
     return commentsCertified[zoneOwner.addr];
@@ -311,6 +310,7 @@ contract Zone is ERC223ReceivingContract {
 
   function getComments()
     external
+    view
     returns (bytes32[])
   {
     return commentsFree[zoneOwner.addr];
