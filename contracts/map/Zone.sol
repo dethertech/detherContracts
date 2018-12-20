@@ -55,14 +55,15 @@ contract Zone is ERC223ReceivingContract {
   }
 
   struct Teller {
-    uint8 currencyId;   // 1 - 100 , see README
+    uint8 currencyId;  // 1 - 100 , see README
     bytes16 messenger; // telegrame nickname
-    bytes10 position;  // 10 char geohash for location of teller
-    bytes1 settings;    // bitmask containing up to 8 boolean settings (only 2 used currently: isSeller, isBuyer)
+    bytes12 position;  // 12 char geohash for location of teller
+    bytes1 settings;   // bitmask containing up to 8 boolean settings (only 2 used currently: isSeller, isBuyer)
     // TODO: wouldn't it be wiser to use uint256, to make all calculations cost less
     int16 buyRate;     // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     int16 sellRate;    // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     // 256 bits in total
+    address referrer;
   }
 
   // ------------------------------------------------
@@ -74,8 +75,9 @@ contract Zone is ERC223ReceivingContract {
   uint private constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
   uint private constant BID_PERIOD = 24 * 1 hours;
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
-  uint private constant ENTRY_FEE_PERCENTAGE = 1;
-  uint private constant TAX_PERCENTAGE = 1;
+  uint private constant ENTRY_FEE_PERCENTAGE = 1; // 1%
+  uint private constant TAX_PERCENTAGE = 1; // 1%
+  uint private constant REFERRER_FEE_PERCENTAGE = 1; // 0.1%
   address private constant ADDRESS_BURN = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
   ZoneOwner private zoneOwner;
@@ -111,6 +113,11 @@ contract Zone is ERC223ReceivingContract {
 
   //(prev)zoneOwner          ethAmount
   mapping(address => uint) public funds;
+
+  mapping(address => mapping(address => uint)) public canPlaceCertifiedComment;
+
+  mapping(address => bytes32[]) public commentsFree;
+  mapping(address => bytes32[]) public commentsCertified;
 
   // ------------------------------------------------
   //
@@ -214,6 +221,14 @@ contract Zone is ERC223ReceivingContract {
     bidAmount = _value.sub(burnAmount); // 99%
   }
 
+  function calcReferrerFee(uint _value)
+    public
+    view
+    returns (uint referrerAmount)
+  {
+    referrerAmount = _value.div(1000).mul(REFERRER_FEE_PERCENTAGE); // 0.1%
+  }
+
   function auctionExists(uint _auctionId)
     external
     view
@@ -273,7 +288,7 @@ contract Zone is ERC223ReceivingContract {
   function getTeller()
     external
     view
-    returns (uint8, bytes16, bytes10, bytes1, int16, int16, uint)
+    returns (uint8, bytes16, bytes12, bytes1, int16, int16, uint, address)
   {
     return (
       teller.currencyId,
@@ -282,8 +297,23 @@ contract Zone is ERC223ReceivingContract {
       teller.settings,
       teller.buyRate,
       teller.sellRate,
-      funds[zoneOwner.addr]
+      funds[zoneOwner.addr],
+      teller.referrer
     );
+  }
+
+  function getCertifiedComments()
+    external
+    returns (bytes32[])
+  {
+    return commentsCertified[zoneOwner.addr];
+  }
+
+  function getComments()
+    external
+    returns (bytes32[])
+  {
+    return commentsFree[zoneOwner.addr];
   }
 
   // ------------------------------------------------
@@ -318,18 +348,18 @@ contract Zone is ERC223ReceivingContract {
 
       return tempBytes7;
   }
-  function toBytes10(bytes _bytes, uint _start)
+  function toBytes12(bytes _bytes, uint _start)
     private
     pure
-    returns (bytes10) {
-      require(_bytes.length >= (_start + 10), " not long enough");
-      bytes10 tempBytes10;
+    returns (bytes12) {
+      require(_bytes.length >= (_start + 12), " not long enough");
+      bytes12 tempBytes12;
 
       assembly {
-          tempBytes10 := mload(add(add(_bytes, 0x20), _start))
+          tempBytes12 := mload(add(add(_bytes, 0x20), _start))
       }
 
-      return tempBytes10;
+      return tempBytes12;
   }
 
   // ------------------------------------------------
@@ -337,6 +367,33 @@ contract Zone is ERC223ReceivingContract {
   // Functions Setters Private
   //
   // ------------------------------------------------
+
+  function _removeZoneOwner()
+    private
+  {
+    delete commentsFree[zoneOwner.addr];
+    delete commentsCertified[zoneOwner.addr];
+
+    zoneOwner.addr = address(0);
+    zoneOwner.startTime = 0;
+    zoneOwner.staked = 0;
+    zoneOwner.balance = 0;
+    zoneOwner.lastTaxTime = 0;
+  }
+
+  function _removeTeller()
+    private
+  {
+    // we dont remove comments here, so that if zoneowner readds or repositions his teller,
+    // his comments still exist.
+    teller.currencyId = 0;
+    teller.messenger = bytes16(0);
+    teller.position = bytes12(0);
+    teller.settings = bytes1(0);
+    teller.buyRate = 0;
+    teller.sellRate = 0;
+    teller.referrer = address(0);
+  }
 
   function _handleTaxPayment()
     private
@@ -375,18 +432,12 @@ contract Zone is ERC223ReceivingContract {
       uint taxDebt = taxAmount.sub(zoneOwner.balance); // TODO: what to do with debt, just forget about it?
       taxAmount = zoneOwner.balance;
 
-      address prevOwnerAddr = zoneOwner.addr;
-
-      // reset zone owner to nobody, somebody can now call claimFreeZone() with 100DTH
-      zoneOwner.addr = address(0);
-      zoneOwner.startTime = 0;
-      zoneOwner.staked = 0;
-      zoneOwner.balance = 0;
-      zoneOwner.lastTaxTime = 0;
-
       emit ZoneOwnerTaxesPaid(zoneOwner.addr, taxStartTime, taxEndTime, taxAmount);
       emit ZoneOwnerForeClosed(zoneOwner.addr, zoneOwner.startTime, taxEndTime, taxableAmount, taxDebt);
-      emit ZoneOwnerUpdated(address(this), prevOwnerAddr, zoneOwner.addr);
+
+      // reset zone owner to nobody, somebody can now call claimFreeZone() with 100DTH
+      _removeZoneOwner();
+      _removeTeller();
     } else {
       // zone onwer has enough balance to pay his harberger taxes
 
@@ -448,6 +499,8 @@ contract Zone is ERC223ReceivingContract {
       uint ethAmount = funds[prevOwnerAddr];
       funds[prevOwnerAddr] = 0;
       withdrawableEth[prevOwnerAddr] = withdrawableEth[prevOwnerAddr].add(ethAmount);
+
+      _removeTeller();
 
       emit ZoneOwnerUpdated(address(this), prevOwnerAddr, winningBidder);
     }
@@ -603,8 +656,6 @@ contract Zone is ERC223ReceivingContract {
       return; // just retun success
     }
 
-    require(users.getUserTier(_from) > 0, "user not certified");
-
     _processState();
 
     if (func == bytes1(0x41)) { // claimFreeZone
@@ -623,7 +674,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     // allow also when country is disabled, otherwise no way for zone owner to get their eth/dth back
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
 
     // zone owner could be removed if he does not have enough balance to pay his taxes
     _processState();
@@ -635,11 +685,8 @@ contract Zone is ERC223ReceivingContract {
 
     uint ownerBalance = zoneOwner.balance;
 
-    zoneOwner.addr = address(0);
-    zoneOwner.startTime = 0; // we dont really need startTime, lastTaxTime initially is startTime
-    zoneOwner.staked = 0;
-    zoneOwner.balance = 0;
-    zoneOwner.lastTaxTime = 0;
+    _removeZoneOwner();
+    _removeTeller();
 
     // if msg.sender is a contract, the DTH ERC223 contract will try to call tokenFallback
     // on msg.sender, this could lead to a reentrancy. But we prevent this by resetting
@@ -656,7 +703,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     // even when country is disabled, otherwise users cannot withdraw their bids
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
 
     require(_auctionId <= currentAuctionId, "auctionId does not exist");
 
@@ -677,7 +723,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     // even when country is disabled, can withdraw
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
 
     _processState();
 
@@ -706,17 +751,23 @@ contract Zone is ERC223ReceivingContract {
     dth.transfer(msg.sender, withdrawAmountTotal);
   }
 
-  function prevZoneOwnerWithdraw()
+  function withdrawDth()
     external
   {
     uint dthWithdraw = withdrawableDth[msg.sender];
-    uint ethWithdraw = withdrawableEth[msg.sender];
-    require(dthWithdraw > 0 || ethWithdraw > 0, "nothing to withdraw");
+    require(dthWithdraw > 0, "nothing to withdraw");
 
     if (dthWithdraw > 0) {
       withdrawableDth[msg.sender] = 0;
       dth.transfer(msg.sender, dthWithdraw);
     }
+  }
+
+  function withdrawEth()
+    external
+  {
+    uint ethWithdraw = withdrawableEth[msg.sender];
+    require(ethWithdraw > 0, "nothing to withdraw");
 
     if (ethWithdraw > 0) {
       withdrawableEth[msg.sender] = 0;
@@ -733,16 +784,15 @@ contract Zone is ERC223ReceivingContract {
   /////////////
 
 
-  // NOTE: we could just require only last 3 bytes of a bytes10 geohash, since
+  // NOTE: we could just require only last 5 bytes of a bytes12 geohash, since
   // the first 7 bytes will be the geohash of this zone. But by requiring the full geohash
   // we can mkae more sure the user is talking to the right zone
-  function addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings) // GAS COST +/- 75.301
+  function addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings, address _referrer) // GAS COST +/- 75.301
     external
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
-    require(_position.length == 10, "expected position to be 10 bytes");
+    require(_position.length == 12, "expected position to be 10 bytes");
     require(toBytes7(_position, 0) == geohash, "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
 
@@ -769,10 +819,23 @@ contract Zone is ERC223ReceivingContract {
     teller.messenger = _messenger;
     teller.buyRate = _buyRate;
     teller.sellRate = _sellRate;
-    teller.position = toBytes10(_position, 0);
+    teller.position = toBytes12(_position, 0);
     teller.settings = _settings;
+    teller.referrer = _referrer;
 
     emit ZoneUpdatedTeller(msg.sender);
+  }
+
+  function removeTeller()
+    external
+  {
+    require(control.paused() == false, "contract is paused");
+
+    _processState();
+
+    require(msg.sender == zoneOwner.addr, "only zone owner can add teller info");
+
+    _removeTeller();
   }
 
   // called by Teller, adding ETH to Teller funds
@@ -782,7 +845,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
     require(msg.value > 0, "no eth send with call");
 
     _processState();
@@ -800,7 +862,6 @@ contract Zone is ERC223ReceivingContract {
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
     require(msg.sender != _to, "sender cannot also be to");
     require(_amount > 0, "amount to sell cannot be zero");
 
@@ -809,11 +870,55 @@ contract Zone is ERC223ReceivingContract {
     require(msg.sender == zoneOwner.addr, "can only be called by zone owner");
     require(teller.currencyId != 0, "not yet added teller info");
 
-    require(funds[msg.sender] >= _amount, "cannot sell more than in funds");
-
-    // subtract the amount of ETH we are gonna send from this contract to _to
-    funds[msg.sender] = funds[msg.sender].sub(_amount);
+    if (teller.referrer != address(0)) { // need to pay referrer fee
+      uint referrerAmount = calcReferrerFee(_amount);
+      require(funds[msg.sender] >= _amount + referrerAmount, "not enough funds to sell eth amount plus pay referrer fee");
+      funds[msg.sender] = funds[msg.sender].sub(_amount + referrerAmount);
+      withdrawableEth[teller.referrer] = withdrawableEth[teller.referrer].add(referrerAmount);
+    } else {
+      require(funds[msg.sender] >= _amount, "cannot sell more than in funds");
+      funds[msg.sender] = funds[msg.sender].sub(_amount);
+    }
 
     zoneFactory.updateUserDailySold(country, msg.sender, _to, _amount); // MIGHT THROW if exceeds daily limit
+
+    canPlaceCertifiedComment[zoneOwner.addr][_to]++;
+
+    _to.transfer(_amount);
+  }
+
+  function addCertifiedComment(bytes32 _commentHash)
+    external
+  {
+    require(control.paused() == false, "contract is paused");
+    require(geo.countryIsEnabled(country), "country is disabled");
+    require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
+
+    _processState();
+
+    require(zoneOwner.addr != address(0), "cannot comment on zone without owner");
+    require(teller.position != bytes12(0), "cannot comment on zone without teller");
+    require(msg.sender != zoneOwner.addr, "zone owner cannot comment on himself");
+
+    require(canPlaceCertifiedComment[zoneOwner.addr][msg.sender] > 0, "user not allowed to place a certified comment");
+    canPlaceCertifiedComment[zoneOwner.addr][msg.sender]--;
+
+    commentsCertified[zoneOwner.addr].push(_commentHash);
+  }
+
+  function addComment(bytes32 _commentHash)
+    external
+  {
+    require(control.paused() == false, "contract is paused");
+    require(geo.countryIsEnabled(country), "country is disabled");
+    require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
+
+    _processState();
+
+    require(zoneOwner.addr != address(0), "cannot comment on zone without owner");
+    require(teller.position != bytes12(0), "cannot comment on zone without teller");
+    require(msg.sender != zoneOwner.addr, "zone owner cannot comment on himself");
+
+    commentsFree[zoneOwner.addr].push(_commentHash);
   }
 }

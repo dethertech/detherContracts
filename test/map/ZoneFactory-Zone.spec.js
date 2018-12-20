@@ -17,11 +17,12 @@ const Web3 = require('web3');
 const TimeTravel = require('../utils/timeTravel');
 const { getAccounts } = require('../utils/accounts');
 const { addCountry } = require('../utils/geo');
-const { ethToWei, asciiToHex } = require('../utils/convert');
+const { ethToWei, asciiToHex, toBN } = require('../utils/convert');
 const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
+const { getRandomBytes32 } = require('../utils/ipfs');
 const {
   BYTES7_ZERO, VALID_CG_ZONE_GEOHASH, INVALID_CG_ZONE_GEOHASH, MIN_ZONE_DTH_STAKE,
-  ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD,
+  ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD, ADDRESS_ZERO, BYTES32_ZERO,
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
@@ -114,7 +115,6 @@ contract('ZoneFactory + Zone', () => {
   });
 
   const createZone = async (from, dthAmount, countryCode, geohash) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -128,7 +128,6 @@ contract('ZoneFactory + Zone', () => {
   };
 
   const placeBid = async (from, dthAmount, zoneAddress) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -141,7 +140,6 @@ contract('ZoneFactory + Zone', () => {
   };
 
   const claimFreeZone = async (from, dthAmount, zoneAddress) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -154,7 +152,6 @@ contract('ZoneFactory + Zone', () => {
   };
 
   const topUp = async (from, dthAmount, zoneAddress) => {
-    await smsInstance.certify(from, { from: owner });
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
       from,
@@ -217,7 +214,6 @@ contract('ZoneFactory + Zone', () => {
       });
       it(`[success] ++ creating a zone with dthAmount minimum (${MIN_ZONE_DTH_STAKE} DTH)`, async () => {
         await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
         await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
         const tx = await web3.eth.sendTransaction({
           from: user1,
@@ -518,7 +514,6 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- caller is not the zone owner', async () => {
-          await smsInstance.certify(user2, { from: owner });
           await expectRevert(
             zoneInstance.release({ from: user2 }),
             'caller is not zone owner',
@@ -639,27 +634,6 @@ contract('ZoneFactory + Zone', () => {
           await expectRevert(
             zoneInstance.withdrawFromAuctions(['1'], { from: user3 }),
             'contract is paused',
-          );
-        });
-        it('[error] -- user not certified', async () => {
-          // auction 1
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // loser
-          await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-          // auction 2
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user1, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // loser
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-
-          await smsInstance.revoke(user3, { from: owner });
-
-          await expectRevert(
-            zoneInstance.withdrawFromAuctions(['1'], { from: user3 }),
-            'user not certified',
           );
         });
         it('[error] -- empty auctionIds list arg', async () => {
@@ -895,7 +869,7 @@ contract('ZoneFactory + Zone', () => {
     });
 
     describe('TELLER', () => {
-      const VALID_POSITION = asciiToHex('krcztsebcd');
+      const VALID_TELLER_POSITION = asciiToHex('krcztsebcddd');
       const VALID_CURRENCY_ID = '1';
       const VALID_MESSENGER = asciiToHex('my_telegram_nick');
       const VALID_SELLRATE = '177'; // 1.77%
@@ -911,116 +885,108 @@ contract('ZoneFactory + Zone', () => {
         it('[error] -- global pause is enabled', async () => {
           await controlInstance.pause({ from: owner });
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'contract is paused',
           );
         });
         it('[error] -- country is disabled', async () => {
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'country is disabled',
-          );
-        });
-        it('[error] -- user not certified', async () => {
-          await smsInstance.revoke(user1, { from: owner });
-          await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
-            'user not certified',
           );
         });
         it('[error] -- position is empty bytes array', async () => {
           await expectRevert(
-            zoneInstance.addTeller('0x', VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller('0x', VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
-        it('[error] -- position is 9 bytes (instead of expected 10)', async () => {
+        it('[error] -- position is 9 bytes (instead of expected 12)', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('krcztsebc'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebc'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
-        it('[error] -- position is 11 bytes (instead of expected 10)', async () => {
+        it('[error] -- position is 11 bytes (instead of expected 12)', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('krcztsebcde'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebcde'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
         it('[error] -- position does not match geohash of Zone contract', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('xxxxxxxbcd'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('xxxxxxxbcddd'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'position is not inside this zone',
           );
         });
         it('[error] -- position last 3 chars contain invalid geohash char', async () => {
           await expectRevert(
             // a is not a valid geohash char
-            zoneInstance.addTeller(asciiToHex('krcztsebca'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebcdda'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'invalid position geohash characters',
           );
         });
         it('[error] -- currency id is zero', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, '0', VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, '0', VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'currency id must be in range 1-100',
           );
         });
         it('[error] -- currency id is 101', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, '101', VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, '101', VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'currency id must be in range 1-100',
           );
         });
         it('[error] -- seller bit set -- sellrate less than -9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '-10000', VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '-10000', VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'sellRate should be between -9999 and 9999',
           );
         });
         it('[error] -- seller bit set -- sellrate more than than 9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '10000', VALID_BUYRATE, VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '10000', VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'sellRate should be between -9999 and 9999',
           );
         });
         it('[error] -- seller bit not set -- sellrate is not zero', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '1', VALID_BUYRATE, '0x02', { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '1', VALID_BUYRATE, '0x02', ADDRESS_ZERO, { from: user1 }),
             'cannot set sellRate if not set as seller',
           );
         });
         it('[error] -- buyer bit set -- sellrate less than -9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '-10000', VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '-10000', VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'buyRate should be between -9999 and 9999',
           );
         });
         it('[error] -- buyer bit set -- buyrate more than than 9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '10000', VALID_SETTINGS, { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '10000', VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'buyRate should be between -9999 and 9999',
           );
         });
         it('[error] -- buyer bit not set -- buyrate is not zero', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '1', '0x01', { from: user1 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '1', '0x01', ADDRESS_ZERO, { from: user1 }),
             'cannot set buyRate if not set as buyer',
           );
         });
         it('[error] -- caller is not zone owner', async () => {
-          await smsInstance.certify(user2, { from: owner });
           await expectRevert(
-            zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user2 }),
+            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user2 }),
             'only zone owner can add teller info',
           );
         });
         it('[success] messenger can be bytes16(0)', async () => {
-          const tx = await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, '0x00000000000000000000000000000000', VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          const tx = await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, '0x00000000000000000000000000000000', VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           // console.log('addTeller gas used:', addNumberDots(tx.receipt.gasUsed));
         });
         it('[success]', async () => {
-          const tx = await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          const tx = await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           // console.log('addTeller gas used:', addNumberDots(tx.receipt.gasUsed));
         });
       });
@@ -1031,7 +997,7 @@ contract('ZoneFactory + Zone', () => {
           zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
         });
         it('[error] -- global pause is enabled', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await controlInstance.pause({ from: owner });
           await expectRevert(
             zoneInstance.addFunds({ from: user1, value: ethToWei(100) }),
@@ -1039,31 +1005,22 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- country is disabled', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
             zoneInstance.addFunds({ from: user1, value: ethToWei(100) }),
             'country is disabled',
           );
         });
-        it('[error] -- user not certified', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
-          await smsInstance.revoke(user1, { from: owner });
-          await expectRevert(
-            zoneInstance.addFunds({ from: user1, value: ethToWei(100) }),
-            'user not certified',
-          );
-        });
         it('[error] -- no eth send with call', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await expectRevert(
             zoneInstance.addFunds({ from: user1, value: ethToWei(0) }),
             'no eth send with call',
           );
         });
         it('[error] -- called by not-zoneowner', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
-          await smsInstance.certify(user2, { from: owner });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await expectRevert(
             zoneInstance.addFunds({ from: user2, value: ethToWei(100) }),
             'only zoneOwner can add funds',
@@ -1076,7 +1033,7 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[success]', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           const tx = await zoneInstance.addFunds({ from: user1, value: ethToWei(100) });
           // console.log('addFunds gas used:', addNumberDots(tx.receipt.gasUsed));
         });
@@ -1086,10 +1043,10 @@ contract('ZoneFactory + Zone', () => {
         beforeEach(async () => {
           await enableAndLoadCountry(COUNTRY_CG);
           zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '1', '1000', { from: owner });
+          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
         });
         it('[error] -- global pause is enabled', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await controlInstance.pause({ from: owner });
           await expectRevert(
@@ -1098,7 +1055,7 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- country is disabled', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
@@ -1106,17 +1063,8 @@ contract('ZoneFactory + Zone', () => {
             'country is disabled',
           );
         });
-        it('[error] -- user not certified', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
-          await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await smsInstance.revoke(user1, { from: owner });
-          await expectRevert(
-            zoneInstance.sellEth(user3, ethToWei(1), { from: user1 }),
-            'user not certified',
-          );
-        });
         it('[error] -- sender is also to', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user1, ethToWei(1), { from: user1 }),
@@ -1124,7 +1072,7 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- amount is zero', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(0), { from: user1 }),
@@ -1132,9 +1080,8 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- caller is not zoneowner', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await smsInstance.certify(user2, { from: owner });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1), { from: user2 }),
             'can only be called by zone owner',
@@ -1147,26 +1094,171 @@ contract('ZoneFactory + Zone', () => {
           );
         });
         it('[error] -- amount to sell is greater than funds added', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1.1), { from: user1 }),
             'cannot sell more than in funds',
           );
         });
+        it('[error] -- amount to sell is not enough pay 0.1% referrer fee', async () => {
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, user4, { from: user1 });
+          await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
+          await expectRevert(
+            zoneInstance.sellEth(user3, ethToWei(1), { from: user1 }),
+            'not enough funds to sell eth amount plus pay referrer fee',
+          );
+        });
         it('[error] -- amount to sell is greater than daily limit', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(2) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(2), { from: user1 }),
             'exceeded daily sell limit',
           );
         });
-        it('[success]', async () => {
-          await zoneInstance.addTeller(VALID_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, { from: user1 });
-          await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
-          const tx = await zoneInstance.sellEth(user3, ethToWei(1), { from: user1 });
+        it('[success] - no referrer', async () => {
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+          const ethToSend = toBN(ethToWei(1));
+          await zoneInstance.addFunds({ from: user1, value: ethToSend });
+          const sellerFundsBefore = await zoneInstance.funds(user1);
+          const buyerBalanceBefore = toBN(await web3.eth.getBalance(user3));
+          const tx = await zoneInstance.sellEth(user3, ethToSend.toString(), { from: user1 });
+          const sellerFundsAfter = await zoneInstance.funds(user1);
+          const buyerBalanceAfter = toBN(await web3.eth.getBalance(user3));
+          expect(sellerFundsBefore.sub(ethToSend).eq(sellerFundsAfter)).to.equal(true);
+          expect(buyerBalanceBefore.add(ethToSend).eq(buyerBalanceAfter)).to.equal(true);
           // console.log('sell eth gas used:', addNumberDots(tx.receipt.gasUsed));
+        });
+        it('[success] - with referrer paid out 0.1% on top of sold eth', async () => {
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, user4, { from: user1 });
+          await zoneInstance.addFunds({ from: user1, value: ethToWei(1.001) });
+          const buyerBalanceBefore = toBN(await web3.eth.getBalance(user3));
+          const tx = await zoneInstance.sellEth(user3, ethToWei(1), { from: user1 });
+          const sellerFundsAfter = await zoneInstance.funds(user1);
+          const referrerWithdrawableEth = await zoneInstance.withdrawableEth(user4);
+          const buyerBalanceAfter = toBN(await web3.eth.getBalance(user3));
+          expect(sellerFundsAfter.eq(0)).to.equal(true);
+          expect(buyerBalanceBefore.add(toBN(ethToWei(1))).eq(buyerBalanceAfter)).to.equal(true);
+          expect(referrerWithdrawableEth.eq(toBN(ethToWei(0.001)))).to.equal(true);
+          // console.log('sell eth gas used:', addNumberDots(tx.receipt.gasUsed));
+        });
+      });
+      describe('Zone.addComment(bytes32 _commentHash)', () => {
+        let zoneInstance;
+        beforeEach(async () => {
+          await enableAndLoadCountry(COUNTRY_CG);
+          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        });
+        it('[error] -- global pause is enabled', async () => {
+          await controlInstance.pause({ from: owner });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'contract is paused',
+          );
+        });
+        it('[error] -- country is disabled', async () => {
+          await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'country is disabled',
+          );
+        });
+        it('[error] -- comment hash is empty', async () => {
+          await expectRevert(
+            zoneInstance.addComment(BYTES32_ZERO, { from: user2 }),
+            'comment hash cannot be 0x0',
+          );
+        });
+        it('[error] -- zone has no owner', async () => {
+          await zoneInstance.release({ from: user1 });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without owner',
+          );
+        });
+        it('[error] -- zone has no teller', async () => {
+          await zoneInstance.removeTeller({ from: user1 });
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without teller',
+          );
+        });
+        it('[error] -- zone owner cannot comment himself', async () => {
+          await expectRevert(
+            zoneInstance.addComment(getRandomBytes32(), { from: user1 }),
+            'zone owner cannot comment on himself',
+          );
+        });
+        it('[success]', async () => {
+          await zoneInstance.addComment(getRandomBytes32(), { from: user2 });
+        });
+      });
+      describe('Zone.addCertifiedComment(bytes32 _commentHash)', () => {
+        let zoneInstance;
+        beforeEach(async () => {
+          await enableAndLoadCountry(COUNTRY_CG);
+          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
+          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+          await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
+        });
+        it('[error] -- global pause is enabled', async () => {
+          await controlInstance.pause({ from: owner });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'contract is paused',
+          );
+        });
+        it('[error] -- country is disabled', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'country is disabled',
+          );
+        });
+        it('[error] -- comment hash is empty', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(BYTES32_ZERO, { from: user2 }),
+            'comment hash cannot be 0x0',
+          );
+        });
+        it('[error] -- zone has no owner', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await zoneInstance.release({ from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without owner',
+          );
+        });
+        it('[error] -- zone has no teller', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await zoneInstance.removeTeller({ from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'cannot comment on zone without teller',
+          );
+        });
+        it('[error] -- zone owner cannot comment himself', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user1 }),
+            'zone owner cannot comment on himself',
+          );
+        });
+        it('[error] -- user did not trade with teller yet (1 trade = 1 comment)', async () => {
+          await expectRevert(
+            zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+            'user not allowed to place a certified comment',
+          );
+        });
+        it('[success]', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+          await zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
         });
       });
     });
