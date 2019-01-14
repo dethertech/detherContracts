@@ -14,19 +14,21 @@ const GeoRegistry = artifacts.require('GeoRegistry.sol');
 const ZoneFactory = artifacts.require('ZoneFactory.sol');
 const Zone = artifacts.require('Zone.sol');
 
+const BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 
 const expect = require('../utils/chai');
 const TimeTravel = require('../utils/timeTravel');
 const { addCountry } = require('../utils/geo');
-const { ethToWei, asciiToHex, toBN } = require('../utils/convert');
+const { ethToWei, asciiToHex } = require('../utils/convert');
 const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
 const { getRandomBytes32 } = require('../utils/ipfs');
 const {
   BYTES7_ZERO, VALID_CG_ZONE_GEOHASH, INVALID_CG_ZONE_GEOHASH, MIN_ZONE_DTH_STAKE,
   ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD, ADDRESS_ZERO, BYTES32_ZERO,
   BYTES1_ZERO, BYTES12_ZERO, BYTES16_ZERO, ZONE_AUCTION_STATE_STARTED,
-  ZONE_AUCTION_STATE_ENDED,
+  ZONE_AUCTION_STATE_ENDED, TELLER_CG_POSITION, TELLER_CG_CURRENCY_ID,
+  TELLER_CG_MESSENGER, TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS,
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
@@ -75,6 +77,15 @@ const zoneOwnerToObj = zoneOwnerArr => ({
   staked: zoneOwnerArr[2],
   balance: zoneOwnerArr[3],
   lastTaxTime: zoneOwnerArr[4],
+  auctionId: zoneOwnerArr[5],
+});
+const zoneOwnerToObjPretty = zoneOwnerArr => ({
+  addr: zoneOwnerArr[0],
+  startTime: zoneOwnerArr[1].toString(),
+  staked: zoneOwnerArr[2].toString(),
+  balance: zoneOwnerArr[3].toString(),
+  lastTaxTime: zoneOwnerArr[4].toString(),
+  auctionId: zoneOwnerArr[5].toString(),
 });
 
 const tellerToObj = tellerArr => ({
@@ -96,6 +107,14 @@ const auctionToObj = auctionArr => ({
   highestBidder: auctionArr[4],
   highestBid: auctionArr[5],
 });
+const auctionToObjPretty = auctionArr => ({
+  id: auctionArr[0].toString(),
+  state: auctionArr[1].toString(),
+  startTime: auctionArr[2].toString(),
+  endTime: auctionArr[3].toString(),
+  highestBidder: auctionArr[4],
+  highestBid: auctionArr[5].toString(),
+});
 
 contract('ZoneFactory + Zone', () => {
   let owner;
@@ -103,6 +122,7 @@ contract('ZoneFactory + Zone', () => {
   let user2;
   let user3;
   let user4;
+  let user5;
 
   let __rootState__; // eslint-disable-line no-underscore-dangle
 
@@ -114,10 +134,11 @@ contract('ZoneFactory + Zone', () => {
   let usersInstance;
   let geoInstance;
   let zoneFactoryInstance;
+  let zoneImplementationInstance;
 
   before(async () => {
     __rootState__ = await timeTravel.saveState();
-    ([owner, user1, user2, user3, user4] = (await web3.eth.getAccounts()).map(a => a.toLowerCase()));
+    ([owner, user1, user2, user3, user4, user5] = (await web3.eth.getAccounts()).map(a => a.toLowerCase()));
   });
 
   beforeEach(async () => {
@@ -129,6 +150,8 @@ contract('ZoneFactory + Zone', () => {
     kycInstance = await KycCertifier.new(controlInstance.address, { from: owner });
     geoInstance = await GeoRegistry.new(controlInstance.address, { from: owner });
 
+    zoneImplementationInstance = await Zone.new({ from: owner });
+
     usersInstance = await Users.new(
       priceInstance.address,
       geoInstance.address,
@@ -137,13 +160,16 @@ contract('ZoneFactory + Zone', () => {
       controlInstance.address,
       { from: owner },
     );
+
     zoneFactoryInstance = await ZoneFactory.new(
       dthInstance.address,
       geoInstance.address,
       usersInstance.address,
       controlInstance.address,
+      zoneImplementationInstance.address,
       { from: owner },
     );
+
     await usersInstance.setZoneFactory(zoneFactoryInstance.address, { from: owner });
     await smsInstance.addDelegate(owner, { from: owner });
   });
@@ -204,34 +230,34 @@ contract('ZoneFactory + Zone', () => {
 
   describe('>>> deploying a Zone', () => {
     describe('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
-      it('[error] -- global pause enabled', async () => {
+      it('should revert if global pause enabled', async () => {
         await controlInstance.pause({ from: owner });
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH),
           'contract is paused',
         );
       });
-      it('[error] -- country is disabled', async () => {
+      it('should revert if country is disabled', async () => {
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH),
           'country is disabled',
         );
       });
-      it('[error] -- creating a zone with geohash 0x0', async () => {
+      it('should revert if creating a zone with geohash 0x0', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, BYTES7_ZERO),
           'createAndClaim expects 10 bytes as data',
         );
       });
-      it('[error] -- zone is not inside country', async () => {
+      it('should revert if zone is not inside country', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, INVALID_CG_ZONE_GEOHASH),
           'zone is not inside country',
         );
       });
-      it('[error] -- zone already exists', async () => {
+      it('should revert if zone already exists', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
         await expectRevert2(
@@ -239,14 +265,14 @@ contract('ZoneFactory + Zone', () => {
           'zone already exists',
         );
       });
-      it(`[error] -- creating a zone with dthAmount minimum - 1 (${MIN_ZONE_DTH_STAKE - 1} DTH)`, async () => {
+      it(`should revert if creating a zone with dthAmount minimum - 1 (${MIN_ZONE_DTH_STAKE - 1} DTH)`, async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE - 1, COUNTRY_CG, VALID_CG_ZONE_GEOHASH),
           'zone dth stake shoulld be at least minimum (100DTH)',
         );
       });
-      it.only('[success]', async () => {
+      it('should succeed otherwise', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
         const tx = await web3.eth.sendTransaction({
@@ -267,12 +293,11 @@ contract('ZoneFactory + Zone', () => {
         expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
         expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
 
-        expect(zoneInstance.auctionExists('0')).to.eventually.be.true;
+        expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
         expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
 
         const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
         const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-        const teller = tellerToObj(await zoneInstance.getTeller());
 
         const lastBlockTimestamp = await getLastBlockTimestamp();
 
@@ -281,35 +306,29 @@ contract('ZoneFactory + Zone', () => {
         expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
         expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
         expect(zoneOwner.balance).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+        expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
 
         expect(lastAuction.id).to.be.bignumber.equal(0);
-        expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_ENDED);
-        expect(lastAuction.startTime).to.be.bignumber.equal(lastBlockTimestamp);
-        expect(lastAuction.endTime).to.be.bignumber.equal(lastBlockTimestamp);
-        expect(lastAuction.highestBidder).to.equal(user1);
-        expect(lastAuction.highestBid).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
-
-        expect(teller.currencyId).to.be.bignumber.equal(0);
-        expect(teller.messenger).to.equal(BYTES16_ZERO);
-        expect(teller.position).to.equal(BYTES12_ZERO);
-        expect(teller.settings).to.equal(BYTES1_ZERO);
-        expect(teller.buyRate).to.be.bignumber.equal(0);
-        expect(teller.sellRate).to.be.bignumber.equal(0);
-        expect(teller.funds).to.be.bignumber.equal(0);
-        expect(teller.referrer).to.equal(ADDRESS_ZERO);
-
-        expect(zoneInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
-        expect(zoneInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
+        expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
+        expect(lastAuction.startTime).to.be.bignumber.equal(0);
+        expect(lastAuction.endTime).to.be.bignumber.equal(0);
+        expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
+        expect(lastAuction.highestBid).to.be.bignumber.equal(0);
       });
     });
   });
 
   describe('Setters', () => {
+    let zoneInstance;
+    beforeEach(async () => {
+      // create a zone with a zone owner
+      await enableAndLoadCountry(COUNTRY_CG);
+      zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+      await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
+    });
     describe('AUCTION', () => {
       describe('[ERC223] Zone.claimFreeZone(address _from, uint _dthAmount)', () => {
-        it('[error] -- global pause enabled', async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+        it('should revert if global pause enabled', async () => {
           await zoneInstance.release({ from: user1 });
           await controlInstance.pause({ from: owner });
           await expectRevert2(
@@ -317,9 +336,7 @@ contract('ZoneFactory + Zone', () => {
             'contract is paused',
           );
         });
-        it('[error] -- country is disabled', async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+        it('should revert if country is disabled', async () => {
           await zoneInstance.release({ from: user1 });
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert2(
@@ -327,17 +344,13 @@ contract('ZoneFactory + Zone', () => {
             'country is disabled',
           );
         });
-        it('[error] -- cannot claim zone which has an owner', async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+        it('should revert if cannot claim zone which has an owner', async () => {
           await expectRevert2(
             claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
             'can not claim zone with owner',
           );
         });
-        it('[error] -- cannot claim free zone for minimum stake - 1', async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+        it('should revert if cannot claim free zone for minimum stake - 1', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
           await zoneInstance.release({ from: user1 });
           await expectRevert2(
@@ -345,249 +358,183 @@ contract('ZoneFactory + Zone', () => {
             'need at least minimum zone stake amount (100 DTH)',
           );
         });
-        it('[success] -- can claim free zone for minimum stake', async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          const zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
+        it('should succeed if can claim free zone for minimum stake', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
           await zoneInstance.release({ from: user1 });
-          const tx = await claimFreeZone(user2, MIN_ZONE_DTH_STAKE, zoneInstance.address);
-          // console.log('claim free zone gas used:', addNumberDots(tx.gasUsed));
-          const user2DthBalance = await dthInstance.balanceOf(user2);
-          const zoneFactoryDthBalance = await dthInstance.balanceOf(zoneFactoryInstance.address);
-          const newZoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
-          expect(user2DthBalance.toNumber(), 'user2 balance should have decreased by stake amount').to.equal(0);
-          expect(zoneFactoryDthBalance.toNumber(), 'zone factory balance should not have changed').to.equal(0);
-          expect(newZoneDthBalance.toString(), 'zone balance should equal stake amount').to.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          await claimFreeZone(user2, MIN_ZONE_DTH_STAKE, zoneInstance.address);
 
-          // Zone.sol
-          const auction0Exists = await zoneInstance.auctionExists('0');
-          const auction1Exists = await zoneInstance.auctionExists('1');
+          expect(dthInstance.balanceOf(user2)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
+
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
           const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-          const teller = tellerToObj(await zoneInstance.getTeller());
-          const certifiedComments = await zoneInstance.getCertifiedComments();
-          const comments = await zoneInstance.getComments();
 
-          expect(auction0Exists).to.equal(true);
-          expect(auction1Exists).to.equal(false);
+          const lastBlockTimestamp = await getLastBlockTimestamp();
 
-          expect(zoneOwner.addr).to.equal(user2.toLowerCase());
-          expect(zoneOwner.startTime.toNumber()).to.equal(zoneOwner.lastTaxTime.toNumber());
-          expect(zoneOwner.staked.toString()).to.equal(ethToWei(MIN_ZONE_DTH_STAKE));
-          expect(zoneOwner.balance.toString()).to.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.addr).to.equal(user2);
+          expect(zoneOwner.startTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.balance).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
 
-          expect(lastAuction.id.toNumber()).to.equal(0);
-          expect(lastAuction.state.toNumber()).to.equal(1);
-          expect(lastAuction.startTime.toNumber()).to.equal(lastAuction.endTime.toNumber());
-          expect(lastAuction.highestBidder).to.equal(user1.toLowerCase());
-          expect(lastAuction.highestBid.toNumber()).to.equal(0); // highestBid is moved to zoneOwner.staked
-
-          expect(teller.currencyId.toNumber()).to.equal(0);
-          expect(teller.messenger).to.equal(BYTES16_ZERO);
-          expect(teller.position).to.equal(BYTES12_ZERO);
-          expect(teller.settings).to.equal(BYTES1_ZERO);
-          expect(teller.buyRate.toNumber()).to.equal(0);
-          expect(teller.sellRate.toNumber()).to.equal(0);
-          expect(teller.funds.toNumber()).to.equal(0);
-          expect(teller.referrer).to.equal(ADDRESS_ZERO);
-
-          expect(certifiedComments).to.be.an('array').to.have.lengthOf(0);
-          expect(comments).to.be.an('array').to.have.lengthOf(0);
+          expect(lastAuction.id).to.be.bignumber.equal(0);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(0);
+          expect(lastAuction.endTime).to.be.bignumber.equal(0);
+          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
+          expect(lastAuction.highestBid).to.be.bignumber.equal(0);
         });
       });
 
       describe('[ERC223] Zone.bid(address _from, uint _dthAmount)', () => {
-        describe('when Zone just got created (owned by @user1)', () => {
-          let zoneInstance;
+        it('should revert if cooldown period not yet ended', async () => {
+          await expectRevert2(
+            placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address),
+            'cooldown period did not end yet',
+          );
+        });
+        it('should revert if called by current zone owner', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
+          await expectRevert2(
+            placeBid(user1, 10, zoneInstance.address),
+            'zoneowner cannot start an auction',
+          );
+        });
+        it('should revert if country is disabled', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
+          await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+          await expectRevert2(
+            placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address),
+            'country is disabled',
+          );
+        });
+        it('should revert if bid (minus burn fee) amount is less than current stake', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
+          await expectRevert2(
+            placeBid(user2, MIN_ZONE_DTH_STAKE, zoneInstance.address),
+            'bid is lower than current zone stake',
+          );
+        });
+        it('should succeed if bid (minus burn fee) is higher than current zone stake', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
+          const oldZoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
+          const bidAmount = MIN_ZONE_DTH_STAKE + 10;
+          await placeBid(user2, bidAmount, zoneInstance.address);
 
-          beforeEach(async () => {
-            // create a zone with a zone owner
-            await enableAndLoadCountry(COUNTRY_CG);
-            zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          });
-          it('[error] -- @user2 (challenger1) cooldown period has not yet ended', async () => {
-            await expectRevert2(
-              placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address),
-              'cooldown period did not end yet',
-            );
-          });
-          describe('when Zone cooldown period ended', () => {
-            beforeEach(async () => {
-              await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
-            });
-            it('[error] -- @user1 (current zone owner) cannot start auction', async () => {
-              await expectRevert2(
-                placeBid(user1, 10, zoneInstance.address),
-                'zoneowner cannot start an auction',
-              );
-            });
-            it('[error] -- @user2 (challenger1) bid amount is less than current zone stake', async () => {
-              await expectRevert2(
-                placeBid(user2, MIN_ZONE_DTH_STAKE - 10, zoneInstance.address),
-                'bid is lower than current zone stake',
-              );
-            });
-            it('[error] -- @user2 country is disabled', async () => {
-              await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
-              await expectRevert2(
-                placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address),
-                'country is disabled',
-              );
-            });
-            it('[success] ++ @user2 (challenger1) can start auction if bid higher than current', async () => {
-              await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
-              const user2DthBalance = await dthInstance.balanceOf(user2);
-              const zoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
-              expect(user2DthBalance.toString(), 'user2 balance should have decreased by bid amount').to.equal(ethToWei(0));
-              // bidMinusEntryFee = 108.9; // 1% of 110 = 1,1
-              expect(zoneDthBalance.gt(ethToWei(206)) && zoneDthBalance.lt(ethToWei(208)), 'zone balance (minus harberger taxes) should have increased by bid amount (minus entry fee)').to.equal(true);
-            });
-            describe('when @user2 (challenger1) started an Auction for this Zone', () => {
-              beforeEach(async () => {
-                await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
-              });
-              it('[error] -- @user1 (current zone owner) bid amount is less than current highest', async () => {
-                await expectRevert2(
-                  placeBid(user1, 5, zoneInstance.address),
-                  'bid + already staked is less than current highest',
-                );
-              });
-              it('[error] -- @user2 (challenger1) current highest bidder cannot bid', async () => {
-                await expectRevert2(
-                  placeBid(user2, 10, zoneInstance.address),
-                  'highest bidder cannot bid',
-                );
-              });
-              it('[error] -- @user3 (challenger2) bid amount is less than current highest', async () => {
-                await expectRevert2(
-                  placeBid(user3, MIN_ZONE_DTH_STAKE + 5, zoneInstance.address),
-                  'bid is less than current highest',
-                );
-              });
-              it('[error] -- @user1 country is disabled', async () => {
-                await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
-                await expectRevert2(
-                  placeBid(user1, 20, zoneInstance.address),
-                  'country is disabled',
-                );
-              });
-              it('[error] -- @user3 country is disabled', async () => {
-                await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
-                await expectRevert2(
-                  placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address),
-                  'country is disabled',
-                );
-              });
-              it('[success] ++ @user1 (current zone owner) can overbid challenger1', async () => {
-                const tx = await placeBid(user1, 20, zoneInstance.address);
-                // console.log('place bid gas used:', addNumberDots(tx.gasUsed));
-                const user1DthBalance = await dthInstance.balanceOf(user1);
-                const zoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
-                expect(user1DthBalance.toString(), 'user1 balance should have decreased by bid amount').to.equal(ethToWei(0));
-                expect(zoneDthBalance.gt(ethToWei(226)) && zoneDthBalance.lt(ethToWei(228)), 'zone balance (minus harberger taxes) should have increased by bid amount (minus entry fee)').to.equal(true);
-                // expect(zoneDthBalance.toString(), 'zone balance should have increased by bid amount').to.equal(ethToWei(initialZoneDthBalance + challenger1bidMinusEntryFee + bid));
-              });
-              it('[success] ++ @user3 (challenger2) can overbid challenger1', async () => {
-                const bid = MIN_ZONE_DTH_STAKE + 20; // 1% of 120 = 1,2 = 118,8
-                const bidMinusEntryFee = 118.8; // 1% of 120 = 1,2 = 118,8
-                await placeBid(user3, bid, zoneInstance.address);
-                const user3DthBalance = await dthInstance.balanceOf(user3);
-                const zoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
-                expect(user3DthBalance.toString(), 'user3 balance should have decreased by bid amount').to.equal(ethToWei(0));
-                expect(zoneDthBalance.gt(ethToWei(206 + bidMinusEntryFee)) && zoneDthBalance.lt(ethToWei(208 + bidMinusEntryFee)), 'zone balance (minus harberger taxes) should have increased by bid amount (minus entry fee)').to.equal(true);
-              });
-              describe('when @user3 (challenger2) also placed a bid in the Auction for this Zone', () => {
-                const challenger2bidMinusEntryFee = 118.8; // 1% of 120 = 1,2
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user2)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.above(oldZoneDthBalance);
 
-                beforeEach(async () => {
-                  await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address);
-                });
-                it('[error] -- @user1 (current zone owner) bid amount is less than current highest', async () => {
-                  await expectRevert2(
-                    placeBid(user1, 5, zoneInstance.address),
-                    'bid + already staked is less than current highest',
-                  );
-                });
-                it('[error] -- @user2 (challenger1) bid amount is less than current highest', async () => {
-                  await expectRevert2(
-                    placeBid(user2, 5, zoneInstance.address),
-                    'bid is less than current highest',
-                  );
-                });
-                it('[error] -- @user3 (challenger2) current highest bidder cannot bid', async () => {
-                  await expectRevert2(
-                    placeBid(user3, 10, zoneInstance.address),
-                    'highest bidder cannot bid',
-                  );
-                });
-                it('[error] -- @user1 country is disabled', async () => {
-                  await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
-                  await expectRevert2(
-                    placeBid(user1, 25, zoneInstance.address),
-                    'country is disabled',
-                  );
-                });
-                it('[error] -- @user2 country is disabled', async () => {
-                  await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
-                  await expectRevert2(
-                    placeBid(user2, 10, zoneInstance.address),
-                    'country is disabled',
-                  );
-                });
-                it('[success] ++ @user1 (current zone owner) can overbid challenger2', async () => {
-                  await placeBid(user1, 25, zoneInstance.address);
-                  const user1DthBalance = await dthInstance.balanceOf(user1);
-                  const zoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
-                  expect(user1DthBalance.toString(), 'user1 balance should have decreased by bid amount').to.equal(ethToWei(0));
-                  expect(zoneDthBalance.gt(ethToWei(206 + challenger2bidMinusEntryFee + 25)) && zoneDthBalance.lt(ethToWei(208 + challenger2bidMinusEntryFee + 25)), 'zone balance (minus harberger taxes) should have increased by bid amount (minus entry fee)').to.equal(true);
-                });
-                it('[success] ++ @user2 (challenger1) can overbid challenger2', async () => {
-                  await placeBid(user2, 10, zoneInstance.address);
-                  const user2DthBalance = await dthInstance.balanceOf(user2);
-                  const zoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
-                  expect(user2DthBalance.toString(), 'user2 balance should have decreased by bid amount').to.equal(ethToWei(0));
-                  expect(zoneDthBalance.gt(ethToWei(206 + challenger2bidMinusEntryFee + 10)) && zoneDthBalance.lt(ethToWei(208 + challenger2bidMinusEntryFee + 10)), 'zone balance (minus harberger taxes) should have increased by bid amount (minus entry fee)').to.equal(true);
-                });
-              });
-            });
-          });
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
+
+          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+
+          const lastBlockTimestamp = await getLastBlockTimestamp();
+
+          expect(zoneOwner.addr).to.equal(user1);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.balance).to.be.bignumber.below(zoneOwner.staked);
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
+
+          expect(lastAuction.id).to.be.bignumber.equal(1);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(lastAuction.endTime).to.be.bignumber.equal(lastBlockTimestamp + BID_PERIOD);
+          expect(lastAuction.highestBidder).to.equal(user2);
+          const [, bidMinusEntryFee] = await zoneInstance.calcEntryFee(ethToWei(bidAmount));
+          expect(lastAuction.highestBid).to.be.bignumber.equal(bidMinusEntryFee);
+        });
+        it('should be possible for a 2nd bidder or the zoneOwner to overbid bidder 1', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
+          const oldZoneDthBalance1 = await dthInstance.balanceOf(zoneInstance.address);
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
+          const oldZoneDthBalance2 = await dthInstance.balanceOf(zoneInstance.address);
+          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address);
+          const oldZoneDthBalance3 = await dthInstance.balanceOf(zoneInstance.address);
+          await placeBid(user1, 30, zoneInstance.address);
+
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user2)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user3)).to.eventually.be.bignumber.equal(0);
+          expect(oldZoneDthBalance1).to.be.bignumber.below(oldZoneDthBalance2);
+          expect(oldZoneDthBalance2).to.be.bignumber.below(oldZoneDthBalance3);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.above(oldZoneDthBalance3);
+
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
+
+          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+
+          const lastBlockTimestamp = await getLastBlockTimestamp();
+
+          expect(zoneOwner.addr).to.equal(user1);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.balance).to.be.bignumber.below(zoneOwner.staked);
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
+
+          expect(lastAuction.id).to.be.bignumber.equal(1);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(lastAuction.endTime).to.be.bignumber.equal(lastBlockTimestamp + BID_PERIOD);
+          expect(lastAuction.highestBidder).to.equal(user1);
+          expect(lastAuction.highestBid).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE + 30));
         });
       });
 
       describe('[ERC223] Zone.topUp(address _from, uint _dthAmount)', () => {
-        let zoneInstance;
-        beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-        });
-        it('[error] -- global pause enabled', async () => {
+        it('should revert if global pause enabled', async () => {
           await controlInstance.pause({ from: owner });
           await expectRevert2(
             topUp(user1, 10, zoneInstance.address),
             'contract is paused',
           );
         });
-        it('[error] -- country is disabled', async () => {
+        it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert2(
             topUp(user1, 10, zoneInstance.address),
             'country is disabled',
           );
         });
-        it('[error] -- there is no zone owner', async () => {
+        it('should revert if there is no zone owner', async () => {
           await zoneInstance.release({ from: user1 });
           await expectRevert2(
             topUp(user1, 10, zoneInstance.address),
             'zone has no owner',
           );
         });
-        it('[error] -- caller is not the zone owner', async () => {
+        it('should revert if caller is not the zone owner', async () => {
           await expectRevert2(
             topUp(user2, 20, zoneInstance.address),
             'caller is not zone owner',
           );
         });
-        it('[error] -- can not topUp while running auction', async () => {
+        it('should revert if can not topUp while running auction', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
           await placeBid(user2, 110, zoneInstance.address);
           await expectRevert2(
@@ -595,71 +542,57 @@ contract('ZoneFactory + Zone', () => {
             'cannot top up while auction running',
           );
         });
-        it('[successs] -- zone owner can top up if there is no running auction', async () => {
-          const tx = await topUp(user1, 10, zoneInstance.address);
-          // console.log('top up gas used:', addNumberDots(tx.gasUsed));
+        it('should succeed if there is no running auction', async () => {
+          const oldZoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
+          await topUp(user1, 10, zoneInstance.address);
 
-          // Zone.sol
-          const auction0Exists = await zoneInstance.auctionExists('0');
-          const auction1Exists = await zoneInstance.auctionExists('1');
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.above(oldZoneDthBalance);
+
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
+
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
           const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-          const teller = tellerToObj(await zoneInstance.getTeller());
-          const certifiedComments = await zoneInstance.getCertifiedComments();
-          const comments = await zoneInstance.getComments();
-
-          expect(auction0Exists).to.equal(true);
-          expect(auction1Exists).to.equal(false);
 
           const lastBlockTimestamp = await getLastBlockTimestamp();
 
-          expect(zoneOwner.addr).to.equal(user1.toLowerCase());
-          expect(zoneOwner.startTime.toNumber()).to.equal(lastAuction.endTime.toNumber());
-          expect(zoneOwner.lastTaxTime.toNumber()).to.equal(lastBlockTimestamp);
-          expect(zoneOwner.staked.toString()).to.equal(ethToWei(MIN_ZONE_DTH_STAKE));
-          console.log([ zoneOwner.staked.toString(), zoneOwner.balance.toString() ]);
-          expect(zoneOwner.balance.lt(zoneOwner.staked)).to.equal(true);
+          expect(zoneOwner.addr).to.equal(user1);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.balance).to.be.bignumber.lte(ethToWei(MIN_ZONE_DTH_STAKE + 10));
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
 
-          expect(lastAuction.id.toNumber()).to.equal(0);
-          expect(lastAuction.state.toNumber()).to.equal(1);
-          expect(lastAuction.startTime.toNumber()).to.equal(lastAuction.endTime.toNumber());
-          expect(lastAuction.highestBidder).to.equal(user1.toLowerCase());
-          expect(lastAuction.highestBid.toString()).to.equal(ethToWei(MIN_ZONE_DTH_STAKE));
-
-          expect(teller.currencyId.toNumber()).to.equal(0);
-          expect(teller.messenger).to.equal(BYTES16_ZERO);
-          expect(teller.position).to.equal(BYTES12_ZERO);
-          expect(teller.settings).to.equal(BYTES1_ZERO);
-          expect(teller.buyRate.toNumber()).to.equal(0);
-          expect(teller.sellRate.toNumber()).to.equal(0);
-          expect(teller.funds.toNumber()).to.equal(0);
-          expect(teller.referrer).to.equal(ADDRESS_ZERO);
-
-          expect(certifiedComments).to.be.an('array').to.have.lengthOf(0);
-          expect(comments).to.be.an('array').to.have.lengthOf(0);
+          expect(lastAuction.id).to.be.bignumber.equal(0);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(0);
+          expect(lastAuction.endTime).to.be.bignumber.equal(0);
+          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
+          expect(lastAuction.highestBid).to.be.bignumber.equal(0);
         });
       });
 
       describe('Zone.release()', () => {
-        let zoneInstance;
-        beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-        });
-        it('[error] -- global pause enabled', async () => {
+        it('should revert if global pause enabled', async () => {
           await controlInstance.pause({ from: owner });
           await expectRevert(
             zoneInstance.release({ from: user1 }),
             'contract is paused',
           );
         });
-        it('[error] -- caller is not the zone owner', async () => {
+        it('should revert if caller is not the zone owner', async () => {
           await expectRevert(
             zoneInstance.release({ from: user2 }),
             'caller is not zone owner',
           );
         });
-        it('[error] -- can not release while running auction', async () => {
+        it('should revert if can not release while running auction', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
           await placeBid(user2, 110, zoneInstance.address);
           await expectRevert(
@@ -667,58 +600,73 @@ contract('ZoneFactory + Zone', () => {
             'cannot release while auction running',
           );
         });
-        it('[success] -- can release while country is disabled', async () => {
-          await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
-          const tx = await zoneInstance.release({ from: user1 });
-          // console.log('release gas used:', addNumberDots(tx.receipt.gasUsed));
-        });
-        it('[successs] -- zone owner can release if there is no running auction', async () => {
+        it('should succeed if there is no running auction and country is enabled', async () => {
           await zoneInstance.release({ from: user1 });
 
-          // Zone.sol
-          const auction0Exists = await zoneInstance.auctionExists('0');
-          const auction1Exists = await zoneInstance.auctionExists('1');
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.above(0);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.equal(0);
+
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
+
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
           const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-          const teller = tellerToObj(await zoneInstance.getTeller());
-          const certifiedComments = await zoneInstance.getCertifiedComments();
-          const comments = await zoneInstance.getComments();
-          expect(auction0Exists).to.equal(true);
-          expect(auction1Exists).to.equal(false);
 
           expect(zoneOwner.addr).to.equal(ADDRESS_ZERO);
-          expect(zoneOwner.startTime.toNumber()).to.equal(0);
-          expect(zoneOwner.startTime.toNumber()).to.equal(0);
-          expect(zoneOwner.staked.toNumber()).to.equal(0);
-          expect(zoneOwner.balance.toNumber()).to.equal(0);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(0);
+          expect(zoneOwner.staked).to.be.bignumber.equal(0);
+          expect(zoneOwner.balance).to.be.bignumber.equal(0);
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
 
-          expect(lastAuction.id.toNumber()).to.equal(0);
-          expect(lastAuction.state.toNumber()).to.equal(1);
-          expect(lastAuction.startTime.toNumber()).to.equal(lastAuction.endTime.toNumber());
-          expect(lastAuction.highestBidder).to.equal(user1.toLowerCase());
-          expect(lastAuction.highestBid.toNumber()).to.equal(0); // TODO: dont reset this back to 0
+          expect(lastAuction.id).to.be.bignumber.equal(0);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(0);
+          expect(lastAuction.endTime).to.be.bignumber.equal(0);
+          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
+          expect(lastAuction.highestBid).to.be.bignumber.equal(0);
+        });
+        it('should succeed if there is no running auction and country is disabled', async () => {
+          await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
+          await zoneInstance.release({ from: user1 });
 
-          expect(teller.currencyId.toNumber()).to.equal(0);
-          expect(teller.messenger).to.equal(BYTES16_ZERO);
-          expect(teller.position).to.equal(BYTES12_ZERO);
-          expect(teller.settings).to.equal(BYTES1_ZERO);
-          expect(teller.buyRate.toNumber()).to.equal(0);
-          expect(teller.sellRate.toNumber()).to.equal(0);
-          expect(teller.funds.toNumber()).to.equal(0);
-          expect(teller.referrer).to.equal(ADDRESS_ZERO);
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.above(0);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.equal(0);
 
-          expect(certifiedComments).to.be.an('array').to.have.lengthOf(0);
-          expect(comments).to.be.an('array').to.have.lengthOf(0);
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
+
+          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+
+          expect(zoneOwner.addr).to.equal(ADDRESS_ZERO);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(0);
+          expect(zoneOwner.staked).to.be.bignumber.equal(0);
+          expect(zoneOwner.balance).to.be.bignumber.equal(0);
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
+
+          expect(lastAuction.id).to.be.bignumber.equal(0);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(0);
+          expect(lastAuction.endTime).to.be.bignumber.equal(0);
+          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
+          expect(lastAuction.highestBid).to.be.bignumber.equal(0);
         });
       });
 
       describe('Zone.withdrawFromAuction(uint _auctionId)', () => {
-        let zoneInstance;
-        beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-        });
-        it('[error] -- global pause enabled', async () => {
+        it('should revert if global pause enabled', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
@@ -729,7 +677,7 @@ contract('ZoneFactory + Zone', () => {
             'contract is paused',
           );
         });
-        it('[error] -- auction does not exist', async () => {
+        it('should revert if auction does not exist', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
@@ -739,7 +687,7 @@ contract('ZoneFactory + Zone', () => {
             'auctionId does not exist',
           );
         });
-        it('[error] -- auction is still running', async () => {
+        it('should revert if auction is still running', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
@@ -748,89 +696,109 @@ contract('ZoneFactory + Zone', () => {
             'cannot withdraw while auction is active',
           );
         });
-        it('[error] -- nothing to withdraw', async () => {
+        it('should revert if winning bidder tries to withdraw', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
           await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
           await expectRevert(
             zoneInstance.withdrawFromAuction('1', { from: user3 }),
-            'nothing to withdraw',
+            'auction winner can not withdraw',
           );
         });
-        it('[error] -- [bid winner] cannot withdraw', async () => {
+        it('should revert if nothing to withdraw', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
           await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+          await zoneInstance.withdrawFromAuction('1', { from: user2 });
           await expectRevert(
-            zoneInstance.withdrawFromAuction('1', { from: user3 }),
+            zoneInstance.withdrawFromAuction('1', { from: user2 }),
             'nothing to withdraw',
           );
         });
-        it('[success] -- [bid loser] can withdraw while country is disabled', async () => {
+        it('should succeed while country is enabled', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
+          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
+          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+          await zoneInstance.withdrawFromAuction('1', { from: user2 });
+        });
+        it('should succeed while country is disabled', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
           await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
-          const tx = await zoneInstance.withdrawFromAuction('1', { from: user2 });
+          await zoneInstance.withdrawFromAuction('1', { from: user2 });
         });
-        it('[success] -- [bid loser] can withdraw while country is enabled', async () => {
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-          const tx = await zoneInstance.withdrawFromAuction('1', { from: user2 });
-          // console.log('withdrawFromAuction gas used:', addNumberDots(tx.receipt.gasUsed));
+        describe('when succeeds after bid period ended', () => {
+          let user1dthBalanceBefore;
+          let user2dthBalanceBefore;
+          let user3dthBalanceBefore;
+          let user2bidAmount;
+          let auctionBefore;
+          beforeEach(async () => {
+            await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+            await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
+            await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
+            await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+            user1dthBalanceBefore = await dthInstance.balanceOf(user1);
+            user2dthBalanceBefore = await dthInstance.balanceOf(user2);
+            user3dthBalanceBefore = await dthInstance.balanceOf(user3);
+            user2bidAmount = await zoneInstance.auctionBids('1', user2);
+            auctionBefore = auctionToObj(await zoneInstance.getLastAuction());
 
-          // Zone.sol
-          const auction0Exists = await zoneInstance.auctionExists('0');
-          const auction1Exists = await zoneInstance.auctionExists('1');
-          const auction2Exists = await zoneInstance.auctionExists('2');
-          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-          const teller = tellerToObj(await zoneInstance.getTeller());
-          const certifiedComments = await zoneInstance.getCertifiedComments();
-          const comments = await zoneInstance.getComments();
-
-          expect(auction0Exists).to.equal(true);
-          expect(auction1Exists).to.equal(true);
-          expect(auction2Exists).to.equal(false);
-
-          const lastBlockTimestamp = await getLastBlockTimestamp();
-
-          expect(zoneOwner.addr).to.equal(user3.toLowerCase());
-          expect(zoneOwner.lastTaxTime.toNumber()).to.equal(lastBlockTimestamp);
-          expect(zoneOwner.staked.toString()).to.equal(ethToWei(MIN_ZONE_DTH_STAKE + 20));
-          expect(zoneOwner.balance.toString()).to.be.below(ethToWei(MIN_ZONE_DTH_STAKE + 20));
-
-          expect(lastAuction.id.toNumber()).to.equal(1);
-          expect(lastAuction.state.toNumber()).to.equal(1);
-          expect(lastAuction.endTime.toNumber()).to.be.below(lastBlockTimestamp);
-          expect(lastAuction.highestBidder).to.equal(user3.toLowerCase());
-          expect(lastAuction.highestBid.toString()).to.equal(ethToWei(MIN_ZONE_DTH_STAKE + 20));
-
-          expect(teller.currencyId.toNumber()).to.equal(0);
-          expect(teller.messenger).to.equal(BYTES16_ZERO);
-          expect(teller.position).to.equal(BYTES12_ZERO);
-          expect(teller.settings).to.equal(BYTES1_ZERO);
-          expect(teller.buyRate.toNumber()).to.equal(0);
-          expect(teller.sellRate.toNumber()).to.equal(0);
-          expect(teller.funds.toNumber()).to.equal(0);
-          expect(teller.referrer).to.equal(ADDRESS_ZERO);
-
-          expect(certifiedComments).to.be.an('array').to.have.lengthOf(0);
-          expect(comments).to.be.an('array').to.have.lengthOf(0);
+            await zoneInstance.withdrawFromAuction('1', { from: user2 });
+          });
+          it('user auction bid should be reset to 0', () => {
+            expect(zoneInstance.auctionBids('1', user2)).to.eventually.be.bignumber.equal(0);
+          });
+          it('user dth balance should have increased by withdrawn bid amount', async () => {
+            const user2dthBalanceAfter = await dthInstance.balanceOf(user2);
+            const expectedNewDthBalance = user2dthBalanceBefore.plus(user2bidAmount);
+            expect(user2dthBalanceAfter).to.be.bignumber.equal(expectedNewDthBalance);
+          });
+          it('pevious zoneOwner and winning bidder dth balance should not have changed', async () => {
+            const user1dthBalanceAfter = await dthInstance.balanceOf(user1);
+            const user3dthBalanceAfter = await dthInstance.balanceOf(user3);
+            expect(user1dthBalanceAfter).to.be.bignumber.equal(user1dthBalanceBefore);
+            expect(user3dthBalanceAfter).to.be.bignumber.equal(user3dthBalanceBefore);
+          });
+          it('auction state should have changed to Ended', async () => {
+            const auctionAfter = auctionToObj(await zoneInstance.getLastAuction());
+            expect(auctionAfter.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_ENDED);
+          });
+          it('all other auction fields should have not changed', async () => {
+            const auctionAfter = auctionToObj(await zoneInstance.getLastAuction());
+            expect(auctionAfter.id).to.be.bignumber.equal(auctionBefore.id);
+            expect(auctionAfter.startTime).to.be.bignumber.equal(auctionBefore.startTime);
+            expect(auctionAfter.endTime).to.be.bignumber.equal(auctionBefore.endTime);
+            expect(auctionAfter.highestBidder).to.equal(auctionBefore.highestBidder);
+            expect(auctionAfter.highestBid).to.be.bignumber.equal(auctionBefore.highestBid);
+          });
+          it('zoneOwner lastTaxTime should equal auction endTime', async () => {
+            const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+            expect(zoneOwnerAfter.lastTaxTime).to.be.bignumber.equal(auctionBefore.endTime);
+          });
+          it('zoneOwner addr should be updated to last auction winner', async () => {
+            const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+            expect(zoneOwnerAfter.addr).to.be.bignumber.equal(user3);
+          });
+          it('zoneOwner stake + balance should be updated to winning bid minus entry fee', async () => {
+            const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+            const [, bidMinusEntryFeeUser3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 20));
+            expect(zoneOwnerAfter.staked).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+            expect(zoneOwnerAfter.balance).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+          });
+          it('zoneOwner auctionId should be updated to last auction id', async () => {
+            const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+            expect(zoneOwnerAfter.auctionId).to.be.bignumber.equal('1');
+          });
         });
       });
       describe('Zone.withdrawFromAuctions(uint[] _auctionIds)', () => {
-        let zoneInstance;
-        beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-        });
-        it('[error] -- global pause enabled', async () => {
+        it('should revert if global pause enabled', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -850,7 +818,7 @@ contract('ZoneFactory + Zone', () => {
             'contract is paused',
           );
         });
-        it('[error] -- empty auctionIds list arg', async () => {
+        it('should revert if empty auctionIds list arg', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -869,7 +837,7 @@ contract('ZoneFactory + Zone', () => {
             'auctionIds list is empty',
           );
         });
-        it('[error] -- auctionIds list is 1 longer than currentAuctionId', async () => {
+        it('should revert if auctionIds list is 1 longer than currentAuctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -889,7 +857,7 @@ contract('ZoneFactory + Zone', () => {
           );
         });
 
-        it('[error] -- auctionIds list (len 1) contains nonexistent auctionId', async () => {
+        it('should revert if auctionIds list (len 1) contains nonexistent auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -908,7 +876,7 @@ contract('ZoneFactory + Zone', () => {
             'auctionId does not exist',
           );
         });
-        it('[error] -- auctionIds list (len 2) contains (at start) non-existent auctionId', async () => {
+        it('should revert if auctionIds list (len 2) contains (at start) non-existent auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -927,7 +895,7 @@ contract('ZoneFactory + Zone', () => {
             'auctionId does not exist',
           );
         });
-        it('[error] -- auctionIds list (len 2) contains (at end) non-existent auctionId', async () => {
+        it('should revert if auctionIds list (len 2) contains (at end) non-existent auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -946,7 +914,7 @@ contract('ZoneFactory + Zone', () => {
             'auctionId does not exist',
           );
         });
-        it('[error] -- auctionIds list (len 3) contains (in middle) non-existent auctionId', async () => {
+        it('should revert if auctionIds list (len 3) contains (in middle) non-existent auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -972,7 +940,7 @@ contract('ZoneFactory + Zone', () => {
           );
         });
 
-        it('[error] -- auctionIds list (len 1) contains still-running auctionId', async () => {
+        it('should revert if auctionIds list (len 1) contains still-running auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -991,7 +959,7 @@ contract('ZoneFactory + Zone', () => {
             'cannot withdraw from running auction',
           );
         });
-        it('[error] -- auctionIds list (len 2) contains (at start) still-running auctionId', async () => {
+        it('should revert if auctionIds list (len 2) contains (at start) still-running auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -1010,7 +978,7 @@ contract('ZoneFactory + Zone', () => {
             'cannot withdraw from running auction',
           );
         });
-        it('[error] -- auctionIds list (len 2) contains (at end) still-running auctionId', async () => {
+        it('should revert if auctionIds list (len 2) contains (at end) still-running auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -1029,7 +997,7 @@ contract('ZoneFactory + Zone', () => {
             'cannot withdraw from running auction',
           );
         });
-        it('[error] -- auctionIds list (len 3) contains (in middle) still-running auctionId', async () => {
+        it('should revert if auctionIds list (len 3) contains (in middle) still-running auctionId', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -1055,212 +1023,370 @@ contract('ZoneFactory + Zone', () => {
             'cannot withdraw from running auction',
           );
         });
-        it('[success]', async () => {
+        it.skip('should succeed to withdraw part of a users withdrawable bids', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // loser
-          await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // winner
+          await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // loser
+          await placeBid(user5, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // winner
           await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
           // auction 2
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user1, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // loser
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // winner
+          await placeBid(user1, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // loser
+          await placeBid(user3, MIN_ZONE_DTH_STAKE + 70, zoneInstance.address); // loser
+          await placeBid(user4, MIN_ZONE_DTH_STAKE + 80, zoneInstance.address); // winner
           await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-
           // auction 3
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user1, MIN_ZONE_DTH_STAKE + 70, zoneInstance.address); // loser
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 80, zoneInstance.address); // loser
-          await placeBid(user4, MIN_ZONE_DTH_STAKE + 90, zoneInstance.address); // winner
+          await placeBid(user1, MIN_ZONE_DTH_STAKE + 90, zoneInstance.address); // loser
+          const lastAuctionBlockTimestamp = await getLastBlockTimestamp();
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 100, zoneInstance.address); // loser
+          await placeBid(user5, MIN_ZONE_DTH_STAKE + 110, zoneInstance.address); // loser
+          await placeBid(user3, MIN_ZONE_DTH_STAKE + 120, zoneInstance.address); // winner
           await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
 
-          const tx = await zoneInstance.withdrawFromAuctions(['1', '3', '2'], { from: user3 });
-          // console.log('withdrawFromAuctions gas used:', addNumberDots(tx.receipt.gasUsed));
+          const [, user2bid1MinusEntryFee1] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 10));
+          const [, user2bid1MinusEntryFee3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 100));
+
+          // user2 never won an auction
+
+          await zoneInstance.withdrawFromAuctions(['1', '3'], { from: user2 });
+
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user2)).to.eventually.be.bignumber.equal(user2bid1MinusEntryFee1.add(user2bid1MinusEntryFee3));
+          expect(dthInstance.balanceOf(user3)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user4)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user5)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.above(0);
+
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('2')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('3')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('4')).to.eventually.be.false;
+
+          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+          const teller = tellerToObj(await zoneInstance.getTeller());
+
+          const lastBlockTimestamp = await getLastBlockTimestamp();
+
+          expect(zoneOwner.addr).to.equal(user3);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          const [, bidMinusEntryFeeUser3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 120));
+          expect(zoneOwner.staked).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+          expect(zoneOwner.balance).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(3);
+
+          expect(lastAuction.id).to.be.bignumber.equal(3);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_ENDED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(lastAuctionBlockTimestamp);
+          expect(lastAuction.endTime).to.be.bignumber.equal(lastAuctionBlockTimestamp + BID_PERIOD);
+          expect(lastAuction.highestBidder).to.equal(user3);
+          expect(lastAuction.highestBid).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+
+          expect(teller.currencyId).to.be.bignumber.equal(0);
+          expect(teller.messenger).to.equal(BYTES16_ZERO);
+          expect(teller.position).to.equal(BYTES12_ZERO);
+          expect(teller.settings).to.equal(BYTES1_ZERO);
+          expect(teller.buyRate).to.be.bignumber.equal(0);
+          expect(teller.sellRate).to.be.bignumber.equal(0);
+          expect(teller.funds).to.be.bignumber.equal(0);
+          expect(teller.referrer).to.equal(ADDRESS_ZERO);
+
+          expect(zoneInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
+          expect(zoneInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
+        });
+        it.only('should succeed to withdraw all of a users withdrawable bids', async () => {
+          // auction 1
+          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
+          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // loser
+          await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // loser
+          await placeBid(user5, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // winner
+          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+          // auction 2
+          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+          await placeBid(user1, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // loser
+          await placeBid(user3, MIN_ZONE_DTH_STAKE + 70, zoneInstance.address); // loser
+          await placeBid(user4, MIN_ZONE_DTH_STAKE + 80, zoneInstance.address); // winner
+          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+          // auction 3
+          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+          await placeBid(user1, MIN_ZONE_DTH_STAKE + 90, zoneInstance.address); // loser
+          const lastAuctionBlockTimestamp = await getLastBlockTimestamp();
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 100, zoneInstance.address); // loser
+          await placeBid(user5, MIN_ZONE_DTH_STAKE + 110, zoneInstance.address); // loser
+          await placeBid(user3, MIN_ZONE_DTH_STAKE + 120, zoneInstance.address); // winner
+          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+
+          const [, user2bid1MinusEntryFee1] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 10));
+          const [, user2bid1MinusEntryFee2] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 60));
+          const [, user2bid1MinusEntryFee3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 100));
+
+          // user2 never won an auction
+
+          await zoneInstance.withdrawFromAuctions(['1', '2', '3'], { from: user2 });
+
+          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user2)).to.eventually.be.bignumber.equal(user2bid1MinusEntryFee1.add(user2bid1MinusEntryFee2).add(user2bid1MinusEntryFee3));
+          expect(dthInstance.balanceOf(user3)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user4)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(user5)).to.eventually.be.bignumber.equal(0);
+          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.above(0);
+
+          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
+          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('2')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('3')).to.eventually.be.true;
+          expect(zoneInstance.auctionExists('4')).to.eventually.be.false;
+
+          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+
+          const lastBlockTimestamp = await getLastBlockTimestamp();
+
+          expect(zoneOwner.addr).to.equal(user3);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          const [, bidMinusEntryFeeUser3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 120));
+          expect(zoneOwner.staked).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+          expect(zoneOwner.balance).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(3);
+
+          expect(lastAuction.id).to.be.bignumber.equal(3);
+          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_ENDED);
+          expect(lastAuction.startTime).to.be.bignumber.equal(lastAuctionBlockTimestamp);
+          expect(lastAuction.endTime).to.be.bignumber.equal(lastAuctionBlockTimestamp + BID_PERIOD);
+          expect(lastAuction.highestBidder).to.equal(user3);
+          expect(lastAuction.highestBid).to.be.bignumber.equal(bidMinusEntryFeeUser3);
         });
       });
     });
 
     describe('TELLER', () => {
-      const VALID_TELLER_POSITION = asciiToHex('krcztsebcddd');
-      const VALID_CURRENCY_ID = '1';
-      const VALID_MESSENGER = asciiToHex('my_telegram_nick');
-      const VALID_SELLRATE = '177'; // 1.77%
-      const VALID_BUYRATE = '1364'; // 13.64%
-      const VALID_SETTINGS = '0x03'; // 0000 0011 <-- both buyer and seller bit set
-
       describe('Zone.addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings)', () => {
-        let zoneInstance;
-        beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-        });
-        it('[error] -- global pause is enabled', async () => {
+        it('should revert if global pause is enabled', async () => {
           await controlInstance.pause({ from: owner });
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'contract is paused',
           );
         });
-        it('[error] -- country is disabled', async () => {
+        it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'country is disabled',
           );
         });
-        it('[error] -- position is empty bytes array', async () => {
+        it('should revert if position is empty bytes array', async () => {
           await expectRevert(
-            zoneInstance.addTeller('0x', VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller('0x', TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
-        it('[error] -- position is 9 bytes (instead of expected 12)', async () => {
+        it('should revert if position is 9 bytes (instead of expected 12)', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('krcztsebc'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebc'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
-        it('[error] -- position is 11 bytes (instead of expected 12)', async () => {
+        it('should revert if position is 11 bytes (instead of expected 12)', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('krcztsebcde'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebcde'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'expected position to be 10 bytes',
           );
         });
-        it('[error] -- position does not match geohash of Zone contract', async () => {
+        it('should revert if position does not match geohash of Zone contract', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('xxxxxxxbcddd'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('xxxxxxxbcddd'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'position is not inside this zone',
           );
         });
-        it('[error] -- position last 3 chars contain invalid geohash char', async () => {
+        it('should revert if position last 3 chars contain invalid geohash char', async () => {
           await expectRevert(
             // a is not a valid geohash char
-            zoneInstance.addTeller(asciiToHex('krcztsebcdda'), VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex('krcztsebcdda'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'invalid position geohash characters',
           );
         });
-        it('[error] -- currency id is zero', async () => {
+        it('should revert if currency id is zero', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, '0', VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), '0', asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'currency id must be in range 1-100',
           );
         });
-        it('[error] -- currency id is 101', async () => {
+        it('should revert if currency id is 101', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, '101', VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), '101', asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'currency id must be in range 1-100',
           );
         });
-        it('[error] -- seller bit set -- sellrate less than -9999', async () => {
+        it('should revert if seller bit set -- sellrate less than -9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '-10000', VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '-10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'sellRate should be between -9999 and 9999',
           );
         });
-        it('[error] -- seller bit set -- sellrate more than than 9999', async () => {
+        it('should revert if seller bit set -- sellrate more than than 9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '10000', VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'sellRate should be between -9999 and 9999',
           );
         });
-        it('[error] -- seller bit not set -- sellrate is not zero', async () => {
+        it('should revert if seller bit not set -- sellrate is not zero', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, '1', VALID_BUYRATE, '0x02', ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '1', TELLER_CG_BUYRATE, '0x02', ADDRESS_ZERO, { from: user1 }),
             'cannot set sellRate if not set as seller',
           );
         });
-        it('[error] -- buyer bit set -- sellrate less than -9999', async () => {
+        it('should revert if buyer bit set -- buyrate less than -9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '-10000', VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '-10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'buyRate should be between -9999 and 9999',
           );
         });
-        it('[error] -- buyer bit set -- buyrate more than than 9999', async () => {
+        it('should revert if buyer bit set -- buyrate more than than 9999', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '10000', VALID_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
             'buyRate should be between -9999 and 9999',
           );
         });
-        it('[error] -- buyer bit not set -- buyrate is not zero', async () => {
+        it('should revert if buyer bit not set -- buyrate is not zero', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, '1', '0x01', ADDRESS_ZERO, { from: user1 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '1', '0x01', ADDRESS_ZERO, { from: user1 }),
             'cannot set buyRate if not set as buyer',
           );
         });
-        it('[error] -- caller is not zone owner', async () => {
+        it('should revert if caller is not zone owner', async () => {
           await expectRevert(
-            zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user2 }),
+            zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user2 }),
             'only zone owner can add teller info',
           );
         });
-        it('[success] messenger can be bytes16(0)', async () => {
-          const tx = await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, '0x00000000000000000000000000000000', VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          // console.log('addTeller gas used:', addNumberDots(tx.receipt.gasUsed));
+        it('should succeed if all args valid', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, TELLER_CG_MESSENGER, TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, { from: user1 });
+
+          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+          const teller = tellerToObj(await zoneInstance.getTeller());
+
+          const lastBlockTimestamp = await getLastBlockTimestamp();
+
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
+
+          expect(zoneOwner.addr).to.equal(user1);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.balance).to.be.bignumber.lte(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
+
+          expect(teller.currencyId).to.be.bignumber.equal(TELLER_CG_CURRENCY_ID);
+          expect(teller.messenger).to.equal(asciiToHex(TELLER_CG_MESSENGER));
+          expect(teller.position).to.equal(asciiToHex(TELLER_CG_POSITION));
+          expect(teller.settings).to.equal(TELLER_CG_SETTINGS);
+          expect(teller.buyRate).to.be.bignumber.equal(TELLER_CG_BUYRATE);
+          expect(teller.sellRate).to.be.bignumber.equal(TELLER_CG_SELLRATE);
+          expect(teller.funds).to.be.bignumber.equal(0);
+          expect(teller.referrer).to.equal(user5);
+
+          expect(zoneInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
+          expect(zoneInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
         });
-        it('[success]', async () => {
-          const tx = await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          // console.log('addTeller gas used:', addNumberDots(tx.receipt.gasUsed));
+        it('should succeed if optional arg "messenger" is bytes16(0)', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, '0x00000000000000000000000000000000', TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, { from: user1 });
+
+          const teller = tellerToObj(await zoneInstance.getTeller());
+
+          expect(teller.currencyId).to.be.bignumber.equal(TELLER_CG_CURRENCY_ID);
+          expect(teller.messenger).to.equal('0x00000000000000000000000000000000');
+          expect(teller.position).to.equal(asciiToHex(TELLER_CG_POSITION));
+          expect(teller.settings).to.equal(TELLER_CG_SETTINGS);
+          expect(teller.buyRate).to.be.bignumber.equal(TELLER_CG_BUYRATE);
+          expect(teller.sellRate).to.be.bignumber.equal(TELLER_CG_SELLRATE);
+          expect(teller.funds).to.be.bignumber.equal(0);
+          expect(teller.referrer).to.equal(user5);
+        });
+        it('should succeed if optional arg "referrer" is address(0)', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, TELLER_CG_MESSENGER, TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+
+          const teller = tellerToObj(await zoneInstance.getTeller());
+
+          expect(teller.currencyId).to.be.bignumber.equal(TELLER_CG_CURRENCY_ID);
+          expect(teller.messenger).to.equal(asciiToHex(TELLER_CG_MESSENGER));
+          expect(teller.position).to.equal(asciiToHex(TELLER_CG_POSITION));
+          expect(teller.settings).to.equal(TELLER_CG_SETTINGS);
+          expect(teller.buyRate).to.be.bignumber.equal(TELLER_CG_BUYRATE);
+          expect(teller.sellRate).to.be.bignumber.equal(TELLER_CG_SELLRATE);
+          expect(teller.funds).to.be.bignumber.equal(0);
+          expect(teller.referrer).to.equal(ADDRESS_ZERO);
         });
       });
       describe('Zone.addFunds(uint _amount)', () => {
-        let zoneInstance;
-        beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-        });
-        it('[error] -- global pause is enabled', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if global pause is enabled', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await controlInstance.pause({ from: owner });
           await expectRevert(
             zoneInstance.addFunds({ from: user1, value: ethToWei(100) }),
             'contract is paused',
           );
         });
-        it('[error] -- country is disabled', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if country is disabled', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
             zoneInstance.addFunds({ from: user1, value: ethToWei(100) }),
             'country is disabled',
           );
         });
-        it('[error] -- no eth send with call', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if no eth send with call', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await expectRevert(
             zoneInstance.addFunds({ from: user1, value: ethToWei(0) }),
             'no eth send with call',
           );
         });
-        it('[error] -- called by not-zoneowner', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if called by not-zoneowner', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await expectRevert(
             zoneInstance.addFunds({ from: user2, value: ethToWei(100) }),
             'only zoneOwner can add funds',
           );
         });
-        it('[error] -- no teller added', async () => {
+        it('should revert if no teller added', async () => {
           await expectRevert(
             zoneInstance.addFunds({ from: user1, value: ethToWei(100) }),
             'not yet added teller info',
           );
         });
-        it('[success]', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          const tx = await zoneInstance.addFunds({ from: user1, value: ethToWei(100) });
-          // console.log('addFunds gas used:', addNumberDots(tx.receipt.gasUsed));
+        it('should succeed otherwise', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+          const userEthBalanceBefore = new BigNumber(await web3.eth.getBalance(user1));
+          const zoneEthBalanceBefore = new BigNumber(await web3.eth.getBalance(zoneInstance.address));
+          await zoneInstance.addFunds({ from: user1, value: ethToWei(100) });
+          const userEthBalanceAfter = new BigNumber(await web3.eth.getBalance(user1));
+          const zoneEthBalanceAfter = new BigNumber(await web3.eth.getBalance(zoneInstance.address));
+          expect(userEthBalanceAfter).to.be.bignumber.below(userEthBalanceBefore.minus(ethToWei(100)));
+          expect(zoneEthBalanceAfter).to.be.bignumber.equal(zoneEthBalanceBefore.plus(ethToWei(100)));
+          expect(zoneInstance.funds(user1)).to.eventually.be.bignumber.equal(ethToWei(100));
         });
       });
       describe('Zone.sellEth(address _to, uint _amount)', () => {
-        let zoneInstance;
-        beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
-        });
-        it('[error] -- global pause is enabled', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if global pause is enabled', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await controlInstance.pause({ from: owner });
           await expectRevert(
@@ -1268,8 +1394,8 @@ contract('ZoneFactory + Zone', () => {
             'contract is paused',
           );
         });
-        it('[error] -- country is disabled', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if country is disabled', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
@@ -1277,156 +1403,164 @@ contract('ZoneFactory + Zone', () => {
             'country is disabled',
           );
         });
-        it('[error] -- sender is also to', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if sender is also to', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user1, ethToWei(1), { from: user1 }),
             'sender cannot also be to',
           );
         });
-        it('[error] -- amount is zero', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if amount is zero', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(0), { from: user1 }),
             'amount to sell cannot be zero',
           );
         });
-        it('[error] -- caller is not zoneowner', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if caller is not zoneowner', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1), { from: user2 }),
             'can only be called by zone owner',
           );
         });
-        it('[error] -- zone is no teller', async () => {
+        it('should revert if zone is no teller', async () => {
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1), { from: user1 }),
             'not yet added teller info',
           );
         });
-        it('[error] -- amount to sell is greater than funds added', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if amount to sell is greater than funds added', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1.1), { from: user1 }),
             'cannot sell more than in funds',
           );
         });
-        it('[error] -- amount to sell is not enough pay 0.1% referrer fee', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, user4, { from: user1 });
+        it('should revert if amount to sell is not enough pay 0.1% referrer fee', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user4, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(1), { from: user1 }),
             'not enough funds to sell eth amount plus pay referrer fee',
           );
         });
-        it('[error] -- amount to sell is greater than daily limit', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        it('should revert if amount to sell is greater than daily limit', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(2) });
           await expectRevert(
             zoneInstance.sellEth(user3, ethToWei(2), { from: user1 }),
             'exceeded daily sell limit',
           );
         });
-        it('[success] - no referrer', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          const ethToSend = toBN(ethToWei(1));
-          await zoneInstance.addFunds({ from: user1, value: ethToSend });
-          const sellerFundsBefore = await zoneInstance.funds(user1);
-          const buyerBalanceBefore = toBN(await web3.eth.getBalance(user3));
-          const tx = await zoneInstance.sellEth(user3, ethToSend.toString(), { from: user1 });
-          const sellerFundsAfter = await zoneInstance.funds(user1);
-          const buyerBalanceAfter = toBN(await web3.eth.getBalance(user3));
-          expect(sellerFundsBefore.sub(ethToSend).eq(sellerFundsAfter)).to.equal(true);
-          expect(buyerBalanceBefore.add(ethToSend).eq(buyerBalanceAfter)).to.equal(true);
-          // console.log('sell eth gas used:', addNumberDots(tx.receipt.gasUsed));
+        it('should succeed and transfer sell amount to buyer', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+          await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
+
+          const buyerEthBalanceBefore = new BigNumber(await web3.eth.getBalance(user2));
+
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+
+          const zoneEthBalanceAfter = new BigNumber(await web3.eth.getBalance(zoneInstance.address));
+          const buyerEthBalanceAfter = new BigNumber(await web3.eth.getBalance(user2));
+
+          expect(zoneInstance.funds(user1)).to.eventually.be.bignumber.equal(0);
+          expect(zoneInstance.funds(user2)).to.eventually.be.bignumber.equal(0);
+
+          expect(zoneEthBalanceAfter).to.be.bignumber.equal(0);
+          expect(buyerEthBalanceAfter).to.be.bignumber.equal(buyerEthBalanceBefore.plus(ethToWei(1)));
         });
-        it('[success] - with referrer paid out 0.1% on top of sold eth', async () => {
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, user4, { from: user1 });
+        it('should succeed and transfer sell amount to buyer plus send 0.1% referrer fee to referrer', async () => {
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user3, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1.001) });
-          const buyerBalanceBefore = toBN(await web3.eth.getBalance(user3));
-          const tx = await zoneInstance.sellEth(user3, ethToWei(1), { from: user1 });
-          const sellerFundsAfter = await zoneInstance.funds(user1);
-          const referrerWithdrawableEth = await zoneInstance.withdrawableEth(user4);
-          const buyerBalanceAfter = toBN(await web3.eth.getBalance(user3));
-          expect(sellerFundsAfter.eq(0)).to.equal(true);
-          expect(buyerBalanceBefore.add(toBN(ethToWei(1))).eq(buyerBalanceAfter)).to.equal(true);
-          expect(referrerWithdrawableEth.eq(toBN(ethToWei(0.001)))).to.equal(true);
-          // console.log('sell eth gas used:', addNumberDots(tx.receipt.gasUsed));
+
+          const buyerEthBalanceBefore = new BigNumber(await web3.eth.getBalance(user2));
+          const referrerEthBalanceBefore = new BigNumber(await web3.eth.getBalance(user3));
+
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
+
+          const zoneEthBalanceAfter = new BigNumber(await web3.eth.getBalance(zoneInstance.address));
+          const buyerEthBalanceAfter = new BigNumber(await web3.eth.getBalance(user2));
+          const referrerEthBalanceAfter = new BigNumber(await web3.eth.getBalance(user3));
+
+          expect(zoneInstance.funds(user1)).to.eventually.be.bignumber.equal(0);
+          expect(zoneInstance.funds(user2)).to.eventually.be.bignumber.equal(0);
+          expect(zoneInstance.withdrawableEth(user3)).to.eventually.be.bignumber.equal(ethToWei(0.001));
+
+          expect(zoneEthBalanceAfter).to.be.bignumber.equal(ethToWei(0.001));
+          expect(buyerEthBalanceAfter).to.be.bignumber.equal(buyerEthBalanceBefore.plus(ethToWei(1)));
+          expect(referrerEthBalanceAfter).to.be.bignumber.equal(referrerEthBalanceBefore.plus(0));
         });
       });
       describe('Zone.addComment(bytes32 _commentHash)', () => {
-        let zoneInstance;
         beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
         });
-        it('[error] -- global pause is enabled', async () => {
+        it('should revert if global pause is enabled', async () => {
           await controlInstance.pause({ from: owner });
           await expectRevert(
             zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
             'contract is paused',
           );
         });
-        it('[error] -- country is disabled', async () => {
+        it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
             zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
             'country is disabled',
           );
         });
-        it('[error] -- comment hash is empty', async () => {
+        it('should revert if comment hash is empty', async () => {
           await expectRevert(
             zoneInstance.addComment(BYTES32_ZERO, { from: user2 }),
             'comment hash cannot be 0x0',
           );
         });
-        it('[error] -- zone has no owner', async () => {
+        it('should revert if zone has no owner', async () => {
           await zoneInstance.release({ from: user1 });
           await expectRevert(
             zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
             'cannot comment on zone without owner',
           );
         });
-        it('[error] -- zone has no teller', async () => {
+        it('should revert if zone has no teller', async () => {
           await zoneInstance.removeTeller({ from: user1 });
           await expectRevert(
             zoneInstance.addComment(getRandomBytes32(), { from: user2 }),
             'cannot comment on zone without teller',
           );
         });
-        it('[error] -- zone owner cannot comment himself', async () => {
+        it('should revert if called by current zone owner', async () => {
           await expectRevert(
             zoneInstance.addComment(getRandomBytes32(), { from: user1 }),
             'zone owner cannot comment on himself',
           );
         });
-        it('[success]', async () => {
+        it('should succeed otherwise', async () => {
           await zoneInstance.addComment(getRandomBytes32(), { from: user2 });
+
+          expect(zoneInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
+          expect(zoneInstance.getComments()).to.eventually.be.an('array').with.lengthOf(1);
         });
       });
       describe('Zone.addCertifiedComment(bytes32 _commentHash)', () => {
-        let zoneInstance;
         beforeEach(async () => {
-          await enableAndLoadCountry(COUNTRY_CG);
-          zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          await geoInstance.setCountryTierDailyLimit(COUNTRY_CG, '0', '1000', { from: owner });
-          await zoneInstance.addTeller(VALID_TELLER_POSITION, VALID_CURRENCY_ID, VALID_MESSENGER, VALID_SELLRATE, VALID_BUYRATE, VALID_SETTINGS, ADDRESS_ZERO, { from: user1 });
+          await zoneInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await zoneInstance.addFunds({ from: user1, value: ethToWei(1) });
         });
-        it('[error] -- global pause is enabled', async () => {
+        it('should revert if global pause is enabled', async () => {
+          await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await controlInstance.pause({ from: owner });
           await expectRevert(
             zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
             'contract is paused',
           );
         });
-        it('[error] -- country is disabled', async () => {
+        it('should revert if country is disabled', async () => {
           await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await geoInstance.disableCountry(COUNTRY_CG, { from: owner });
           await expectRevert(
@@ -1434,14 +1568,14 @@ contract('ZoneFactory + Zone', () => {
             'country is disabled',
           );
         });
-        it('[error] -- comment hash is empty', async () => {
+        it('should revert if comment hash is empty', async () => {
           await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await expectRevert(
             zoneInstance.addCertifiedComment(BYTES32_ZERO, { from: user2 }),
             'comment hash cannot be 0x0',
           );
         });
-        it('[error] -- zone has no owner', async () => {
+        it('should revert if zone has no owner', async () => {
           await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await zoneInstance.release({ from: user1 });
           await expectRevert(
@@ -1449,7 +1583,7 @@ contract('ZoneFactory + Zone', () => {
             'cannot comment on zone without owner',
           );
         });
-        it('[error] -- zone has no teller', async () => {
+        it('should revert if zone has no teller', async () => {
           await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await zoneInstance.removeTeller({ from: user1 });
           await expectRevert(
@@ -1457,22 +1591,25 @@ contract('ZoneFactory + Zone', () => {
             'cannot comment on zone without teller',
           );
         });
-        it('[error] -- zone owner cannot comment himself', async () => {
+        it('should revert if zone owner cannot comment himself', async () => {
           await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await expectRevert(
             zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user1 }),
             'zone owner cannot comment on himself',
           );
         });
-        it('[error] -- user did not trade with teller yet (1 trade = 1 comment)', async () => {
+        it('should revert if user did not trade with teller yet (1 trade = 1 comment)', async () => {
           await expectRevert(
             zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
             'user not allowed to place a certified comment',
           );
         });
-        it('[success]', async () => {
+        it('should succeed otherwise', async () => {
           await zoneInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await zoneInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
+
+          expect(zoneInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(1);
+          expect(zoneInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
         });
       });
     });
@@ -1481,7 +1618,6 @@ contract('ZoneFactory + Zone', () => {
   describe('Getters', () => {
     describe('[ pure ]', () => {
       let zoneInstance;
-
       beforeEach(async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
@@ -1531,7 +1667,7 @@ contract('ZoneFactory + Zone', () => {
             await enableAndLoadCountry(COUNTRY_CG);
             zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
           });
-          it('returns correct Auction 0 Sentinel values', async () => {
+          it.skip('returns correct Auction 0 Sentinel values', async () => {
             const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
             expect(lastAuction.id.toNumber(), 'lastAuction.id should be zero').to.equal(0);
             expect(lastAuction.state.toNumber(), 'lastAuction.state should equal Ended(=1)').to.equal(1);

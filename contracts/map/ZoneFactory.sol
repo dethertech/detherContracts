@@ -6,11 +6,11 @@ import "../dth/IDetherToken.sol";
 import "../core/IUsers.sol";
 import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
+import "./IZone.sol";
 
-// will be deployed by this factory so we need the entire contract
-import "./Zone.sol";
+import "../eip1167/CloneFactory.sol";
 
-contract ZoneFactory is Ownable {
+contract ZoneFactory is Ownable, CloneFactory {
 
   // ------------------------------------------------
   //
@@ -28,6 +28,8 @@ contract ZoneFactory is Ownable {
   IUsers public users;
   IControl public control;
 
+  address public zoneImplementation;
+
   // ------------------------------------------------
   //
   // Events
@@ -42,7 +44,7 @@ contract ZoneFactory is Ownable {
   //
   // ------------------------------------------------
 
-  constructor(address _dth, address _geo, address _users, address _control)
+  constructor(address _dth, address _geo, address _users, address _control, address _zoneImplementation)
     public
   {
     require(_dth != address(0), "dth address cannot be 0x0");
@@ -54,6 +56,8 @@ contract ZoneFactory is Ownable {
     geo = IGeoRegistry(_geo);
     users = IUsers(_users);
     control = IControl(_control);
+
+    zoneImplementation = _zoneImplementation;
   }
 
   // ------------------------------------------------
@@ -190,18 +194,21 @@ contract ZoneFactory is Ownable {
     require(geo.countryIsEnabled(country), "country is disabled");
     require(geo.zoneInsideCountry(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
-    
+
     // create/deploy the new zone
-    geohashToZone[geohash] = new Zone(
+    address newZone = createClone(zoneImplementation);
+    IZone(newZone).init(
       country, geohash, sender, dthAmount,
       address(dth), address(geo), address(users), address(control), address(this)
     );
 
-    zoneToGeohash[geohashToZone[geohash]] = geohash;
+    // store references
+    geohashToZone[geohash] = newZone;
+    zoneToGeohash[newZone] = geohash;
 
     // send all dth through to the new Zone contract
-    dth.transfer(geohashToZone[geohash], dthAmount, hex"40");
+    dth.transfer(newZone, dthAmount, hex"40");
 
-    emit ZoneFactoryCreatedZone(geohashToZone[geohash], geohash, sender, dthAmount);
+    emit ZoneFactoryCreatedZone(newZone, geohash, sender, dthAmount);
   }
 }

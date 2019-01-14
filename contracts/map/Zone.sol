@@ -8,9 +8,9 @@ import "../core/IUsers.sol";
 import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
 import "./IZoneFactory.sol";
-// import "./IZone.sol"; TODO
+import "./IZone.sol";
 
-contract Zone is ERC223ReceivingContract {
+contract Zone is ERC223ReceivingContract, IZone {
   // ------------------------------------------------
   //
   // Library init
@@ -43,6 +43,7 @@ contract Zone is ERC223ReceivingContract {
     uint staked;
     uint balance;
     uint lastTaxTime;
+    uint auctionId;
   }
 
   struct Auction {
@@ -94,6 +95,8 @@ contract Zone is ERC223ReceivingContract {
   //
   // ------------------------------------------------
 
+  bool inited = false;
+
   IDetherToken public dth;
   IGeoRegistry public geo;
   IUsers public users;
@@ -106,7 +109,7 @@ contract Zone is ERC223ReceivingContract {
   mapping(address => uint) public withdrawableDth;
   mapping(address => uint) public withdrawableEth;
 
-  uint public currentAuctionId;
+  uint public currentAuctionId; // starts at 0, first auction will get id 1, etc.
 
   //      auctionId       bidder     dthAmount
   mapping(uint => mapping(address => uint)) public auctionBids;
@@ -137,12 +140,21 @@ contract Zone is ERC223ReceivingContract {
 
   // ------------------------------------------------
   //
+  // Modifiers
+  //
+  // ------------------------------------------------
+
+  modifier onlyWhenInited() { require(inited == true, "contract not yet initialized"); _; }
+  modifier onlyWhenNotInited() { require(inited == false, "contract already initialized"); _; }
+
+  // ------------------------------------------------
+  //
   // Constructor
   //
   // ------------------------------------------------
 
   // executed by ZoneFactory.sol when this Zone does not yet exist (= not yet deployed)
-  constructor(
+  function init(
     bytes2 _countryCode,
     bytes7 _geohash,
     address _zoneOwner,
@@ -153,7 +165,8 @@ contract Zone is ERC223ReceivingContract {
     address _control,
     address _zoneFactory
   )
-    public
+    onlyWhenNotInited
+    external
   {
     require(_dthAmount >= MIN_STAKE, "zone dth stake shoulld be at least minimum (100DTH)");
 
@@ -171,18 +184,12 @@ contract Zone is ERC223ReceivingContract {
     zoneOwner.staked = _dthAmount;
     zoneOwner.balance = _dthAmount;
     zoneOwner.lastTaxTime = now;
-
-    // create a Sentinel Auction for the user that first creates this Zone
-    Auction memory sentinelAuction = Auction({
-      state: AuctionState.Ended,
-      startTime: now,
-      endTime: now,
-      highestBidder: _zoneOwner // called by zoneFactory.createAndClaim, which passes msg.sender as _zoneOwner
-    });
-    auctionIdToAuction[currentAuctionId] = sentinelAuction;
+    zoneOwner.auctionId = 0; // was not gained by winning an auction
 
     emit ZoneCreated(address(this), _countryCode, _geohash, _dthAmount);
     emit ZoneOwnerUpdated(address(this), address(0), _zoneOwner);
+
+    inited = true;
   }
 
   // ------------------------------------------------
@@ -241,14 +248,15 @@ contract Zone is ERC223ReceivingContract {
   function getZoneOwner()
     external
     view
-    returns (address, uint, uint, uint, uint)
+    returns (address, uint, uint, uint, uint, uint)
   {
     return (
-      zoneOwner.addr,       // address of current owner
-      zoneOwner.startTime,  // time this address became owner
-      zoneOwner.staked,     // "price you sell at"
-      zoneOwner.balance,    // will decrease whenever harberger taxes are paid
-      zoneOwner.lastTaxTime // time until taxes have been paid
+      zoneOwner.addr,        // address of current owner
+      zoneOwner.startTime,   // time this address became owner
+      zoneOwner.staked,      // "price you sell at"
+      zoneOwner.balance,     // will decrease whenever harberger taxes are paid
+      zoneOwner.lastTaxTime, // time until taxes have been paid
+      zoneOwner.auctionId    // if gained by winning auction, the auction id, otherwise zero
     );
   }
 
@@ -261,8 +269,13 @@ contract Zone is ERC223ReceivingContract {
     Auction memory auction = auctionIdToAuction[_auctionId];
 
     uint highestBid = auctionBids[_auctionId][auction.highestBidder];
+
     // for current zone owner his existing zone stake is added to his bid
-    if (auction.highestBidder == zoneOwner.addr) highestBid = highestBid.add(zoneOwner.staked);
+    if (auction.state == AuctionState.Started &&
+        auction.highestBidder == zoneOwner.addr)
+    {
+      highestBid = highestBid.add(zoneOwner.staked);
+    }
 
     return (
       _auctionId,
@@ -374,11 +387,16 @@ contract Zone is ERC223ReceivingContract {
     delete commentsFree[zoneOwner.addr];
     delete commentsCertified[zoneOwner.addr];
 
+    withdrawableDth[zoneOwner.addr] = withdrawableDth[zoneOwner.addr].add(zoneOwner.balance);
+
+    _removeTeller(); // we do it here since it needs zoneOwner.addr
+
     zoneOwner.addr = address(0);
     zoneOwner.startTime = 0;
     zoneOwner.staked = 0;
     zoneOwner.balance = 0;
     zoneOwner.lastTaxTime = 0;
+    zoneOwner.auctionId = 0;
   }
 
   function _removeTeller()
@@ -386,6 +404,10 @@ contract Zone is ERC223ReceivingContract {
   {
     // we dont remove comments here, so that if zoneowner readds or repositions his teller,
     // his comments still exist.
+
+    withdrawableEth[zoneOwner.addr] = withdrawableEth[zoneOwner.addr].add(funds[zoneOwner.addr]);
+    funds[zoneOwner.addr] = 0;
+
     teller.currencyId = 0;
     teller.messenger = bytes16(0);
     teller.position = bytes12(0);
@@ -395,133 +417,184 @@ contract Zone is ERC223ReceivingContract {
     teller.referrer = address(0);
   }
 
-  function _handleTaxPayment()
+  function _forecloseZoneOwner()
     private
   {
-    Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
+    uint zoneOwnerBalance = zoneOwner.balance;
+    zoneOwner.balance = 0;
 
-    uint taxEndTime; // set depending on current auction state
-    uint taxStartTime = zoneOwner.lastTaxTime; // always keep track of time until taxes are paid
-    uint taxableAmount = zoneOwner.staked;     // you pay taxes over "the price you sell at"
+    _removeZoneOwner();
 
-    // Auction state did not change in this transaction/block!!
-    // current Auction is in state Started or Ended
-    if (lastAuction.state == AuctionState.Started) {
-      // if there is a current auction, taxes need to be paid until auction start time
-      taxEndTime = lastAuction.startTime;
-      if (taxStartTime == taxEndTime) {
-        return; // short-circuit: multiple txes in 1 block OR many blocks but in same Auction
-      }
-    } else if (lastAuction.state == AuctionState.Ended) {
-      // if there is NO current auction, measure tax until "now"
-      taxEndTime = now;
-      if (taxStartTime == taxEndTime) {
-        return; // short-circuit: multiple txes in 1 block
-      }
-    }
-    // ANY auction has to be in one of those 2 states, first auction ever (constructor()) starts in state Ended
+    dth.transfer(ADDRESS_BURN, zoneOwnerBalance);
+  }
 
-    uint taxAmount;
-    uint keepAmount;
-    (taxAmount, keepAmount) = calcHarbergerTax(taxStartTime, taxEndTime, taxableAmount);
+  function _payTaxZoneOwner(uint taxAmount, uint taxEndTime, bool inAuction)
+    private
+  {
+    zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
 
-    if (taxAmount >= zoneOwner.balance) {
-      // zone owner DOES NOT have anough balance to be owner any longer
-
-      // set tax amount to max he can pay
-      uint taxDebt = taxAmount.sub(zoneOwner.balance); // TODO: what to do with debt, just forget about it?
-      taxAmount = zoneOwner.balance;
-
-      emit ZoneOwnerTaxesPaid(zoneOwner.addr, taxStartTime, taxEndTime, taxAmount);
-      emit ZoneOwnerForeClosed(zoneOwner.addr, zoneOwner.startTime, taxEndTime, taxableAmount, taxDebt);
-
-      // reset zone owner to nobody, somebody can now call claimFreeZone() with 100DTH
-      _removeZoneOwner();
-      _removeTeller();
+    if (inAuction) {
+      // even though zone owner needs to pay taxes until auction.startTime,
+      // we set zoneOwner.lastTaxTime to auction.endTime since the zone owner
+      // does not have to pay taxes over the time when an auction is running
+      zoneOwner.lastTaxTime = auctionIdToAuction[currentAuctionId].endTime;
     } else {
-      // zone onwer has enough balance to pay his harberger taxes
-
-      zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
       zoneOwner.lastTaxTime = taxEndTime;
-
-      emit ZoneOwnerTaxesPaid(zoneOwner.addr, taxStartTime, taxEndTime, taxAmount);
     }
 
     dth.transfer(ADDRESS_BURN, taxAmount);
   }
 
-  function _handleAuctionEnd()
+  function _getTaxEndTime()
+    private
+    view
+    returns (uint taxEndTime, bool inAuction)
+  {
+    if (currentAuctionId > 0 && auctionIdToAuction[currentAuctionId].state == AuctionState.Started) {
+      taxEndTime = auctionIdToAuction[currentAuctionId].startTime;
+      inAuction = true;
+    } else {
+      taxEndTime = now;
+      inAuction = false;
+    }
+  }
+
+  function _handleTaxPayment()
+    private
+  {
+    (uint taxEndTime, bool inAuction) = _getTaxEndTime();
+
+    if (zoneOwner.lastTaxTime >= taxEndTime) {
+      return; // short-circuit: multiple txes in 1 block OR many blocks but in same Auction
+    }
+
+    (uint taxAmount, uint keepAmount) = calcHarbergerTax(zoneOwner.lastTaxTime, taxEndTime, zoneOwner.staked);
+
+    if (taxAmount >= zoneOwner.balance) {
+      _forecloseZoneOwner();
+    } else {
+      _payTaxZoneOwner(taxAmount, taxEndTime, inAuction);
+    }
+  }
+
+  function _extendZoneOwner(uint _winningBidAmount)
+    private
+  {
+    zoneOwner.staked = zoneOwner.staked.add(_winningBidAmount);
+    zoneOwner.balance = zoneOwner.balance.add(_winningBidAmount);
+
+    // need to set it since it might've been zero
+    zoneOwner.auctionId = currentAuctionId; // the auctionId that gave the zoneOwner zone ownership
+  }
+
+  function _changeZoneOwner(address _newZoneOwner, uint _winningBidAmount)
+    private
+  {
+    _removeZoneOwner();
+
+    uint auctionEndTime = auctionIdToAuction[currentAuctionId].endTime;
+
+    zoneOwner.addr = _newZoneOwner;
+    zoneOwner.startTime = auctionEndTime;
+    zoneOwner.lastTaxTime = auctionEndTime;
+    zoneOwner.staked = _winningBidAmount; // entry fee is already deducted when user calls bid()
+    zoneOwner.balance = _winningBidAmount;
+    zoneOwner.auctionId = currentAuctionId; // the auctionId that gave the zoneOwner zone ownership
+  }
+
+  function _endAuction()
     private
   {
     Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
 
-    // 1. update current Auction state to Ended
     lastAuction.state = AuctionState.Ended;
 
-    // 2. collect winning bidder address
-    address winningBidder = lastAuction.highestBidder;
+    uint highestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
 
-    // 3. collect winning bid amount
-    uint winningAmount = auctionBids[currentAuctionId][winningBidder];
-
-    // 4. reset winning bidders bid in Auction
-    auctionBids[currentAuctionId][winningBidder] = 0;
-
-    // 5. calc harberger tax of current zoneOwner
-    uint taxAmount;
-    uint keepAmount;
-    (taxAmount, keepAmount) = calcHarbergerTax(zoneOwner.lastTaxTime, lastAuction.startTime, zoneOwner.staked);
-
-    // 6. check if highest bidder is current zone owner or not
-    if (zoneOwner.addr == winningBidder) {
-      // 6a. highest bidder is current zone owner
-
-      // 6a.1 update zone owner info (current zone owner always has his stake amount added to all his bids)
-      zoneOwner.staked = zoneOwner.staked.add(winningAmount);
-      zoneOwner.balance = zoneOwner.balance.add(winningAmount);
-      zoneOwner.lastTaxTime = now;
+    if (zoneOwner.addr == lastAuction.highestBidder) {
+      _extendZoneOwner(highestBid);
     } else {
-      // 6b. winning bidder differs from current zone owner
-
-      address prevOwnerAddr = zoneOwner.addr;
-
-      // 6b.1 make the winnig bidder the new zoneOwner
-      zoneOwner.addr = winningBidder;
-      zoneOwner.startTime = lastAuction.endTime;
-      zoneOwner.staked = winningAmount; // entry fee is already deducted when user calls bid()
-      zoneOwner.balance = winningAmount;
-      zoneOwner.lastTaxTime = now;
-
-      // 6b.2 make left-over staked DTH of old zone owner withdrawable
-      withdrawableDth[prevOwnerAddr] = withdrawableDth[prevOwnerAddr].add(keepAmount);
-
-      // 6b.3 make added eth funds withdrawable
-      uint ethAmount = funds[prevOwnerAddr];
-      funds[prevOwnerAddr] = 0;
-      withdrawableEth[prevOwnerAddr] = withdrawableEth[prevOwnerAddr].add(ethAmount);
-
-      _removeTeller();
-
-      emit ZoneOwnerUpdated(address(this), prevOwnerAddr, winningBidder);
+      _changeZoneOwner(lastAuction.highestBidder, highestBid);
     }
-
-    // 7. burn the tax amount
-    dth.transfer(ADDRESS_BURN, taxAmount);
   }
 
   /// @notice private function to update the current auction state
   function _processState()
     private
   {
-    Auction memory lastAuction = auctionIdToAuction[currentAuctionId];
-
-    if (lastAuction.state == AuctionState.Started && now >= lastAuction.endTime) {
-      // current Auction is still set to Started and endTime has passed, we need to update it to Ended
-      _handleAuctionEnd();
-    } else if (zoneOwner.addr != address(0)) {
+    if (zoneOwner.addr != address(0)) {
       // there is currently a zone owner, check/handle his tax payment
       _handleTaxPayment();
     }
+
+    if (currentAuctionId > 0 &&
+        auctionIdToAuction[currentAuctionId].state == AuctionState.Started &&
+        now >= auctionIdToAuction[currentAuctionId].endTime)
+    {
+      // current Auction is still set to Started and endTime has passed, we need to update it to Ended
+      _endAuction();
+    }
+  }
+
+  function _joinAuction(address _sender, uint _dthAmount)
+    private
+  {
+    Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
+
+    //------------------------------------------------------------------------------//
+    // there is a running auction, lets see if we can join the auction with our bid //
+    //------------------------------------------------------------------------------//
+
+    require(_sender != lastAuction.highestBidder, "highest bidder cannot bid");
+
+    uint currentHighestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
+
+    if (_sender == zoneOwner.addr) {
+      uint dthAddedBidsAmount = auctionBids[currentAuctionId][_sender].add(_dthAmount); // NOTE: _dthAmount
+      // the current zone owner's stake also counts in his bid
+      require(zoneOwner.staked.add(dthAddedBidsAmount) > currentHighestBid, "bid + already staked is less than current highest");
+      auctionBids[currentAuctionId][_sender] = dthAddedBidsAmount;
+    } else {
+      // _sender is not the current zone owner
+      if (auctionBids[currentAuctionId][_sender] == 0) {
+        // this is the first bid of this challenger, deduct entry fee
+        (uint burnAmount, uint bidAmount) = calcEntryFee(_dthAmount);
+        require(bidAmount > currentHighestBid, "bid is less than current highest");
+        auctionBids[currentAuctionId][_sender] = bidAmount;
+        dth.transfer(ADDRESS_BURN, burnAmount);
+      } else {
+        // not the first bid, no entry fee
+        uint newUserTotalBid = auctionBids[currentAuctionId][_sender].add(_dthAmount);
+        require(newUserTotalBid > currentHighestBid, "bid is less than current highest");
+        auctionBids[currentAuctionId][_sender] = newUserTotalBid;
+      }
+    }
+
+    // it worked, _sender placed a bid
+    lastAuction.highestBidder = _sender;
+  }
+
+  function _createAuction(address _sender, uint _dthAmount)
+    private
+  {
+    require(_sender != zoneOwner.addr, "zoneowner cannot start an auction");
+
+    (uint burnAmount, uint bidAmount) = calcEntryFee(_dthAmount);
+    require(bidAmount > zoneOwner.staked, "bid is lower than current zone stake");
+
+    // save the new Auction
+    uint newAuctionId = ++currentAuctionId;
+
+    auctionIdToAuction[newAuctionId] = Auction({
+      state: AuctionState.Started,
+      startTime: now,
+      endTime: now.add(BID_PERIOD),
+      highestBidder: _sender // caller (challenger)
+    });
+
+    auctionBids[newAuctionId][_sender] = bidAmount;
+
+    dth.transfer(ADDRESS_BURN, burnAmount);
   }
 
   /// @notice private function to update the current auction state
@@ -530,68 +603,17 @@ contract Zone is ERC223ReceivingContract {
   {
     require(zoneOwner.addr != address(0), "cannot bid on zone without owner, use claimFreeZone()");
 
-    uint burnAmount;
-    uint bidAmount;
-
-    Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
-
-    if (lastAuction.state == AuctionState.Ended) {
-      //---------------------------------------------//
-      // let's see if sender can start a new Auction //
-      //---------------------------------------------//
-
-      require(now > lastAuction.endTime.add(COOLDOWN_PERIOD), "cooldown period did not end yet");
-      require(_sender != zoneOwner.addr, "zoneowner cannot start an auction");
-
-      (burnAmount, bidAmount) = calcEntryFee(_dthAmount);
-      require(bidAmount > zoneOwner.staked, "bid is lower than current zone stake");
-
-      // save the new Auction
-      uint newAuctionId = ++currentAuctionId;
-
-      auctionIdToAuction[newAuctionId] = Auction({
-        state: AuctionState.Started,
-        startTime: now,
-        endTime: now.add(BID_PERIOD),
-        highestBidder: _sender // caller (challenger)
-      });
-
-      auctionBids[newAuctionId][_sender] = bidAmount;
-
-      dth.transfer(ADDRESS_BURN, burnAmount);
-
-    } else if (lastAuction.state == AuctionState.Started) {
-      //------------------------------------------------------------------------------//
-      // there is a running auction, lets see if we can join the auction with our bid //
-      //------------------------------------------------------------------------------//
-
-      require(_sender != lastAuction.highestBidder, "highest bidder cannot bid");
-
-      uint currentHighestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
-
-      if (_sender == zoneOwner.addr) {
-        uint dthAddedBidsAmount = auctionBids[currentAuctionId][_sender].add(_dthAmount); // NOTE: _dthAmount
-        // the current zone owner's stake also counts in his bid
-        require(zoneOwner.staked.add(dthAddedBidsAmount) > currentHighestBid, "bid + already staked is less than current highest");
-        auctionBids[currentAuctionId][_sender] = dthAddedBidsAmount;
+    if (currentAuctionId > 0 && auctionIdToAuction[currentAuctionId].state == AuctionState.Started) {
+      _joinAuction(_sender, _dthAmount);
+    } else { // there currently is no running auction
+      if (zoneOwner.auctionId == 0) {
+        // current zone owner did not become owner by winning an auction, but by creating this zone or caliming it when it was free
+        require(now > zoneOwner.startTime.add(COOLDOWN_PERIOD), "cooldown period did not end yet");
       } else {
-        // _sender is not the current zone owner
-        if (auctionBids[currentAuctionId][_sender] == 0) {
-          // this is the first bid of this challenger, deduct entry fee
-          (burnAmount, bidAmount) = calcEntryFee(_dthAmount);
-          require(bidAmount > currentHighestBid, "bid is less than current highest");
-          auctionBids[currentAuctionId][_sender] = bidAmount;
-          dth.transfer(ADDRESS_BURN, burnAmount);
-        } else {
-          // not the first bid, no entry fee
-          uint newUserTotalBid = auctionBids[currentAuctionId][_sender].add(_dthAmount);
-          require(newUserTotalBid > currentHighestBid, "bid is less than current highest");
-          auctionBids[currentAuctionId][_sender] = newUserTotalBid;
-        }
+        // current zone owner became owner by winning an auction (which has ended)
+        require(now > auctionIdToAuction[currentAuctionId].endTime.add(COOLDOWN_PERIOD), "cooldown period did not end yet");
       }
-
-      // it worked, _sender placed a bid
-      lastAuction.highestBidder = _sender;
+      _createAuction(_sender, _dthAmount);
     }
   }
 
@@ -607,6 +629,7 @@ contract Zone is ERC223ReceivingContract {
     zoneOwner.staked = _dthAmount;
     zoneOwner.balance = _dthAmount;
     zoneOwner.lastTaxTime = now;
+    zoneOwner.auctionId = 0; // since it was not gained wby winning an auction
   }
 
   function _topUp(address _sender, uint _dthAmount) // GAS COST +/- 104.201
@@ -614,7 +637,7 @@ contract Zone is ERC223ReceivingContract {
   {
     require(zoneOwner.addr != address(0), "zone has no owner");
     require(_sender == zoneOwner.addr, "caller is not zone owner");
-    require(auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "cannot top up while auction running");
+    require(currentAuctionId == 0 || auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "cannot top up while auction running");
 
     uint oldBalance = zoneOwner.balance;
     uint newBalance = oldBalance.add(_dthAmount);
@@ -642,6 +665,7 @@ contract Zone is ERC223ReceivingContract {
   /// @param _value How much DTH was sent to this contract
   /// @param _data Additional bytes data sent
   function tokenFallback(address _from, uint _value, bytes _data)
+    onlyWhenInited
     public
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
@@ -670,6 +694,7 @@ contract Zone is ERC223ReceivingContract {
   /// @notice release zone ownership
   /// @dev can only be called by current zone owner, when there is no running auction
   function release() // GAS COST +/- 72.351
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");
@@ -679,9 +704,7 @@ contract Zone is ERC223ReceivingContract {
     _processState();
 
     require(msg.sender == zoneOwner.addr, "caller is not zone owner");
-    require(auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "cannot release while auction running");
-
-    Auction storage lastAuction = auctionIdToAuction[currentAuctionId];
+    require(currentAuctionId == 0 || auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "cannot release while auction running");
 
     uint ownerBalance = zoneOwner.balance;
 
@@ -699,16 +722,18 @@ contract Zone is ERC223ReceivingContract {
   /// @notice withdraw losing bids from a specific auction
   /// @param _auctionId The auction id
   function withdrawFromAuction(uint _auctionId) // GAS COST +/- 125.070
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");
     // even when country is disabled, otherwise users cannot withdraw their bids
 
-    require(_auctionId <= currentAuctionId, "auctionId does not exist");
+    require(_auctionId > 0 && _auctionId <= currentAuctionId, "auctionId does not exist");
 
     _processState();
 
     require(auctionIdToAuction[_auctionId].state == AuctionState.Ended, "cannot withdraw while auction is active");
+    require(auctionIdToAuction[_auctionId].highestBidder != msg.sender, "auction winner can not withdraw");
     require(auctionBids[_auctionId][msg.sender] > 0, "nothing to withdraw");
 
     uint withdrawAmount = auctionBids[_auctionId][msg.sender];
@@ -719,15 +744,16 @@ contract Zone is ERC223ReceivingContract {
 
   /// @notice withdraw from a given list of auction ids
   function withdrawFromAuctions(uint[] _auctionIds) // GAS COST +/- 127.070
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");
     // even when country is disabled, can withdraw
+    require(currentAuctionId > 0, "there are no auctions");
 
     _processState();
 
     require(_auctionIds.length > 0, "auctionIds list is empty");
-    // auction 0 cannot be withdrawn from
     require(_auctionIds.length <= currentAuctionId, "auctionIds list is longer than allowed");
 
     uint withdrawAmountTotal = 0;
@@ -736,6 +762,7 @@ contract Zone is ERC223ReceivingContract {
       uint auctionId = _auctionIds[idx];
       require(auctionId > 0 && auctionId <= currentAuctionId, "auctionId does not exist");
       require(auctionIdToAuction[auctionId].state == AuctionState.Ended, "cannot withdraw from running auction");
+      require(auctionIdToAuction[auctionId].highestBidder != msg.sender, "auction winner can not withdraw");
       uint withdrawAmount = auctionBids[auctionId][msg.sender];
       if (withdrawAmount > 0) {
         // if user supplies the same auctionId multiple times in auctionIds,
@@ -745,13 +772,13 @@ contract Zone is ERC223ReceivingContract {
       }
     }
 
-    // TODO: not throw here?
     require(withdrawAmountTotal > 0, "nothing to withdraw");
 
     dth.transfer(msg.sender, withdrawAmountTotal);
   }
 
   function withdrawDth()
+    onlyWhenInited
     external
   {
     uint dthWithdraw = withdrawableDth[msg.sender];
@@ -764,6 +791,7 @@ contract Zone is ERC223ReceivingContract {
   }
 
   function withdrawEth()
+    onlyWhenInited
     external
   {
     uint ethWithdraw = withdrawableEth[msg.sender];
@@ -788,6 +816,7 @@ contract Zone is ERC223ReceivingContract {
   // the first 7 bytes will be the geohash of this zone. But by requiring the full geohash
   // we can mkae more sure the user is talking to the right zone
   function addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings, address _referrer) // GAS COST +/- 75.301
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");
@@ -827,6 +856,7 @@ contract Zone is ERC223ReceivingContract {
   }
 
   function removeTeller()
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");
@@ -840,6 +870,7 @@ contract Zone is ERC223ReceivingContract {
 
   // called by Teller, adding ETH to Teller funds
   function addFunds() // GAS COST +/- 59.809
+    onlyWhenInited
     external
     payable
   {
@@ -858,6 +889,7 @@ contract Zone is ERC223ReceivingContract {
 
   // called by Teller, sending ETH from Zone to _to
   function sellEth(address _to, uint _amount) // GAS COST +/- 147.310
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");
@@ -888,6 +920,7 @@ contract Zone is ERC223ReceivingContract {
   }
 
   function addCertifiedComment(bytes32 _commentHash)
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");
@@ -907,6 +940,7 @@ contract Zone is ERC223ReceivingContract {
   }
 
   function addComment(bytes32 _commentHash)
+    onlyWhenInited
     external
   {
     require(control.paused() == false, "contract is paused");

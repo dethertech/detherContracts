@@ -33,6 +33,13 @@ const KLEROS_NO_RULING = 0;
 const ZONE_AUCTION_STATE_STARTED = 0;
 const ZONE_AUCTION_STATE_ENDED = 1;
 
+const TELLER_CG_POSITION = 'krcztsebcddd';
+const TELLER_CG_CURRENCY_ID = '1';
+const TELLER_CG_MESSENGER = 'my_telegram_nick';
+const TELLER_CG_SELLRATE = '177'; // 1.77%
+const TELLER_CG_BUYRATE = '1364'; // 13.64%
+const TELLER_CG_SETTINGS = '0x03'; // 0000 0011 <-- both buyer and seller bit set
+
 module.exports = {
   BYTES1_ZERO,
   BYTES7_ZERO,
@@ -68,4 +75,11 @@ module.exports = {
 
   ZONE_AUCTION_STATE_STARTED,
   ZONE_AUCTION_STATE_ENDED,
+
+  TELLER_CG_POSITION,
+  TELLER_CG_CURRENCY_ID,
+  TELLER_CG_MESSENGER,
+  TELLER_CG_SELLRATE,
+  TELLER_CG_BUYRATE,
+  TELLER_CG_SETTINGS,
 };
