@@ -47,6 +47,7 @@ contract Shops is IArbitrable {
   }
 
   struct ShopDispute {
+    uint id;
     address shop;
     address challenger;
     uint disputeType;
@@ -81,6 +82,8 @@ contract Shops is IArbitrable {
 
   //      geohash7    shopAddresses
   mapping(bytes7 =>   address[]) public zoneToShopAddresses;
+
+  mapping(address => uint) public withdrawableDth;
 
   // ------------------------------------------------
   //
@@ -326,7 +329,7 @@ contract Shops is IArbitrable {
     require(geo.validGeohashChars12(position), "invalid geohash characters in position");
     require(geo.zoneInsideCountry(country, bytes4(position)), "zone is not inside country");
 
-    require(_value >= countryLicensePrice[country], "send dth is less than shop license price");
+    require(dthAmount >= countryLicensePrice[country], "send dth is less than shop license price");
 
     // create new entry in storage
     Shop storage shop = shopAddressToShop[sender];
@@ -370,16 +373,14 @@ contract Shops is IArbitrable {
     }
   }
 
-  function removeShop(bytes12 _position)
+  function removeShop()
     external
   {
     require(control.paused() == false, "contract is paused");
     require(users.getUserTier(msg.sender) > 0, "user not certified");
     // if country is disabled, user can still remove his shop!
 
-    require(_position != bytes12(0), "position cannot be bytes12(0)");
-    require(shopAddressToShop[msg.sender].position == _position, "caller does not own shop at position");
-
+    require(shopAddressToShop[msg.sender].position != bytes12(0), "caller does not own shop");
     require(shopAddressToShop[msg.sender].hasDispute == false, "cannot remove shop while in dispute");
 
     uint shopStake = shopAddressToShop[msg.sender].staked;
@@ -462,23 +463,24 @@ contract Shops is IArbitrable {
   function getDispute(uint _disputeID)
     public
     view
-    returns (address, address, uint, uint, uint)
+    returns (uint, address, address, uint, uint, uint)
   {
     ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
     return (
+      dispute.id,
       dispute.shop,
       dispute.challenger,
       dispute.disputeType,
 
       // from arbitrator contract or this contract if finalized
-      uint(getDisputeRuling(_disputeID)),
-      uint(getDisputeStatus(_disputeID))
+      uint(getDisputeRuling(dispute.id)),
+      uint(getDisputeStatus(dispute.id))
     );
   }
 
   // called by somebody who wants to start a dispute with a shop
-  function createDispute(bytes12 _position, uint _metaEvidenceId, string _evidenceLink)
+  function createDispute(address _shopAddress, uint _metaEvidenceId, string _evidenceLink)
     public
     payable
   {
@@ -488,10 +490,9 @@ contract Shops is IArbitrable {
     require(_metaEvidenceId < disputeTypes.length, "dispute type does not exist");
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
 
-    address shopAddress = positionToShopAddress[_position];
-    require(shopAddress != address(0), "no shop at that position");
-    require(shopAddressToShop[msg.sender].position != _position, "shop owner cannot start dispute on own shop");
-    require(shopAddressToShop[shopAddress].hasDispute == false, "shop already has a dispute");
+    require(_shopAddress != address(0), "shop does not exist");
+    require(msg.sender != _shopAddress, "shop owner cannot start dispute on own shop");
+    require(shopAddressToShop[_shopAddress].hasDispute == false, "shop already has a dispute");
 
     uint arbitrationCost = getDisputeCreateCost();
     require(msg.value >= arbitrationCost, "sent eth is lower than arbitration cost");
@@ -500,13 +501,14 @@ contract Shops is IArbitrable {
 
     // create new Dispute
     ShopDispute storage dispute = disputeIdToDispute[disputeID];
+    dispute.id = disputeID;
     dispute.challenger = msg.sender;
-    dispute.shop = shopAddress;
+    dispute.shop = _shopAddress;
     dispute.disputeType = _metaEvidenceId;
     dispute.ruling = RulingOptions.NoRuling;
     dispute.status = Arbitrator.DisputeStatus.Waiting;
 
-    Shop storage shop = shopAddressToShop[shopAddress];
+    Shop storage shop = shopAddressToShop[_shopAddress];
     shop.hasDispute = true; // disputeID could theoretically be zero, so we need this to know if a dispute exists
     shop.disputeID = disputeID;
 
@@ -518,7 +520,7 @@ contract Shops is IArbitrable {
   }
 
 
-  function appealDispute(uint _disputeID, string _evidenceLink)
+  function appealDispute(address _shopAddress, string _evidenceLink)
     external
     payable
   {
@@ -527,11 +529,13 @@ contract Shops is IArbitrable {
 
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
 
-    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
-    require(dispute.shop != address(0), "dispute does not exist");
-    require(getDisputeStatus(_disputeID) == Arbitrator.DisputeStatus.Appealable, "dispute is not appealable");
+    Shop storage shop = shopAddressToShop[_shopAddress];
+    require(shop.hasDispute == true, "shop has no active dispute");
 
-    RulingOptions currentRuling = getDisputeRuling(_disputeID);
+    ShopDispute storage dispute = disputeIdToDispute[shop.disputeID];
+    require(getDisputeStatus(dispute.id) == Arbitrator.DisputeStatus.Appealable, "dispute is not appealable");
+
+    RulingOptions currentRuling = getDisputeRuling(dispute.id);
     if (currentRuling == RulingOptions.ShopWins) {
       require(msg.sender == dispute.challenger, "shop ruled to win, only challenger can appeal");
     } else if (currentRuling == RulingOptions.ChallengerWins) {
@@ -540,12 +544,12 @@ contract Shops is IArbitrable {
       require(msg.sender == dispute.challenger, "no ruling given, only challenger can appeal");
     }
 
-    uint appealCost = arbitrator.appealCost(_disputeID, arbitratorExtraData);
+    uint appealCost = arbitrator.appealCost(dispute.id, arbitratorExtraData);
     require(msg.value >= appealCost, "sent eth is lower than appeal cost");
 
-    arbitrator.appeal.value(appealCost)(_disputeID, arbitratorExtraData);
+    arbitrator.appeal.value(appealCost)(dispute.id, arbitratorExtraData);
 
-    emit Evidence(arbitrator, _disputeID, msg.sender, _evidenceLink);
+    emit Evidence(arbitrator, dispute.id, msg.sender, _evidenceLink);
 
     uint excessEth = appealCost.sub(msg.value);
     if (excessEth > 0) msg.sender.transfer(excessEth);
@@ -555,6 +559,18 @@ contract Shops is IArbitrable {
     private
   {
     delete disputeIdToDispute[_disputeID];
+  }
+
+  function withdrawDth()
+    external
+  {
+    uint dthWithdraw = withdrawableDth[msg.sender];
+    require(dthWithdraw > 0, "nothing to withdraw");
+
+    if (dthWithdraw > 0) {
+      withdrawableDth[msg.sender] = 0;
+      dth.transfer(msg.sender, dthWithdraw);
+    }
   }
 
   // called by rule() which is called by Kleros Arbitrator contract
@@ -578,13 +594,17 @@ contract Shops is IArbitrable {
       deleteShop(dispute.shop);
       deleteDispute(_disputeID);
 
-      dth.transfer(challenger, shopStake);
+      // dispute winner can now withdraw this shops zone dth stake
+      withdrawableDth[challenger] = withdrawableDth[challenger].add(shopStake);
     } else if (finalRuling == RulingOptions.NoRuling) {
       shop.hasDispute = false;
       shop.disputeID = 0;
 
       deleteDispute(_disputeID);
     }
+
+    dispute.status = Arbitrator.DisputeStatus.Solved;
+    dispute.ruling = finalRuling;
   }
   function rule(uint _disputeID, uint _ruling)
     public

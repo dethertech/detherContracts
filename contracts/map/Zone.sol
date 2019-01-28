@@ -73,7 +73,7 @@ contract Zone is ERC223ReceivingContract, IZone {
   //
   // ------------------------------------------------
 
-  uint private constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
+  uint public constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
   uint private constant BID_PERIOD = 24 * 1 hours;
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
   uint private constant ENTRY_FEE_PERCENTAGE = 1; // 1%
@@ -95,7 +95,7 @@ contract Zone is ERC223ReceivingContract, IZone {
   //
   // ------------------------------------------------
 
-  bool inited = false;
+  bool inited;
 
   IDetherToken public dth;
   IGeoRegistry public geo;
@@ -144,14 +144,26 @@ contract Zone is ERC223ReceivingContract, IZone {
   //
   // ------------------------------------------------
 
-  modifier onlyWhenInited() { require(inited == true, "contract not yet initialized"); _; }
-  modifier onlyWhenNotInited() { require(inited == false, "contract already initialized"); _; }
+  modifier onlyWhenInited() {
+    // NOTE: somehow if w add an error message, we get 'out of gas' on deploy?!
+    // require(inited == true);
+    require(inited == true, "contract not yet initialized");
+    _;
+  }
+  modifier onlyWhenNotInited() {
+    require(inited == false, "contract already initialized");
+    _;
+  }
 
   // ------------------------------------------------
   //
   // Constructor
   //
   // ------------------------------------------------
+
+  constructor() public {
+
+  }
 
   // executed by ZoneFactory.sol when this Zone does not yet exist (= not yet deployed)
   function init(
@@ -389,7 +401,7 @@ contract Zone is ERC223ReceivingContract, IZone {
 
     withdrawableDth[zoneOwner.addr] = withdrawableDth[zoneOwner.addr].add(zoneOwner.balance);
 
-    _removeTeller(); // we do it here since it needs zoneOwner.addr
+    if (teller.position != bytes12(0)) _removeTeller(); // we do it here since it needs zoneOwner.addr
 
     zoneOwner.addr = address(0);
     zoneOwner.startTime = 0;
@@ -417,89 +429,28 @@ contract Zone is ERC223ReceivingContract, IZone {
     teller.referrer = address(0);
   }
 
-  function _forecloseZoneOwner()
-    private
-  {
-    uint zoneOwnerBalance = zoneOwner.balance;
-    zoneOwner.balance = 0;
-
-    _removeZoneOwner();
-
-    dth.transfer(ADDRESS_BURN, zoneOwnerBalance);
-  }
-
-  function _payTaxZoneOwner(uint taxAmount, uint taxEndTime, bool inAuction)
-    private
-  {
-    zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
-
-    if (inAuction) {
-      // even though zone owner needs to pay taxes until auction.startTime,
-      // we set zoneOwner.lastTaxTime to auction.endTime since the zone owner
-      // does not have to pay taxes over the time when an auction is running
-      zoneOwner.lastTaxTime = auctionIdToAuction[currentAuctionId].endTime;
-    } else {
-      zoneOwner.lastTaxTime = taxEndTime;
-    }
-
-    dth.transfer(ADDRESS_BURN, taxAmount);
-  }
-
-  function _getTaxEndTime()
-    private
-    view
-    returns (uint taxEndTime, bool inAuction)
-  {
-    if (currentAuctionId > 0 && auctionIdToAuction[currentAuctionId].state == AuctionState.Started) {
-      taxEndTime = auctionIdToAuction[currentAuctionId].startTime;
-      inAuction = true;
-    } else {
-      taxEndTime = now;
-      inAuction = false;
-    }
-  }
-
   function _handleTaxPayment()
     private
   {
-    (uint taxEndTime, bool inAuction) = _getTaxEndTime();
+    // processState ensured that: no running auction + there is a zone owner
 
-    if (zoneOwner.lastTaxTime >= taxEndTime) {
+    if (zoneOwner.lastTaxTime >= now) {
       return; // short-circuit: multiple txes in 1 block OR many blocks but in same Auction
     }
 
-    (uint taxAmount, uint keepAmount) = calcHarbergerTax(zoneOwner.lastTaxTime, taxEndTime, zoneOwner.staked);
+    (uint taxAmount, uint keepAmount) = calcHarbergerTax(zoneOwner.lastTaxTime, now, zoneOwner.staked);
 
     if (taxAmount >= zoneOwner.balance) {
-      _forecloseZoneOwner();
+      // zone owner does not have enough balance, remove him as zone owner
+      uint oldZoneOwnerBalance = zoneOwner.balance;
+      _removeZoneOwner();
+      dth.transfer(ADDRESS_BURN, oldZoneOwnerBalance);
     } else {
-      _payTaxZoneOwner(taxAmount, taxEndTime, inAuction);
+      // zone owner can pay due taxes
+      zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
+      zoneOwner.lastTaxTime = now;
+      dth.transfer(ADDRESS_BURN, taxAmount);
     }
-  }
-
-  function _extendZoneOwner(uint _winningBidAmount)
-    private
-  {
-    zoneOwner.staked = zoneOwner.staked.add(_winningBidAmount);
-    zoneOwner.balance = zoneOwner.balance.add(_winningBidAmount);
-
-    // need to set it since it might've been zero
-    zoneOwner.auctionId = currentAuctionId; // the auctionId that gave the zoneOwner zone ownership
-  }
-
-  function _changeZoneOwner(address _newZoneOwner, uint _winningBidAmount)
-    private
-  {
-    _removeZoneOwner();
-
-    uint auctionEndTime = auctionIdToAuction[currentAuctionId].endTime;
-
-    zoneOwner.addr = _newZoneOwner;
-    zoneOwner.startTime = auctionEndTime;
-    zoneOwner.lastTaxTime = auctionEndTime;
-    zoneOwner.staked = _winningBidAmount; // entry fee is already deducted when user calls bid()
-    zoneOwner.balance = _winningBidAmount;
-    zoneOwner.auctionId = currentAuctionId; // the auctionId that gave the zoneOwner zone ownership
   }
 
   function _endAuction()
@@ -510,29 +461,43 @@ contract Zone is ERC223ReceivingContract, IZone {
     lastAuction.state = AuctionState.Ended;
 
     uint highestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
+    uint auctionEndTime = auctionIdToAuction[currentAuctionId].endTime;
 
     if (zoneOwner.addr == lastAuction.highestBidder) {
-      _extendZoneOwner(highestBid);
+      // current zone owner won the auction, extend his zone ownershp
+      zoneOwner.staked = zoneOwner.staked.add(highestBid);
+      zoneOwner.balance = zoneOwner.balance.add(highestBid);
+
+      // need to set it since it might've been zero
+      zoneOwner.auctionId = currentAuctionId; // the (last) auctionId that gave the zoneOwner zone ownership
     } else {
-      _changeZoneOwner(lastAuction.highestBidder, highestBid);
+      // we need to update the zone owner
+      _removeZoneOwner();
+
+      zoneOwner.addr = lastAuction.highestBidder;
+      zoneOwner.startTime = auctionEndTime;
+      zoneOwner.staked = highestBid; // entry fee is already deducted when user calls bid()
+      zoneOwner.balance = highestBid;
+      zoneOwner.auctionId = currentAuctionId; // the auctionId that gave the zoneOwner zone ownership
     }
+
+    // (new) zone owner needs to pay taxes from the moment he acquires zone ownership until now
+    (uint taxAmount, uint keepAmount) = calcHarbergerTax(auctionEndTime, now, zoneOwner.staked);
+    zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
+    zoneOwner.lastTaxTime = now;
   }
 
   /// @notice private function to update the current auction state
   function _processState()
     private
   {
-    if (zoneOwner.addr != address(0)) {
-      // there is currently a zone owner, check/handle his tax payment
-      _handleTaxPayment();
-    }
+    if (currentAuctionId > 0 && auctionIdToAuction[currentAuctionId].state == AuctionState.Started) {
+      // while uaction is running, no taxes need to be paid
 
-    if (currentAuctionId > 0 &&
-        auctionIdToAuction[currentAuctionId].state == AuctionState.Started &&
-        now >= auctionIdToAuction[currentAuctionId].endTime)
-    {
-      // current Auction is still set to Started and endTime has passed, we need to update it to Ended
-      _endAuction();
+      // handling of taxes around change of zone ownership are handled inside _endAuction
+      if (now >= auctionIdToAuction[currentAuctionId].endTime) _endAuction();
+    } else { // no running auction, currentAuctionId could be zero
+      if (zoneOwner.addr != address(0)) _handleTaxPayment();
     }
   }
 
@@ -892,6 +857,7 @@ contract Zone is ERC223ReceivingContract, IZone {
     onlyWhenInited
     external
   {
+    // NOTE: even users which are not registered in tier 1/2 -> sms/kyc, are allowed to sell eth
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
     require(msg.sender != _to, "sender cannot also be to");

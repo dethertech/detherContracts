@@ -10,7 +10,8 @@ module.exports = {
       host: 'localhost',
       port: 8545,
       network_id: '*', // Match any network id
-      gasPrice: 25000000000,
+      gasPrice: 20000000000,
+      gas: 6500000,
     },
     kovan: {
       provider: () => new HDWalletProvider(MNEMONIC, 'https://kovan.infura.io/'),
@@ -44,13 +45,19 @@ module.exports = {
       // gasPrice: 25000000000,
     },
   },
-  solc: {
+  // compilers: { // truffle v5
+  //   solc: {
+  //     version: '0.4.25',
+  //     optimizer: {
+  //       enabled: true,
+  //       runs: 200,
+  //     },
+  //   },
+  // },
+  solc: { // truffle v4
     optimizer: {
       enabled: true,
       runs: 200,
     },
-  },
-  mocha: {
-    useColors: true,
   },
 };

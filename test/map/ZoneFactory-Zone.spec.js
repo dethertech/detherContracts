@@ -116,7 +116,7 @@ const auctionToObjPretty = auctionArr => ({
   highestBid: auctionArr[5].toString(),
 });
 
-contract('ZoneFactory + Zone', () => {
+contract('ZoneFactory + Zone', (accounts) => {
   let owner;
   let user1;
   let user2;
@@ -138,7 +138,7 @@ contract('ZoneFactory + Zone', () => {
 
   before(async () => {
     __rootState__ = await timeTravel.saveState();
-    ([owner, user1, user2, user3, user4, user5] = (await web3.eth.getAccounts()).map(a => a.toLowerCase()));
+    ([owner, user1, user2, user3, user4, user5] = accounts);
   });
 
   beforeEach(async () => {
@@ -149,9 +149,7 @@ contract('ZoneFactory + Zone', () => {
     smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
     kycInstance = await KycCertifier.new(controlInstance.address, { from: owner });
     geoInstance = await GeoRegistry.new(controlInstance.address, { from: owner });
-
     zoneImplementationInstance = await Zone.new({ from: owner });
-
     usersInstance = await Users.new(
       priceInstance.address,
       geoInstance.address,
@@ -160,7 +158,6 @@ contract('ZoneFactory + Zone', () => {
       controlInstance.address,
       { from: owner },
     );
-
     zoneFactoryInstance = await ZoneFactory.new(
       dthInstance.address,
       geoInstance.address,
@@ -231,6 +228,7 @@ contract('ZoneFactory + Zone', () => {
   describe('>>> deploying a Zone', () => {
     describe('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
       it('should revert if global pause enabled', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
         await controlInstance.pause({ from: owner });
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH),
@@ -492,7 +490,7 @@ contract('ZoneFactory + Zone', () => {
           const lastBlockTimestamp = await getLastBlockTimestamp();
 
           expect(zoneOwner.addr).to.equal(user1);
-          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastAuction.startTime);
           expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
           expect(zoneOwner.balance).to.be.bignumber.below(zoneOwner.staked);
           expect(zoneOwner.auctionId).to.be.bignumber.equal(0);
@@ -738,6 +736,7 @@ contract('ZoneFactory + Zone', () => {
           let user3dthBalanceBefore;
           let user2bidAmount;
           let auctionBefore;
+          let withdrawTxTimestamp;
           beforeEach(async () => {
             await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
             await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
@@ -749,7 +748,8 @@ contract('ZoneFactory + Zone', () => {
             user2bidAmount = await zoneInstance.auctionBids('1', user2);
             auctionBefore = auctionToObj(await zoneInstance.getLastAuction());
 
-            await zoneInstance.withdrawFromAuction('1', { from: user2 });
+            const tx = await zoneInstance.withdrawFromAuction('1', { from: user2 });
+            withdrawTxTimestamp = (await web3.eth.getBlock(tx.receipt.blockNumber)).timestamp;
           });
           it('user auction bid should be reset to 0', () => {
             expect(zoneInstance.auctionBids('1', user2)).to.eventually.be.bignumber.equal(0);
@@ -777,19 +777,22 @@ contract('ZoneFactory + Zone', () => {
             expect(auctionAfter.highestBidder).to.equal(auctionBefore.highestBidder);
             expect(auctionAfter.highestBid).to.be.bignumber.equal(auctionBefore.highestBid);
           });
-          it('zoneOwner lastTaxTime should equal auction endTime', async () => {
+          it('zoneOwner lastTaxTime should equal withdraw tx timestamp', async () => {
             const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-            expect(zoneOwnerAfter.lastTaxTime).to.be.bignumber.equal(auctionBefore.endTime);
+            expect(zoneOwnerAfter.lastTaxTime).to.be.bignumber.equal(withdrawTxTimestamp);
           });
           it('zoneOwner addr should be updated to last auction winner', async () => {
             const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
             expect(zoneOwnerAfter.addr).to.be.bignumber.equal(user3);
           });
-          it('zoneOwner stake + balance should be updated to winning bid minus entry fee', async () => {
+          it('zoneOwner stake + balance should be updated to winning bid minus entry fee (minus taxes)', async () => {
             const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-            const [, bidMinusEntryFeeUser3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 20));
-            expect(zoneOwnerAfter.staked).to.be.bignumber.equal(bidMinusEntryFeeUser3);
-            expect(zoneOwnerAfter.balance).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+            const [, bidMinusEntryFee] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 20));
+            expect(zoneOwnerAfter.staked).to.be.bignumber.equal(bidMinusEntryFee);
+            const lastAuctionEndTime = zoneOwnerAfter.startTime; // we just added a zoneowner, his startTime will be that first auctions endTime
+            const lastBlockTimestamp = await getLastBlockTimestamp();
+            const [, bidMinusTaxesPaid] = await zoneInstance.calcHarbergerTax(lastAuctionEndTime, lastBlockTimestamp, bidMinusEntryFee);
+            expect(zoneOwnerAfter.balance).to.be.bignumber.equal(bidMinusTaxesPaid);
           });
           it('zoneOwner auctionId should be updated to last auction id', async () => {
             const zoneOwnerAfter = zoneOwnerToObj(await zoneInstance.getZoneOwner());
@@ -1023,7 +1026,7 @@ contract('ZoneFactory + Zone', () => {
             'cannot withdraw from running auction',
           );
         });
-        it.skip('should succeed to withdraw part of a users withdrawable bids', async () => {
+        it('should succeed to withdraw part of a users withdrawable bids', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -1082,7 +1085,9 @@ contract('ZoneFactory + Zone', () => {
           expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
           const [, bidMinusEntryFeeUser3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 120));
           expect(zoneOwner.staked).to.be.bignumber.equal(bidMinusEntryFeeUser3);
-          expect(zoneOwner.balance).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+          const lastAuctionEndTime = lastAuctionBlockTimestamp + BID_PERIOD;
+          const [, bidMinusTaxesPaid] = await zoneInstance.calcHarbergerTax(lastAuctionEndTime, lastBlockTimestamp, bidMinusEntryFeeUser3);
+          expect(zoneOwner.balance).to.be.bignumber.equal(bidMinusTaxesPaid);
           expect(zoneOwner.auctionId).to.be.bignumber.equal(3);
 
           expect(lastAuction.id).to.be.bignumber.equal(3);
@@ -1104,7 +1109,7 @@ contract('ZoneFactory + Zone', () => {
           expect(zoneInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
           expect(zoneInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
         });
-        it.only('should succeed to withdraw all of a users withdrawable bids', async () => {
+        it('should succeed to withdraw all of a users withdrawable bids', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
@@ -1163,7 +1168,9 @@ contract('ZoneFactory + Zone', () => {
           expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(lastBlockTimestamp);
           const [, bidMinusEntryFeeUser3] = await zoneInstance.calcEntryFee(ethToWei(MIN_ZONE_DTH_STAKE + 120));
           expect(zoneOwner.staked).to.be.bignumber.equal(bidMinusEntryFeeUser3);
-          expect(zoneOwner.balance).to.be.bignumber.equal(bidMinusEntryFeeUser3);
+          const lastAuctionEndTime = lastAuctionBlockTimestamp + BID_PERIOD;
+          const [, bidMinusTaxesPaid] = await zoneInstance.calcHarbergerTax(lastAuctionEndTime, lastBlockTimestamp, bidMinusEntryFeeUser3);
+          expect(zoneOwner.balance).to.be.bignumber.equal(bidMinusTaxesPaid);
           expect(zoneOwner.auctionId).to.be.bignumber.equal(3);
 
           expect(lastAuction.id).to.be.bignumber.equal(3);
@@ -1666,14 +1673,6 @@ contract('ZoneFactory + Zone', () => {
           beforeEach(async () => {
             await enableAndLoadCountry(COUNTRY_CG);
             zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          });
-          it.skip('returns correct Auction 0 Sentinel values', async () => {
-            const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-            expect(lastAuction.id.toNumber(), 'lastAuction.id should be zero').to.equal(0);
-            expect(lastAuction.state.toNumber(), 'lastAuction.state should equal Ended(=1)').to.equal(1);
-            expect(lastAuction.startTime.toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
-            expect(lastAuction.startTime.toNumber(), 'lastAuction.endTime should equal auction.startTime').to.equal(lastAuction.endTime.toNumber());
-            expect(lastAuction.highestBidder, 'lastAuction.highestBidder should equal @user1').to.equal(user1.toLowerCase());
           });
           describe('when Zone cooldown period ended', () => {
             beforeEach(async () => {

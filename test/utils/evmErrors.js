@@ -1,3 +1,4 @@
+// const forgeErrorMessageTruffle5 = str => `Returned error: VM Exception while processing transaction: revert ${str} -- Reason given: ${str}.`;
 const forgeErrorMessage = str => `VM Exception while processing transaction: revert ${str}`;
 const forgeErrorMessage2 = str => `Returned error: VM Exception while processing transaction: revert ${str}`;
 
@@ -6,6 +7,8 @@ const expectRevert = async (fn, errMsg) => {
     await fn;
   } catch (err) {
     if (err.message !== forgeErrorMessage(errMsg)) {
+      console.log('1', err.message);
+      console.log('2', forgeErrorMessage(errMsg));
       throw err;
     }
     return;
