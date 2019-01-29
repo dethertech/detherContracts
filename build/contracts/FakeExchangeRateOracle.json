@@ -1,0 +1,654 @@
+{
+  "contractName": "FakeExchangeRateOracle",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "WAD",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "getWeiPriceOneUsd",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x608060405234801561001057600080fd5b50610152806100206000396000f30060806040526004361061004b5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166350ccf36b81146100505780636a14602414610077575b600080fd5b34801561005c57600080fd5b5061006561008c565b60408051918252519081900360200190f35b34801561008357600080fd5b506100656100b0565b6000806100aa670de0b6b3a7640000681bd635979fa725c0006100bc565b92915050565b670de0b6b3a764000081565b6000816100dd6100d485670de0b6b3a76400006100ee565b60028504610116565b8115156100e657fe5b049392505050565b600081158061010b57505080820282828281151561010857fe5b04145b15156100aa57600080fd5b808201828110156100aa57600080fd00a165627a7a723058204c16bfa84da671c7e8d37e52e3ba3b0e5e9aecc9d2b2ee70c2eeb5f556bdd3510029",
+  "deployedBytecode": "0x60806040526004361061004b5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166350ccf36b81146100505780636a14602414610077575b600080fd5b34801561005c57600080fd5b5061006561008c565b60408051918252519081900360200190f35b34801561008357600080fd5b506100656100b0565b6000806100aa670de0b6b3a7640000681bd635979fa725c0006100bc565b92915050565b670de0b6b3a764000081565b6000816100dd6100d485670de0b6b3a76400006100ee565b60028504610116565b8115156100e657fe5b049392505050565b600081158061010b57505080820282828281151561010857fe5b04145b15156100aa57600080fd5b808201828110156100aa57600080fd00a165627a7a723058204c16bfa84da671c7e8d37e52e3ba3b0e5e9aecc9d2b2ee70c2eeb5f556bdd3510029",
+  "sourceMap": "127:369:30:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;127:369:30;;;;;;;",
+  "deployedSourceMap": "127:369:30:-;;;;;;;;;;;;;;;;;;;;;;;;;;;;246:248;;8:9:-1;5:2;;;30:1;27;20:12;5:2;246:248:30;;;;;;;;;;;;;;;;;;;;263:35:9;;8:9:-1;5:2;;;30:1;27;20:12;5:2;263:35:9;;;;246:248:30;295:4;404:22;429:32;290:8:9;439:21:30;429:4;:32::i;:::-;404:57;246:248;-1:-1:-1;;246:248:30:o;263:35:9:-;290:8;263:35;:::o;303:103::-;356:6;400:1;374:23;378:11;382:1;290:8;378:3;:11::i;:::-;395:1;391;:5;374:3;:23::i;:::-;:27;;;;;;;;;303:103;-1:-1:-1;;;303:103:9:o;149:110::-;201:6;223;;;:30;;-1:-1:-1;;238:5:9;;;252:1;247;238:5;233:15;;;;;;;;:20;223:30;215:39;;;;;;;50:96;129:5;;;124:16;;;;116:25;;;;",
+  "source": "pragma solidity ^0.4.24;\n\nimport \"../dappsys/DSMathWdiv.sol\";\nimport \"./IExchangeRateOracle.sol\";\nimport \"./IMedianizer.sol\";\n\ncontract FakeExchangeRateOracle is DSMathWdiv, IExchangeRateOracle {\n  /**\n   * @dev Return wei price of 1 USD\n   */\n  function getWeiPriceOneUsd() public view returns(uint) {\n    // we fake it here so we can test it, the value represents:\n    // 513 dollar and 4975 cents\n    uint256 weiPriceOneUsd = wdiv(WAD, 513497500000000000000);\n\n    return weiPriceOneUsd;\n  }\n}\n",
+  "sourcePath": "/Users/trip/Projects/detherContracts/contracts/oracle/FakeExchangeRateOracle.sol",
+  "ast": {
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/FakeExchangeRateOracle.sol",
+    "exportedSymbols": {
+      "FakeExchangeRateOracle": [
+        8075
+      ]
+    },
+    "id": 8076,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 8052,
+        "literals": [
+          "solidity",
+          "^",
+          "0.4",
+          ".24"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:30"
+      },
+      {
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dappsys/DSMathWdiv.sol",
+        "file": "../dappsys/DSMathWdiv.sol",
+        "id": 8053,
+        "nodeType": "ImportDirective",
+        "scope": 8076,
+        "sourceUnit": 1152,
+        "src": "26:35:30",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
+        "file": "./IExchangeRateOracle.sol",
+        "id": 8054,
+        "nodeType": "ImportDirective",
+        "scope": 8076,
+        "sourceUnit": 8084,
+        "src": "62:35:30",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IMedianizer.sol",
+        "file": "./IMedianizer.sol",
+        "id": 8055,
+        "nodeType": "ImportDirective",
+        "scope": 8076,
+        "sourceUnit": 8094,
+        "src": "98:27:30",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 8056,
+              "name": "DSMathWdiv",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 1151,
+              "src": "162:10:30",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_DSMathWdiv_$1151",
+                "typeString": "contract DSMathWdiv"
+              }
+            },
+            "id": 8057,
+            "nodeType": "InheritanceSpecifier",
+            "src": "162:10:30"
+          },
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 8058,
+              "name": "IExchangeRateOracle",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 8083,
+              "src": "174:19:30",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_IExchangeRateOracle_$8083",
+                "typeString": "contract IExchangeRateOracle"
+              }
+            },
+            "id": 8059,
+            "nodeType": "InheritanceSpecifier",
+            "src": "174:19:30"
+          }
+        ],
+        "contractDependencies": [
+          1151,
+          8083
+        ],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 8075,
+        "linearizedBaseContracts": [
+          8075,
+          8083,
+          1151
+        ],
+        "name": "FakeExchangeRateOracle",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 8073,
+              "nodeType": "Block",
+              "src": "301:193:30",
+              "statements": [
+                {
+                  "assignments": [
+                    8065
+                  ],
+                  "declarations": [
+                    {
+                      "constant": false,
+                      "id": 8065,
+                      "name": "weiPriceOneUsd",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 8074,
+                      "src": "404:22:30",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      },
+                      "typeName": {
+                        "id": 8064,
+                        "name": "uint256",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "404:7:30",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      "value": null,
+                      "visibility": "internal"
+                    }
+                  ],
+                  "id": 8070,
+                  "initialValue": {
+                    "argumentTypes": null,
+                    "arguments": [
+                      {
+                        "argumentTypes": null,
+                        "id": 8067,
+                        "name": "WAD",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 1126,
+                        "src": "434:3:30",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      {
+                        "argumentTypes": null,
+                        "hexValue": "353133343937353030303030303030303030303030",
+                        "id": 8068,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "number",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "439:21:30",
+                        "subdenomination": null,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_rational_513497500000000000000_by_1",
+                          "typeString": "int_const 513497500000000000000"
+                        },
+                        "value": "513497500000000000000"
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        {
+                          "typeIdentifier": "t_rational_513497500000000000000_by_1",
+                          "typeString": "int_const 513497500000000000000"
+                        }
+                      ],
+                      "id": 8066,
+                      "name": "wdiv",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 1150,
+                      "src": "429:4:30",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
+                        "typeString": "function (uint256,uint256) pure returns (uint256)"
+                      }
+                    },
+                    "id": 8069,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "429:32:30",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "VariableDeclarationStatement",
+                  "src": "404:57:30"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8071,
+                    "name": "weiPriceOneUsd",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 8065,
+                    "src": "475:14:30",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "functionReturnParameters": 8063,
+                  "id": 8072,
+                  "nodeType": "Return",
+                  "src": "468:21:30"
+                }
+              ]
+            },
+            "documentation": "@dev Return wei price of 1 USD",
+            "id": 8074,
+            "implemented": true,
+            "isConstructor": false,
+            "isDeclaredConst": true,
+            "modifiers": [],
+            "name": "getWeiPriceOneUsd",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8060,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "272:2:30"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 8063,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8062,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8074,
+                  "src": "295:4:30",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8061,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "295:4:30",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "294:6:30"
+            },
+            "scope": 8075,
+            "src": "246:248:30",
+            "stateMutability": "view",
+            "superFunction": 8082,
+            "visibility": "public"
+          }
+        ],
+        "scope": 8076,
+        "src": "127:369:30"
+      }
+    ],
+    "src": "0:497:30"
+  },
+  "legacyAST": {
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/FakeExchangeRateOracle.sol",
+    "exportedSymbols": {
+      "FakeExchangeRateOracle": [
+        8075
+      ]
+    },
+    "id": 8076,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 8052,
+        "literals": [
+          "solidity",
+          "^",
+          "0.4",
+          ".24"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:30"
+      },
+      {
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dappsys/DSMathWdiv.sol",
+        "file": "../dappsys/DSMathWdiv.sol",
+        "id": 8053,
+        "nodeType": "ImportDirective",
+        "scope": 8076,
+        "sourceUnit": 1152,
+        "src": "26:35:30",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
+        "file": "./IExchangeRateOracle.sol",
+        "id": 8054,
+        "nodeType": "ImportDirective",
+        "scope": 8076,
+        "sourceUnit": 8084,
+        "src": "62:35:30",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IMedianizer.sol",
+        "file": "./IMedianizer.sol",
+        "id": 8055,
+        "nodeType": "ImportDirective",
+        "scope": 8076,
+        "sourceUnit": 8094,
+        "src": "98:27:30",
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "baseContracts": [
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 8056,
+              "name": "DSMathWdiv",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 1151,
+              "src": "162:10:30",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_DSMathWdiv_$1151",
+                "typeString": "contract DSMathWdiv"
+              }
+            },
+            "id": 8057,
+            "nodeType": "InheritanceSpecifier",
+            "src": "162:10:30"
+          },
+          {
+            "arguments": null,
+            "baseName": {
+              "contractScope": null,
+              "id": 8058,
+              "name": "IExchangeRateOracle",
+              "nodeType": "UserDefinedTypeName",
+              "referencedDeclaration": 8083,
+              "src": "174:19:30",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_IExchangeRateOracle_$8083",
+                "typeString": "contract IExchangeRateOracle"
+              }
+            },
+            "id": 8059,
+            "nodeType": "InheritanceSpecifier",
+            "src": "174:19:30"
+          }
+        ],
+        "contractDependencies": [
+          1151,
+          8083
+        ],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": true,
+        "id": 8075,
+        "linearizedBaseContracts": [
+          8075,
+          8083,
+          1151
+        ],
+        "name": "FakeExchangeRateOracle",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "body": {
+              "id": 8073,
+              "nodeType": "Block",
+              "src": "301:193:30",
+              "statements": [
+                {
+                  "assignments": [
+                    8065
+                  ],
+                  "declarations": [
+                    {
+                      "constant": false,
+                      "id": 8065,
+                      "name": "weiPriceOneUsd",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 8074,
+                      "src": "404:22:30",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      },
+                      "typeName": {
+                        "id": 8064,
+                        "name": "uint256",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "404:7:30",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      "value": null,
+                      "visibility": "internal"
+                    }
+                  ],
+                  "id": 8070,
+                  "initialValue": {
+                    "argumentTypes": null,
+                    "arguments": [
+                      {
+                        "argumentTypes": null,
+                        "id": 8067,
+                        "name": "WAD",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 1126,
+                        "src": "434:3:30",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      {
+                        "argumentTypes": null,
+                        "hexValue": "353133343937353030303030303030303030303030",
+                        "id": 8068,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "number",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "439:21:30",
+                        "subdenomination": null,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_rational_513497500000000000000_by_1",
+                          "typeString": "int_const 513497500000000000000"
+                        },
+                        "value": "513497500000000000000"
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        {
+                          "typeIdentifier": "t_rational_513497500000000000000_by_1",
+                          "typeString": "int_const 513497500000000000000"
+                        }
+                      ],
+                      "id": 8066,
+                      "name": "wdiv",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 1150,
+                      "src": "429:4:30",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
+                        "typeString": "function (uint256,uint256) pure returns (uint256)"
+                      }
+                    },
+                    "id": 8069,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "429:32:30",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "nodeType": "VariableDeclarationStatement",
+                  "src": "404:57:30"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8071,
+                    "name": "weiPriceOneUsd",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 8065,
+                    "src": "475:14:30",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "functionReturnParameters": 8063,
+                  "id": 8072,
+                  "nodeType": "Return",
+                  "src": "468:21:30"
+                }
+              ]
+            },
+            "documentation": "@dev Return wei price of 1 USD",
+            "id": 8074,
+            "implemented": true,
+            "isConstructor": false,
+            "isDeclaredConst": true,
+            "modifiers": [],
+            "name": "getWeiPriceOneUsd",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8060,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "272:2:30"
+            },
+            "payable": false,
+            "returnParameters": {
+              "id": 8063,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8062,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8074,
+                  "src": "295:4:30",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8061,
+                    "name": "uint",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "295:4:30",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "294:6:30"
+            },
+            "scope": 8075,
+            "src": "246:248:30",
+            "stateMutability": "view",
+            "superFunction": 8082,
+            "visibility": "public"
+          }
+        ],
+        "scope": 8076,
+        "src": "127:369:30"
+      }
+    ],
+    "src": "0:497:30"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "2.0.1",
+  "updatedAt": "2019-01-29T09:58:57.207Z"
+}
