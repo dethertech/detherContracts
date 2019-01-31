@@ -420,12 +420,15 @@ contract Shops is IArbitrable {
     return arbitrator.arbitrationCost(arbitratorExtraData) * 2;
   }
 
-  function getDisputeAppealCost(uint _disputeID)
-    public
+  function getDisputeAppealCost(address _shopAddress)
+    external
     view
     returns (uint)
   {
-    uint a = arbitrator.appealCost(_disputeID, arbitratorExtraData);
+    require(shopAddressToShop[_shopAddress].position != bytes12(0), "shop does not exist");
+    require(shopAddressToShop[_shopAddress].hasDispute, "shop has no dispute");
+
+    uint a = arbitrator.appealCost(shopAddressToShop[_shopAddress].disputeID, arbitratorExtraData);
 
     return a;
   }
@@ -460,12 +463,15 @@ contract Shops is IArbitrable {
     }
   }
 
-  function getDispute(uint _disputeID)
+  function getDispute(address _shopAddress)
     public
     view
     returns (uint, address, address, uint, uint, uint)
   {
-    ShopDispute memory dispute = disputeIdToDispute[_disputeID];
+    require(shopAddressToShop[_shopAddress].position != bytes12(0), "shop does not exist");
+    require(shopAddressToShop[_shopAddress].hasDispute, "shop has no dispute");
+
+    ShopDispute memory dispute = disputeIdToDispute[shopAddressToShop[_shopAddress].disputeID];
 
     return (
       dispute.id,
@@ -558,6 +564,7 @@ contract Shops is IArbitrable {
   function deleteDispute(uint _disputeID)
     private
   {
+    // since we have no mapping or array vars in this struct, a 'delete' call will remove the entry
     delete disputeIdToDispute[_disputeID];
   }
 

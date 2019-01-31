@@ -608,6 +608,14 @@ contract Zone is ERC223ReceivingContract, IZone {
     uint newBalance = oldBalance.add(_dthAmount);
     zoneOwner.balance = newBalance;
 
+    // a zone owner can currently keep calling this to increase his dth balance inside the zone
+    // without a change in his sell price (= zone.staked) or tax amount he needs to pay
+    //
+    // TODO:
+    // - should we also increse his dth stake when he tops up his dth balance?
+    // - or should we limit his max topup to make his balance not bigger
+    //   than his zone.staked amount (over which he pays taxes), or maybe not more than 10% above his zone.staked
+
     emit ZoneOwnerTopUp(_sender, oldBalance, newBalance);
   }
 
@@ -742,10 +750,14 @@ contract Zone is ERC223ReceivingContract, IZone {
     dth.transfer(msg.sender, withdrawAmountTotal);
   }
 
+  // - bids in past auctions
+  // - zone owner stake
   function withdrawDth()
     onlyWhenInited
     external
   {
+    _processState();
+
     uint dthWithdraw = withdrawableDth[msg.sender];
     require(dthWithdraw > 0, "nothing to withdraw");
 
@@ -759,6 +771,8 @@ contract Zone is ERC223ReceivingContract, IZone {
     onlyWhenInited
     external
   {
+    _processState();
+
     uint ethWithdraw = withdrawableEth[msg.sender];
     require(ethWithdraw > 0, "nothing to withdraw");
 
@@ -786,7 +800,7 @@ contract Zone is ERC223ReceivingContract, IZone {
   {
     require(control.paused() == false, "contract is paused");
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(_position.length == 12, "expected position to be 10 bytes");
+    require(_position.length == 12, "expected position to be 12 bytes");
     require(toBytes7(_position, 0) == geohash, "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
 

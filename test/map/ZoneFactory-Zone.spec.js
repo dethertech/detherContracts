@@ -1202,19 +1202,19 @@ contract('ZoneFactory + Zone', (accounts) => {
         it('should revert if position is empty bytes array', async () => {
           await expectRevert(
             zoneInstance.addTeller('0x', TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
-            'expected position to be 10 bytes',
-          );
-        });
-        it('should revert if position is 9 bytes (instead of expected 12)', async () => {
-          await expectRevert(
-            zoneInstance.addTeller(asciiToHex('krcztsebc'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
-            'expected position to be 10 bytes',
+            'expected position to be 12 bytes',
           );
         });
         it('should revert if position is 11 bytes (instead of expected 12)', async () => {
           await expectRevert(
-            zoneInstance.addTeller(asciiToHex('krcztsebcde'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
-            'expected position to be 10 bytes',
+            zoneInstance.addTeller(asciiToHex('krcztsebccc'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            'expected position to be 12 bytes',
+          );
+        });
+        it('should revert if position is 13 bytes (instead of expected 12)', async () => {
+          await expectRevert(
+            zoneInstance.addTeller(asciiToHex('krcztsebcdeee'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+            'expected position to be 12 bytes',
           );
         });
         it('should revert if position does not match geohash of Zone contract', async () => {

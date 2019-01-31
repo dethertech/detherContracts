@@ -749,7 +749,7 @@ contract('Shops', (accounts) => {
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
 
-        const disputeBeforeRuling = await shopsInstance.getDispute(0);
+        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
         const disputeBeforeRulingObj = {
           id: disputeBeforeRuling[0].toNumber(),
           shop: disputeBeforeRuling[1],
@@ -1082,8 +1082,6 @@ contract('Shops', (accounts) => {
         await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
-        const disputeId = 0;
-
         //
         // Create dispute
         //
@@ -1091,7 +1089,7 @@ contract('Shops', (accounts) => {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
-        const disputeBeforeRuling = await shopsInstance.getDispute(disputeId);
+        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
         const disputeBeforeRulingObj = {
           id: disputeBeforeRuling[0].toNumber(),
           shop: disputeBeforeRuling[1],
@@ -1110,8 +1108,8 @@ contract('Shops', (accounts) => {
         //
         // Give ruling on dispute
         //
-        await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
-        const disputeAfterRuling = await shopsInstance.getDispute(disputeId);
+        await appealableArbitratorInstance.giveRuling(0, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
+        const disputeAfterRuling = await shopsInstance.getDispute(user1);
         expect(disputeAfterRuling[4].toNumber()).equals(1); // shop wins
         expect(disputeAfterRuling[5].toNumber()).equals(1); // Appealable
 
@@ -1122,17 +1120,14 @@ contract('Shops', (accounts) => {
           from: user2, // challenger can appeal ruling that shop won
           value: ethToWei(KLEROS_ARBITRATION_PRICE),
         });
-        const disputeAfterAppeal = await shopsInstance.getDispute(disputeId);
+        const disputeAfterAppeal = await shopsInstance.getDispute(user1);
         expect(disputeAfterAppeal[4].toNumber()).equals(1); // shop wins
         expect(disputeAfterAppeal[5].toNumber()).equals(0); // Waiting
 
         //
         // Give ruling on appeal
         //
-        await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, challenger wins
-        const disputeAfterAppealRuling = await shopsInstance.getDispute(disputeId);
-        expect(disputeAfterAppealRuling[4].toNumber()).equals(2); // challenger wins
-        expect(disputeAfterAppealRuling[5].toNumber()).equals(2); // Solved
+        await appealableArbitratorInstance.giveRuling(0, KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, challenger wins
 
         const withdrawableDthUser2 = await shopsInstance.withdrawableDth(user2);
         expect(withdrawableDthUser2.toString()).to.equal(ethToWei(CG_SHOP_LICENSE_PRICE));
@@ -1167,8 +1162,6 @@ contract('Shops', (accounts) => {
         await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
-        const disputeId = 0;
-
         //
         // Create dispute
         //
@@ -1176,7 +1169,7 @@ contract('Shops', (accounts) => {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
-        const disputeBeforeRuling = await shopsInstance.getDispute(disputeId);
+        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
         const disputeBeforeRulingObj = {
           id: disputeBeforeRuling[0].toNumber(),
           shop: disputeBeforeRuling[1],
@@ -1195,8 +1188,8 @@ contract('Shops', (accounts) => {
         //
         // Give ruling on dispute
         //
-        await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
-        const disputeAfterRuling = await shopsInstance.getDispute(disputeId);
+        await appealableArbitratorInstance.giveRuling(0, KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
+        const disputeAfterRuling = await shopsInstance.getDispute(user1);
         expect(disputeAfterRuling[4].toNumber()).equals(2); // challenger wins
         expect(disputeAfterRuling[5].toNumber()).equals(1); // Appealable
 
@@ -1207,7 +1200,7 @@ contract('Shops', (accounts) => {
           from: user1, // shop can appeal ruling that challenger won
           value: ethToWei(KLEROS_ARBITRATION_PRICE),
         });
-        const disputeAfterAppeal = await shopsInstance.getDispute(disputeId);
+        const disputeAfterAppeal = await shopsInstance.getDispute(user1);
         expect(disputeAfterAppeal[4].toNumber()).equals(2); // challenger wins
         expect(disputeAfterAppeal[5].toNumber()).equals(0); // Waiting
 
@@ -1215,10 +1208,7 @@ contract('Shops', (accounts) => {
         // Give ruling on appeal
         //
         // we need to get the updated dispute id, only when using the development kleros contracts
-        await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, challenger wins
-        const disputeAfterAppealRuling = await shopsInstance.getDispute(disputeId);
-        expect(disputeAfterAppealRuling[4].toNumber()).equals(1); // shop wins
-        expect(disputeAfterAppealRuling[5].toNumber()).equals(2); // Solved
+        await appealableArbitratorInstance.giveRuling(0, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, challenger wins
 
         const withdrawableDthUser2 = await shopsInstance.withdrawableDth(user2);
         expect(withdrawableDthUser2.toString()).to.equal(ethToWei(0));
@@ -1235,5 +1225,260 @@ contract('Shops', (accounts) => {
     });
   });
 
-  describe('Getters', () => { });
+  describe('Getters', () => {
+    describe('getDispute(address _shopAddress)', () => {
+      it('should throw if shop has no dispute', async () => {
+        // create a shop
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        await expectRevert(
+          shopsInstance.getDispute(user1, {
+            from: user1,
+          }),
+          'shop has no dispute',
+        );
+      });
+      it('should return initial dispute of shop after new dispute is created', async () => {
+        // create a shop
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        // create a dispute
+        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await smsInstance.certify(user2, { from: owner });
+        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          from: user2,
+          value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+        });
+
+        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
+        const disputeBeforeRulingObj = {
+          id: disputeBeforeRuling[0].toNumber(),
+          shop: disputeBeforeRuling[1],
+          challenger: disputeBeforeRuling[2],
+          disputeType: disputeBeforeRuling[3].toNumber(),
+          ruling: disputeBeforeRuling[4].toNumber(),
+          status: disputeBeforeRuling[5].toNumber(),
+        };
+
+        expect(disputeBeforeRulingObj.id).equals(0);
+        expect(disputeBeforeRulingObj.shop).equals(user1);
+        expect(disputeBeforeRulingObj.challenger).equals(user2);
+        expect(disputeBeforeRulingObj.disputeType).equals(0);
+        expect(disputeBeforeRulingObj.ruling).equals(0); // no ruling yet
+        expect(disputeBeforeRulingObj.status).equals(0); // Waiting (on ruling)
+      });
+      it('should return updated dispute of shop after ruling', async () => {
+        // create a shop
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        // create a dispute
+        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await smsInstance.certify(user2, { from: owner });
+        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          from: user2,
+          value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+        });
+
+        // give ruling on dispute
+        await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
+
+        const disputeAfterRuling = await shopsInstance.getDispute(user1);
+        const disputeAfterRulingObj = {
+          id: disputeAfterRuling[0].toNumber(),
+          shop: disputeAfterRuling[1],
+          challenger: disputeAfterRuling[2],
+          disputeType: disputeAfterRuling[3].toNumber(),
+          ruling: disputeAfterRuling[4].toNumber(),
+          status: disputeAfterRuling[5].toNumber(),
+        };
+
+        expect(disputeAfterRulingObj.id).equals(0);
+        expect(disputeAfterRulingObj.shop).equals(user1);
+        expect(disputeAfterRulingObj.challenger).equals(user2);
+        expect(disputeAfterRulingObj.disputeType).equals(0);
+        expect(disputeAfterRulingObj.ruling).equals(2); // ChallengerWins
+        expect(disputeAfterRulingObj.status).equals(1); // Appealable
+      });
+      it('should return updated dispute of shop after appeal', async () => {
+        // create a shop
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        // create a dispute
+        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await smsInstance.certify(user2, { from: owner });
+        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          from: user2,
+          value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+        });
+
+        // give ruling on dispute
+        await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
+
+        // appeal
+        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+          from: user1, // shop can appeal ruling that challenger won
+          value: ethToWei(KLEROS_ARBITRATION_PRICE),
+        });
+
+        const disputeAfterAppeal = await shopsInstance.getDispute(user1);
+        const disputeAfterAppealObj = {
+          id: disputeAfterAppeal[0].toNumber(),
+          shop: disputeAfterAppeal[1],
+          challenger: disputeAfterAppeal[2],
+          disputeType: disputeAfterAppeal[3].toNumber(),
+          ruling: disputeAfterAppeal[4].toNumber(),
+          status: disputeAfterAppeal[5].toNumber(),
+        };
+
+        expect(disputeAfterAppealObj.id).equals(0);
+        expect(disputeAfterAppealObj.shop).equals(user1);
+        expect(disputeAfterAppealObj.challenger).equals(user2);
+        expect(disputeAfterAppealObj.disputeType).equals(0);
+        expect(disputeAfterAppealObj.ruling).equals(2); // ChallengerWins
+        expect(disputeAfterAppealObj.status).equals(0); // Waiting
+      });
+      it('should throw after appeal ruling (shop wins) since there is no dispute', async () => {
+        // create a shop
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        // create a dispute
+        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await smsInstance.certify(user2, { from: owner });
+        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          from: user2,
+          value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+        });
+
+        // give ruling on dispute
+        await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
+
+        // appeal
+        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+          from: user1, // shop can appeal ruling that challenger won
+          value: ethToWei(KLEROS_ARBITRATION_PRICE),
+        });
+
+        // give ruling on appeal
+        await appealableArbitratorInstance.giveRuling('0', KLEROS_SHOP_WINS, { from: owner }); // dispute 0, challenger wins
+
+        await expectRevert(
+          shopsInstance.getDispute(user1),
+          'shop has no dispute',
+        );
+      });
+      it('should throw after appeal ruling (challenger wins) since shop has been removed', async () => {
+        // create a shop
+        await enableAndLoadCountry(COUNTRY_CG);
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          CG_SHOP_LICENSE_PRICE,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        // create a dispute
+        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await smsInstance.certify(user2, { from: owner });
+        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          from: user2,
+          value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+        });
+
+        // give ruling on dispute
+        await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
+
+        // appeal
+        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+          from: user1, // shop can appeal ruling that challenger won
+          value: ethToWei(KLEROS_ARBITRATION_PRICE),
+        });
+
+        // give ruling on appeal
+        await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, challenger wins
+
+        await expectRevert(
+          shopsInstance.getDispute(user1),
+          'shop does not exist',
+        );
+      });
+    });
+  });
 });
