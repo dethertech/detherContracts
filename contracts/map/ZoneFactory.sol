@@ -1,16 +1,18 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
+import "../dth/ERC223ReceivingContract.sol";
 import "../dth/IDetherToken.sol";
 import "../core/IUsers.sol";
 import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
 import "./IZone.sol";
+import "./ITeller.sol";
 
 import "../eip1167/CloneFactory.sol";
 
-contract ZoneFactory is Ownable, CloneFactory {
+contract ZoneFactory is ERC223ReceivingContract, Ownable, CloneFactory {
 
   // ------------------------------------------------
   //
@@ -29,6 +31,7 @@ contract ZoneFactory is Ownable, CloneFactory {
   IControl public control;
 
   address public zoneImplementation;
+  address public tellerImplementation;
 
   // ------------------------------------------------
   //
@@ -36,7 +39,7 @@ contract ZoneFactory is Ownable, CloneFactory {
   //
   // ------------------------------------------------
 
-  event ZoneFactoryCreatedZone(address indexed zoneAddress, bytes7 indexed zoneGeohash, address indexed zoneOwner, uint dthStake);
+  // TODO
 
   // ------------------------------------------------
   //
@@ -44,13 +47,15 @@ contract ZoneFactory is Ownable, CloneFactory {
   //
   // ------------------------------------------------
 
-  constructor(address _dth, address _geo, address _users, address _control, address _zoneImplementation)
+  constructor(address _dth, address _geo, address _users, address _control, address _zoneImplementation, address _tellerImplementation)
     public
   {
     require(_dth != address(0), "dth address cannot be 0x0");
     require(_geo != address(0), "geo address cannot be 0x0");
     require(_users != address(0), "users address cannot be 0x0");
     require(_control != address(0), "control address cannot be 0x0");
+    require(_zoneImplementation != address(0), "zoneImplementation address cannot be 0x0");
+    require(_tellerImplementation != address(0), "tellerImplementation address cannot be 0x0");
 
     dth = IDetherToken(_dth);
     geo = IGeoRegistry(_geo);
@@ -58,6 +63,7 @@ contract ZoneFactory is Ownable, CloneFactory {
     control = IControl(_control);
 
     zoneImplementation = _zoneImplementation;
+    tellerImplementation = _tellerImplementation;
   }
 
   // ------------------------------------------------
@@ -66,7 +72,7 @@ contract ZoneFactory is Ownable, CloneFactory {
   //
   // ------------------------------------------------
 
-  function toBytes1(bytes _bytes, uint _start)
+  function toBytes1(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes1)
@@ -81,7 +87,7 @@ contract ZoneFactory is Ownable, CloneFactory {
     return tempBytes1;
   }
 
-  function toBytes2(bytes _bytes, uint _start)
+  function toBytes2(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes2)
@@ -96,7 +102,7 @@ contract ZoneFactory is Ownable, CloneFactory {
     return tempBytes2;
   }
 
-  function toBytes7(bytes _bytes, uint _start)
+  function toBytes7(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes7)
@@ -111,10 +117,10 @@ contract ZoneFactory is Ownable, CloneFactory {
     return tempBytes7;
   }
 
-  function slice(bytes _bytes, uint _start, uint _length)
+  function slice(bytes memory _bytes, uint _start, uint _length)
     private
     pure
-    returns (bytes)
+    returns (bytes memory)
   {
     require(_bytes.length >= (_start + _length));
     bytes memory tempBytes;
@@ -165,7 +171,7 @@ contract ZoneFactory is Ownable, CloneFactory {
   //
   // ------------------------------------------------
 
-  function updateUserDailySold(bytes2 _countryCode, address _from, address _to, uint _amount)
+  function proxyUpdateUserDailySold(bytes2 _countryCode, address _from, address _to, uint _amount)
     external
   {
     require(zoneToGeohash[msg.sender] != bytes7(0), "can only be called by a registered zone");
@@ -174,7 +180,7 @@ contract ZoneFactory is Ownable, CloneFactory {
   }
 
   // ERC223 magic
-  function tokenFallback(address _from, uint _value, bytes _data) // GAS COST +/- 3.763.729
+  function tokenFallback(address _from, uint _value, bytes memory _data) // GAS COST +/- 3.763.729
     public
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
@@ -195,20 +201,25 @@ contract ZoneFactory is Ownable, CloneFactory {
     require(geo.zoneInsideCountry(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
 
-    // create/deploy the new zone
-    address newZone = createClone(zoneImplementation);
-    IZone(newZone).init(
+    // deploy zone + teller contract
+    address newZoneAddress = createClone(zoneImplementation);
+    address newTellerAddress = createClone(tellerImplementation);
+
+    // init zone + teller contract
+
+    IZone(newZoneAddress).init(
       country, geohash, sender, dthAmount,
-      address(dth), address(geo), address(users), address(control), address(this)
+      address(dth), address(geo), address(control), address(this)
     );
 
+    ITeller(newTellerAddress).init(address(geo), address(control), newZoneAddress);
+    IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
+
     // store references
-    geohashToZone[geohash] = newZone;
-    zoneToGeohash[newZone] = geohash;
+    geohashToZone[geohash] = newZoneAddress;
+    zoneToGeohash[newZoneAddress] = geohash;
 
     // send all dth through to the new Zone contract
-    dth.transfer(newZone, dthAmount, hex"40");
-
-    emit ZoneFactoryCreatedZone(newZone, geohash, sender, dthAmount);
+    dth.transfer(newZoneAddress, dthAmount, hex"40");
   }
 }

@@ -1,16 +1,16 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-import "../dth/tokenfoundry/ERC223ReceivingContract.sol";
+import "../dth/ERC223ReceivingContract.sol";
 import "../dth/IDetherToken.sol";// TODO: replace with zeppelin ERC20 abstract contract?
-import "../core/IUsers.sol";
 import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
 import "./IZoneFactory.sol";
 import "./IZone.sol";
+import "./ITeller.sol";
 
-contract Zone is ERC223ReceivingContract, IZone {
+contract Zone is ERC223ReceivingContract {
   // ------------------------------------------------
   //
   // Library init
@@ -55,18 +55,6 @@ contract Zone is ERC223ReceivingContract, IZone {
     address highestBidder;
   }
 
-  struct Teller {
-    uint8 currencyId;  // 1 - 100 , see README
-    bytes16 messenger; // telegrame nickname
-    bytes12 position;  // 12 char geohash for location of teller
-    bytes1 settings;   // bitmask containing up to 8 boolean settings (only 2 used currently: isSeller, isBuyer)
-    // TODO: wouldn't it be wiser to use uint256, to make all calculations cost less
-    int16 buyRate;     // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
-    int16 sellRate;    // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
-    // 256 bits in total
-    address referrer;
-  }
-
   // ------------------------------------------------
   //
   // Variables Private
@@ -85,23 +73,20 @@ contract Zone is ERC223ReceivingContract, IZone {
 
   mapping(uint => Auction) private auctionIdToAuction;
 
-  Teller private teller;
-  bytes1 private constant isSellerBitMask = hex"01";
-  bytes1 private constant isBuyerBitMask = hex"02";
-
   // ------------------------------------------------
   //
   // Variables Public
   //
   // ------------------------------------------------
 
-  bool inited;
+  bool private inited;
+  bool private tellerConnected;
 
   IDetherToken public dth;
   IGeoRegistry public geo;
-  IUsers public users;
   IControl public control;
   IZoneFactory public zoneFactory;
+  ITeller public teller;
 
   bytes2 public country;
   bytes7 public geohash;
@@ -114,29 +99,13 @@ contract Zone is ERC223ReceivingContract, IZone {
   //      auctionId       bidder     dthAmount
   mapping(uint => mapping(address => uint)) public auctionBids;
 
-  //(prev)zoneOwner          ethAmount
-  mapping(address => uint) public funds;
-
-  mapping(address => mapping(address => uint)) public canPlaceCertifiedComment;
-
-  mapping(address => bytes32[]) public commentsFree;
-  mapping(address => bytes32[]) public commentsCertified;
-
   // ------------------------------------------------
   //
   // Events
   //
   // ------------------------------------------------
 
-  event ZoneCreated(address indexed zoneAddress, bytes2 indexed countryCode, bytes7 indexed geohash, uint dthAmount);
-  event ZoneOwnerUpdated(address indexed zoneAddress, address indexed oldOwner, address indexed newOwner);
-  event ZoneOwnerForeClosed(address indexed owner, uint lifeStart, uint lifeEnd, uint taxPaidTotal, uint taxDebtOutstanding);
-  event ZoneOwnerTaxesPaid(address indexed owner, uint taxStart, uint taxEnd, uint taxAmount);
-  event ZoneOwnerTopUp(address indexed owner, uint oldBalance, uint newBalance);
-  event ZoneAuctionStarted(address indexed auctionId, uint lifeStart);
-  event ZoneAuctionEnded(address indexed auctionId, uint lifeEnd, address indexed newOwner);
-  event ZoneAuctionBid(address indexed auctionId, address indexed bidder, uint bidAmount); // NOTE: this includes current stake if zone owner bids
-  event ZoneUpdatedTeller(address indexed owner);
+  // TODO
 
   // ------------------------------------------------
   //
@@ -145,13 +114,60 @@ contract Zone is ERC223ReceivingContract, IZone {
   // ------------------------------------------------
 
   modifier onlyWhenInited() {
-    // NOTE: somehow if w add an error message, we get 'out of gas' on deploy?!
-    // require(inited == true);
     require(inited == true, "contract not yet initialized");
     _;
   }
   modifier onlyWhenNotInited() {
     require(inited == false, "contract already initialized");
+    _;
+  }
+
+  modifier onlyWhenTellerConnected() {
+    require(tellerConnected == true, "teller contract not yet connected");
+    _;
+  }
+  modifier onlyWhenTellerNotConnected() {
+    require(tellerConnected == false, "teller contract already connected");
+    _;
+  }
+
+  modifier onlyWhenNotPaused {
+    require(control.paused() == false, "contract is paused");
+    _;
+  }
+
+  modifier onlyWhenCountryEnabled {
+    require(geo.countryIsEnabled(country), "country is disabled");
+    _;
+  }
+
+  modifier updateState {
+    _processState();
+    _;
+  }
+
+  modifier onlyWhenZoneHasOwner {
+    require(zoneOwner.addr != address(0), "zone has no owner");
+    _;
+  }
+
+  modifier onlyWhenCallerIsNotZoneOwner {
+    require(msg.sender != zoneOwner.addr, "can not be called by zoneowner");
+    _;
+  }
+
+  modifier onlyWhenCallerIsZoneOwner {
+    require(msg.sender == zoneOwner.addr, "caller is not zoneowner");
+    _;
+  }
+
+  modifier onlyByTellerContract {
+    require(msg.sender == address(teller), "can only be called by teller contract");
+    _;
+  }
+
+  modifier onlyWhenZoneHasNoOwner {
+    require(zoneOwner.addr == address(0), "can not claim zone with owner");
     _;
   }
 
@@ -161,10 +177,6 @@ contract Zone is ERC223ReceivingContract, IZone {
   //
   // ------------------------------------------------
 
-  constructor() public {
-
-  }
-
   // executed by ZoneFactory.sol when this Zone does not yet exist (= not yet deployed)
   function init(
     bytes2 _countryCode,
@@ -173,7 +185,6 @@ contract Zone is ERC223ReceivingContract, IZone {
     uint _dthAmount,
     address _dth,
     address _geo,
-    address _users,
     address _control,
     address _zoneFactory
   )
@@ -187,7 +198,6 @@ contract Zone is ERC223ReceivingContract, IZone {
 
     dth = IDetherToken(_dth);
     geo = IGeoRegistry(_geo);
-    users = IUsers(_users);
     control = IControl(_control);
     zoneFactory = IZoneFactory(_zoneFactory);
 
@@ -198,10 +208,17 @@ contract Zone is ERC223ReceivingContract, IZone {
     zoneOwner.lastTaxTime = now;
     zoneOwner.auctionId = 0; // was not gained by winning an auction
 
-    emit ZoneCreated(address(this), _countryCode, _geohash, _dthAmount);
-    emit ZoneOwnerUpdated(address(this), address(0), _zoneOwner);
-
     inited = true;
+  }
+
+  function connectToTellerContract(address _teller)
+    onlyWhenInited
+    onlyWhenTellerNotConnected
+    external
+  {
+    teller = ITeller(_teller);
+
+    tellerConnected = true;
   }
 
   // ------------------------------------------------
@@ -209,6 +226,13 @@ contract Zone is ERC223ReceivingContract, IZone {
   // Functions Getters Public
   //
   // ------------------------------------------------
+
+  function ownerAddr()
+    external view
+    returns (address)
+  {
+    return zoneOwner.addr;
+  }
 
   function computeCSC(bytes7 _geohash, address _addr)
     public
@@ -236,14 +260,6 @@ contract Zone is ERC223ReceivingContract, IZone {
   {
     burnAmount = _value.div(100).mul(ENTRY_FEE_PERCENTAGE); // 1%
     bidAmount = _value.sub(burnAmount); // 99%
-  }
-
-  function calcReferrerFee(uint _value)
-    public
-    view
-    returns (uint referrerAmount)
-  {
-    referrerAmount = _value.div(1000).mul(REFERRER_FEE_PERCENTAGE); // 0.1%
   }
 
   function auctionExists(uint _auctionId)
@@ -301,44 +317,10 @@ contract Zone is ERC223ReceivingContract, IZone {
 
   /// @notice get the last auction
   function getLastAuction()
-    external
-    view
+    external view
     returns (uint, uint, uint, uint, address, uint)
   {
     return getAuction(currentAuctionId);
-  }
-
-  function getTeller()
-    external
-    view
-    returns (uint8, bytes16, bytes12, bytes1, int16, int16, uint, address)
-  {
-    return (
-      teller.currencyId,
-      teller.messenger,
-      teller.position,
-      teller.settings,
-      teller.buyRate,
-      teller.sellRate,
-      funds[zoneOwner.addr],
-      teller.referrer
-    );
-  }
-
-  function getCertifiedComments()
-    external
-    view
-    returns (bytes32[])
-  {
-    return commentsCertified[zoneOwner.addr];
-  }
-
-  function getComments()
-    external
-    view
-    returns (bytes32[])
-  {
-    return commentsFree[zoneOwner.addr];
   }
 
   // ------------------------------------------------
@@ -347,9 +329,8 @@ contract Zone is ERC223ReceivingContract, IZone {
   //
   // ------------------------------------------------
 
-  function toBytes1(bytes _bytes, uint _start)
-    private
-    pure
+  function toBytes1(bytes memory _bytes, uint _start)
+    private pure
     returns (bytes1) {
       require(_bytes.length >= (_start + 1), " not long enough");
       bytes1 tempBytes1;
@@ -360,9 +341,8 @@ contract Zone is ERC223ReceivingContract, IZone {
 
       return tempBytes1;
   }
-  function toBytes7(bytes _bytes, uint _start)
-    private
-    pure
+  function toBytes7(bytes memory _bytes, uint _start)
+    private pure
     returns (bytes7) {
       require(_bytes.length >= (_start + 7), " not long enough");
       bytes7 tempBytes7;
@@ -373,9 +353,8 @@ contract Zone is ERC223ReceivingContract, IZone {
 
       return tempBytes7;
   }
-  function toBytes12(bytes _bytes, uint _start)
-    private
-    pure
+  function toBytes12(bytes memory _bytes, uint _start)
+    private pure
     returns (bytes12) {
       require(_bytes.length >= (_start + 12), " not long enough");
       bytes12 tempBytes12;
@@ -396,12 +375,11 @@ contract Zone is ERC223ReceivingContract, IZone {
   function _removeZoneOwner()
     private
   {
-    delete commentsFree[zoneOwner.addr];
-    delete commentsCertified[zoneOwner.addr];
-
     withdrawableDth[zoneOwner.addr] = withdrawableDth[zoneOwner.addr].add(zoneOwner.balance);
 
-    if (teller.position != bytes12(0)) _removeTeller(); // we do it here since it needs zoneOwner.addr
+    if (teller.hasTeller()) {
+      teller.removeTellerByZone();
+    }
 
     zoneOwner.addr = address(0);
     zoneOwner.startTime = 0;
@@ -409,24 +387,6 @@ contract Zone is ERC223ReceivingContract, IZone {
     zoneOwner.balance = 0;
     zoneOwner.lastTaxTime = 0;
     zoneOwner.auctionId = 0;
-  }
-
-  function _removeTeller()
-    private
-  {
-    // we dont remove comments here, so that if zoneowner readds or repositions his teller,
-    // his comments still exist.
-
-    withdrawableEth[zoneOwner.addr] = withdrawableEth[zoneOwner.addr].add(funds[zoneOwner.addr]);
-    funds[zoneOwner.addr] = 0;
-
-    teller.currencyId = 0;
-    teller.messenger = bytes16(0);
-    teller.position = bytes12(0);
-    teller.settings = bytes1(0);
-    teller.buyRate = 0;
-    teller.sellRate = 0;
-    teller.referrer = address(0);
   }
 
   function _handleTaxPayment()
@@ -485,6 +445,13 @@ contract Zone is ERC223ReceivingContract, IZone {
     (uint taxAmount, uint keepAmount) = calcHarbergerTax(auctionEndTime, now, zoneOwner.staked);
     zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
     zoneOwner.lastTaxTime = now;
+  }
+
+  function processState()
+    external
+    onlyByTellerContract
+  {
+    _processState();
   }
 
   /// @notice private function to update the current auction state
@@ -565,9 +532,8 @@ contract Zone is ERC223ReceivingContract, IZone {
   /// @notice private function to update the current auction state
   function _bid(address _sender, uint _dthAmount) // GAS COST +/- 223.689
     private
+    onlyWhenZoneHasOwner
   {
-    require(zoneOwner.addr != address(0), "cannot bid on zone without owner, use claimFreeZone()");
-
     if (currentAuctionId > 0 && auctionIdToAuction[currentAuctionId].state == AuctionState.Started) {
       _joinAuction(_sender, _dthAmount);
     } else { // there currently is no running auction
@@ -584,8 +550,8 @@ contract Zone is ERC223ReceivingContract, IZone {
 
   function _claimFreeZone(address _sender, uint _dthAmount) // GAS COSt +/- 177.040
     private
+    onlyWhenZoneHasNoOwner
   {
-    require(zoneOwner.addr == address(0), "can not claim zone with owner");
     require(_dthAmount >= MIN_STAKE, "need at least minimum zone stake amount (100 DTH)");
 
     // NOTE: empty zone claim will not have entry fee deducted, its not bidding it's taking immediately
@@ -599,9 +565,9 @@ contract Zone is ERC223ReceivingContract, IZone {
 
   function _topUp(address _sender, uint _dthAmount) // GAS COST +/- 104.201
     private
+    onlyWhenZoneHasOwner
   {
-    require(zoneOwner.addr != address(0), "zone has no owner");
-    require(_sender == zoneOwner.addr, "caller is not zone owner");
+    require(_sender == zoneOwner.addr, "caller is not zoneowner");
     require(currentAuctionId == 0 || auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "cannot top up while auction running");
 
     uint oldBalance = zoneOwner.balance;
@@ -615,8 +581,6 @@ contract Zone is ERC223ReceivingContract, IZone {
     // - should we also increse his dth stake when he tops up his dth balance?
     // - or should we limit his max topup to make his balance not bigger
     //   than his zone.staked amount (over which he pays taxes), or maybe not more than 10% above his zone.staked
-
-    emit ZoneOwnerTopUp(_sender, oldBalance, newBalance);
   }
 
   // ------------------------------------------------
@@ -625,25 +589,18 @@ contract Zone is ERC223ReceivingContract, IZone {
   //
   // ------------------------------------------------
 
-  /////////////
-  //
-  //
-  // Zone ownership + Auction
-  //
-  //
-  /////////////
-
   /// @notice ERC223 receiving function called by Dth contract when Eth is sent to this contract
   /// @param _from Who send DTH to this contract
   /// @param _value How much DTH was sent to this contract
   /// @param _data Additional bytes data sent
-  function tokenFallback(address _from, uint _value, bytes _data)
-    onlyWhenInited
+  function tokenFallback(address _from, uint _value, bytes memory _data)
     public
+    onlyWhenInited
+    onlyWhenTellerConnected
+    onlyWhenNotPaused
+    onlyWhenCountryEnabled
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
-    require(control.paused() == false, "contract is paused");
-    require(geo.countryIsEnabled(country), "country is disabled");
 
     bytes1 func = toBytes1(_data, 0);
 
@@ -667,22 +624,20 @@ contract Zone is ERC223ReceivingContract, IZone {
   /// @notice release zone ownership
   /// @dev can only be called by current zone owner, when there is no running auction
   function release() // GAS COST +/- 72.351
-    onlyWhenInited
     external
+    onlyWhenInited
+    onlyWhenTellerConnected
+    onlyWhenNotPaused
+    updateState
+    onlyWhenCallerIsZoneOwner
   {
-    require(control.paused() == false, "contract is paused");
     // allow also when country is disabled, otherwise no way for zone owner to get their eth/dth back
 
-    // zone owner could be removed if he does not have enough balance to pay his taxes
-    _processState();
-
-    require(msg.sender == zoneOwner.addr, "caller is not zone owner");
     require(currentAuctionId == 0 || auctionIdToAuction[currentAuctionId].state == AuctionState.Ended, "cannot release while auction running");
 
     uint ownerBalance = zoneOwner.balance;
 
     _removeZoneOwner();
-    _removeTeller();
 
     // if msg.sender is a contract, the DTH ERC223 contract will try to call tokenFallback
     // on msg.sender, this could lead to a reentrancy. But we prevent this by resetting
@@ -695,15 +650,14 @@ contract Zone is ERC223ReceivingContract, IZone {
   /// @notice withdraw losing bids from a specific auction
   /// @param _auctionId The auction id
   function withdrawFromAuction(uint _auctionId) // GAS COST +/- 125.070
-    onlyWhenInited
     external
+    onlyWhenInited
+    onlyWhenTellerConnected
+    onlyWhenNotPaused
+    updateState
   {
-    require(control.paused() == false, "contract is paused");
     // even when country is disabled, otherwise users cannot withdraw their bids
-
     require(_auctionId > 0 && _auctionId <= currentAuctionId, "auctionId does not exist");
-
-    _processState();
 
     require(auctionIdToAuction[_auctionId].state == AuctionState.Ended, "cannot withdraw while auction is active");
     require(auctionIdToAuction[_auctionId].highestBidder != msg.sender, "auction winner can not withdraw");
@@ -716,15 +670,15 @@ contract Zone is ERC223ReceivingContract, IZone {
   }
 
   /// @notice withdraw from a given list of auction ids
-  function withdrawFromAuctions(uint[] _auctionIds) // GAS COST +/- 127.070
-    onlyWhenInited
+  function withdrawFromAuctions(uint[] calldata _auctionIds) // GAS COST +/- 127.070
     external
+    onlyWhenInited
+    onlyWhenTellerConnected
+    onlyWhenNotPaused
+    updateState
   {
-    require(control.paused() == false, "contract is paused");
     // even when country is disabled, can withdraw
     require(currentAuctionId > 0, "there are no auctions");
-
-    _processState();
 
     require(_auctionIds.length > 0, "auctionIds list is empty");
     require(_auctionIds.length <= currentAuctionId, "auctionIds list is longer than allowed");
@@ -753,11 +707,11 @@ contract Zone is ERC223ReceivingContract, IZone {
   // - bids in past auctions
   // - zone owner stake
   function withdrawDth()
-    onlyWhenInited
     external
+    onlyWhenInited
+    onlyWhenTellerConnected
+    updateState
   {
-    _processState();
-
     uint dthWithdraw = withdrawableDth[msg.sender];
     require(dthWithdraw > 0, "nothing to withdraw");
 
@@ -768,11 +722,11 @@ contract Zone is ERC223ReceivingContract, IZone {
   }
 
   function withdrawEth()
-    onlyWhenInited
     external
+    onlyWhenInited
+    onlyWhenTellerConnected
+    updateState
   {
-    _processState();
-
     uint ethWithdraw = withdrawableEth[msg.sender];
     require(ethWithdraw > 0, "nothing to withdraw");
 
@@ -782,157 +736,13 @@ contract Zone is ERC223ReceivingContract, IZone {
     }
   }
 
-  /////////////
-  //
-  //
-  // TELLER
-  //
-  //
-  /////////////
-
-
-  // NOTE: we could just require only last 5 bytes of a bytes12 geohash, since
-  // the first 7 bytes will be the geohash of this zone. But by requiring the full geohash
-  // we can mkae more sure the user is talking to the right zone
-  function addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings, address _referrer) // GAS COST +/- 75.301
-    onlyWhenInited
+  // teller --> zone --> zonefactory --> users
+  function proxyUpdateUserDailySold(address _to, uint _amount)
     external
-  {
-    require(control.paused() == false, "contract is paused");
-    require(geo.countryIsEnabled(country), "country is disabled");
-    require(_position.length == 12, "expected position to be 12 bytes");
-    require(toBytes7(_position, 0) == geohash, "position is not inside this zone");
-    require(geo.validGeohashChars(_position), "invalid position geohash characters");
-
-    require(_currencyId >= 1 && _currencyId <= 100, "currency id must be in range 1-100");
-    // _messenger can be 0x0 if he has no telegram
-
-    if (_settings & isSellerBitMask != 0) { // seller bit is set => teller is a "seller"
-      require(_sellRate >= -9999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
-    } else {
-      require(_sellRate == 0, "cannot set sellRate if not set as seller");
-    }
-
-    if (_settings & isBuyerBitMask != 0) { // buyer bit is set => teller is a "buyer"
-      require(_buyRate >= -9999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
-    } else {
-      require(_buyRate == 0, "cannot set buyRate if not set as buyer");
-    }
-
-    _processState();
-
-    require(msg.sender == zoneOwner.addr, "only zone owner can add teller info");
-
-    teller.currencyId = _currencyId;
-    teller.messenger = _messenger;
-    teller.buyRate = _buyRate;
-    teller.sellRate = _sellRate;
-    teller.position = toBytes12(_position, 0);
-    teller.settings = _settings;
-    teller.referrer = _referrer;
-
-    emit ZoneUpdatedTeller(msg.sender);
-  }
-
-  function removeTeller()
     onlyWhenInited
-    external
+    onlyWhenTellerConnected
+    onlyByTellerContract
   {
-    require(control.paused() == false, "contract is paused");
-
-    _processState();
-
-    require(msg.sender == zoneOwner.addr, "only zone owner can add teller info");
-
-    _removeTeller();
-  }
-
-  // called by Teller, adding ETH to Teller funds
-  function addFunds() // GAS COST +/- 59.809
-    onlyWhenInited
-    external
-    payable
-  {
-    require(control.paused() == false, "contract is paused");
-    require(geo.countryIsEnabled(country), "country is disabled");
-    require(msg.value > 0, "no eth send with call");
-
-    _processState();
-
-    require(msg.sender == zoneOwner.addr, "only zoneOwner can add funds");
-    require(teller.currencyId != 0, "not yet added teller info");
-
-    // register ETH sent to this contract
-    funds[msg.sender] = funds[msg.sender].add(msg.value);
-  }
-
-  // called by Teller, sending ETH from Zone to _to
-  function sellEth(address _to, uint _amount) // GAS COST +/- 147.310
-    onlyWhenInited
-    external
-  {
-    // NOTE: even users which are not registered in tier 1/2 -> sms/kyc, are allowed to sell eth
-    require(control.paused() == false, "contract is paused");
-    require(geo.countryIsEnabled(country), "country is disabled");
-    require(msg.sender != _to, "sender cannot also be to");
-    require(_amount > 0, "amount to sell cannot be zero");
-
-    _processState();
-
-    require(msg.sender == zoneOwner.addr, "can only be called by zone owner");
-    require(teller.currencyId != 0, "not yet added teller info");
-
-    if (teller.referrer != address(0)) { // need to pay referrer fee
-      uint referrerAmount = calcReferrerFee(_amount);
-      require(funds[msg.sender] >= _amount + referrerAmount, "not enough funds to sell eth amount plus pay referrer fee");
-      funds[msg.sender] = funds[msg.sender].sub(_amount + referrerAmount);
-      withdrawableEth[teller.referrer] = withdrawableEth[teller.referrer].add(referrerAmount);
-    } else {
-      require(funds[msg.sender] >= _amount, "cannot sell more than in funds");
-      funds[msg.sender] = funds[msg.sender].sub(_amount);
-    }
-
-    zoneFactory.updateUserDailySold(country, msg.sender, _to, _amount); // MIGHT THROW if exceeds daily limit
-
-    canPlaceCertifiedComment[zoneOwner.addr][_to]++;
-
-    _to.transfer(_amount);
-  }
-
-  function addCertifiedComment(bytes32 _commentHash)
-    onlyWhenInited
-    external
-  {
-    require(control.paused() == false, "contract is paused");
-    require(geo.countryIsEnabled(country), "country is disabled");
-    require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
-
-    _processState();
-
-    require(zoneOwner.addr != address(0), "cannot comment on zone without owner");
-    require(teller.position != bytes12(0), "cannot comment on zone without teller");
-    require(msg.sender != zoneOwner.addr, "zone owner cannot comment on himself");
-
-    require(canPlaceCertifiedComment[zoneOwner.addr][msg.sender] > 0, "user not allowed to place a certified comment");
-    canPlaceCertifiedComment[zoneOwner.addr][msg.sender]--;
-
-    commentsCertified[zoneOwner.addr].push(_commentHash);
-  }
-
-  function addComment(bytes32 _commentHash)
-    onlyWhenInited
-    external
-  {
-    require(control.paused() == false, "contract is paused");
-    require(geo.countryIsEnabled(country), "country is disabled");
-    require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
-
-    _processState();
-
-    require(zoneOwner.addr != address(0), "cannot comment on zone without owner");
-    require(teller.position != bytes12(0), "cannot comment on zone without teller");
-    require(msg.sender != zoneOwner.addr, "zone owner cannot comment on himself");
-
-    commentsFree[zoneOwner.addr].push(_commentHash);
+    zoneFactory.proxyUpdateUserDailySold(country, zoneOwner.addr, _to, _amount); // MIGHT THROW if exceeds daily limit
   }
 }

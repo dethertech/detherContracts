@@ -4,7 +4,7 @@
  *  Bug Bounties: This code hasn't undertaken a bug bounty program yet.
  */
 
-pragma solidity ^0.4.15;
+pragma solidity ^0.5.3;
 
 import "./Arbitrator.sol";
 
@@ -16,7 +16,7 @@ import "./Arbitrator.sol";
  *      -Call arbitrator.createDispute.value(_fee)(_choices,_extraData);
  *      -Create the event Dispute(_arbitrator,_disputeID,_rulingOptions);
  */
-interface IArbitrable {
+contract IArbitrable {
     /** @dev To be emmited when meta-evidence is submitted.
      *  @param _metaEvidenceID Unique identifier of meta-evidence.
      *  @param _evidence A link to the meta-evidence JSON.

@@ -4,7 +4,7 @@
  *  Bug Bounties: This code hasn't undertaken a bug bounty program yet.
  */
 
-pragma solidity ^0.4.15;
+pragma solidity ^0.5.3;
 
 import "./Arbitrable.sol";
 
@@ -19,11 +19,11 @@ contract Arbitrator{
 
     enum DisputeStatus {Waiting, Appealable, Solved}
 
-    modifier requireArbitrationFee(bytes _extraData) {
+    modifier requireArbitrationFee(bytes memory _extraData) {
         require(msg.value >= arbitrationCost(_extraData), "Not enough ETH to cover arbitration costs.");
         _;
     }
-    modifier requireAppealFee(uint _disputeID, bytes _extraData) {
+    modifier requireAppealFee(uint _disputeID, bytes memory _extraData) {
         require(msg.value >= appealCost(_disputeID, _extraData), "Not enough ETH to cover appeal costs.");
         _;
     }
@@ -51,19 +51,19 @@ contract Arbitrator{
      *  @param _extraData Can be used to give additional info on the dispute to be created.
      *  @return disputeID ID of the dispute created.
      */
-    function createDispute(uint _choices, bytes _extraData) public requireArbitrationFee(_extraData) payable returns(uint disputeID) {}
+    function createDispute(uint _choices, bytes memory _extraData) public requireArbitrationFee(_extraData) payable returns(uint disputeID) {}
 
     /** @dev Compute the cost of arbitration. It is recommended not to increase it often, as it can be highly time and gas consuming for the arbitrated contracts to cope with fee augmentation.
      *  @param _extraData Can be used to give additional info on the dispute to be created.
      *  @return fee Amount to be paid.
      */
-    function arbitrationCost(bytes _extraData) public view returns(uint fee);
+    function arbitrationCost(bytes memory _extraData) public view returns(uint fee);
 
     /** @dev Appeal a ruling. Note that it has to be called before the arbitrator contract calls rule.
      *  @param _disputeID ID of the dispute to be appealed.
      *  @param _extraData Can be used to give extra info on the appeal.
      */
-    function appeal(uint _disputeID, bytes _extraData) public requireAppealFee(_disputeID,_extraData) payable {
+    function appeal(uint _disputeID, bytes memory _extraData) public requireAppealFee(_disputeID,_extraData) payable {
         emit AppealDecision(_disputeID, Arbitrable(msg.sender));
     }
 
@@ -72,7 +72,7 @@ contract Arbitrator{
      *  @param _extraData Can be used to give additional info on the dispute to be created.
      *  @return fee Amount to be paid.
      */
-    function appealCost(uint _disputeID, bytes _extraData) public view returns(uint fee);
+    function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint fee);
 
     /** @dev Compute the start and end of the dispute's current or next appeal period, if possible.
      *  @param _disputeID ID of the dispute.

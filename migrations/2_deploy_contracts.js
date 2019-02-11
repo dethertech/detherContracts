@@ -8,6 +8,7 @@ const Users = artifacts.require('Users.sol');
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
 const ZoneFactory = artifacts.require('ZoneFactory.sol');
 const Zone = artifacts.require('Zone.sol');
+const Teller = artifacts.require('Teller.sol');
 // const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // const CONTRACT_ADDRESSES = {
@@ -23,30 +24,39 @@ const Zone = artifacts.require('Zone.sol');
 // delay, right in the middle of the tests after 60 seconds, the next contract in this migration
 // file will be deployed. therefore comment them out until you actually want to deploy.
 
-module.exports = (deployer, network) => {
-  return deployer.then(async () => {
-    await deployer.deploy(DetherToken, { gas: 7000000 });
-    const dth = await DetherToken.deployed();
-    await deployer.deploy(FakeExchangeRateOracle, { gas: 7000000 }); // TODO: let CEO update oracl,
-    const price = await FakeExchangeRateOracle.deployed();
-    await deployer.deploy(Control, { gas: 7000000 });
-    const control = await Control.deployed();
-    console.log('ITTTTTTT', control.address);
-    await deployer.deploy(SmsCertifier, control.address, { gas: 7000000 });
-    const sms = await SmsCertifier.deployed();
-    await deployer.deploy(KycCertifier, control.address, { gas: 7000000 });
-    const kyc = await KycCertifier.deployed();
-    await deployer.deploy(GeoRegistry, control.address, { gas: 7000000 });
-    const geo = await GeoRegistry.deployed();
-    await deployer.deploy(Zone, { gas: 7000000 });
-    const zoneImplementation = await Zone.deployed();
-    await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, control.address, { gas: 10000000 });
-    const users = await Users.deployed();
-    await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, { gas: 7000000 });
-    const zoneFactory = await ZoneFactory.deployed();
-  });
+module.exports = async (deployer, network) => {
+  await deployer.deploy(DetherToken, { gas: 6500000 });
+  const dth = await DetherToken.deployed();
+
+  await deployer.deploy(FakeExchangeRateOracle, { gas: 6500000 });
+  const price = await FakeExchangeRateOracle.deployed();
+
+  await deployer.deploy(Control, { gas: 6500000 });
+  const control = await Control.deployed();
+
+  await deployer.deploy(SmsCertifier, control.address, { gas: 6500000 });
+  const sms = await SmsCertifier.deployed();
+
+  await deployer.deploy(KycCertifier, control.address, { gas: 6500000 });
+  const kyc = await KycCertifier.deployed();
+
+  await deployer.deploy(GeoRegistry, control.address, { gas: 6500000 });
+  const geo = await GeoRegistry.deployed();
+
+  await deployer.deploy(Zone, { gas: 6500000 });
+  const zoneImplementation = await Zone.deployed();
+
+  await deployer.deploy(Teller, { gas: 6500000 });
+  const tellerImplementation = await Teller.deployed();
+
+  await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, control.address, { gas: 6500000 });
+  const users = await Users.deployed();
+
+  await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, { gas: 6500000 });
+  const zoneFactory = await ZoneFactory.deployed();
+  // });
   // // gas 1,161,360
-  // // await deployer.deploy(DetherToken, { gas: 6000000, gasPrice: 27000000000 });
+  // // await deployer.deploy(DetherToken, { gas: 6000000, gasPrice: 26500000000 });
   //
   // // gas: 4,873,314
   // await deployer.deploy(DetherCore, { gas: 6500000 });
@@ -87,7 +97,7 @@ module.exports = (deployer, network) => {
   //       ExchangeRateOracle,
   //       // pass int he address of the Maker price feed contract on the blockchain
   //       CONTRACT_ADDRESSES[network].mkrPriceFeed,
-  //       { gas: 7000000 },
+  //       { gas: 6500000 },
   //     );
   //     break;
   //

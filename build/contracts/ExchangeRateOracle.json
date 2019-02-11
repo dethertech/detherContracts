@@ -55,63 +55,63 @@
       "type": "function"
     }
   ],
-  "bytecode": "0x608060405234801561001057600080fd5b506040516020806102c7833981016040525160008054600160a060020a03909216600160a060020a0319909216919091179055610275806100526000396000f3006080604052600436106100565763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166350ccf36b811461005b5780636a14602414610082578063a60c589914610097575b600080fd5b34801561006757600080fd5b506100706100d5565b60408051918252519081900360200190f35b34801561008e57600080fd5b506100706101b1565b3480156100a357600080fd5b506100ac6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6000806000806000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166359e02dd76040518163ffffffff167c01000000000000000000000000000000000000000000000000000000000281526004016040805180830381600087803b15801561015f57600080fd5b505af1158015610173573d6000803e3d6000fd5b505050506040513d604081101561018957600080fd5b50805160209091015190935091506101a9670de0b6b3a7640000846101d9565b949350505050565b670de0b6b3a764000081565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b6000816101fa6101f185670de0b6b3a764000061020b565b60028504610239565b81151561020357fe5b049392505050565b600081158061022857505080820282828281151561022557fe5b04145b151561023357600080fd5b92915050565b8082018281101561023357600080fd00a165627a7a7230582053df1cff1cb8a9a727169245ec4171f8541b232c4869b62c44e2176e157889dc0029",
-  "deployedBytecode": "0x6080604052600436106100565763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166350ccf36b811461005b5780636a14602414610082578063a60c589914610097575b600080fd5b34801561006757600080fd5b506100706100d5565b60408051918252519081900360200190f35b34801561008e57600080fd5b506100706101b1565b3480156100a357600080fd5b506100ac6101bd565b6040805173ffffffffffffffffffffffffffffffffffffffff9092168252519081900360200190f35b6000806000806000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166359e02dd76040518163ffffffff167c01000000000000000000000000000000000000000000000000000000000281526004016040805180830381600087803b15801561015f57600080fd5b505af1158015610173573d6000803e3d6000fd5b505050506040513d604081101561018957600080fd5b50805160209091015190935091506101a9670de0b6b3a7640000846101d9565b949350505050565b670de0b6b3a764000081565b60005473ffffffffffffffffffffffffffffffffffffffff1681565b6000816101fa6101f185670de0b6b3a764000061020b565b60028504610239565b81151561020357fe5b049392505050565b600081158061022857505080820282828281151561022557fe5b04145b151561023357600080fd5b92915050565b8082018281101561023357600080fd00a165627a7a7230582053df1cff1cb8a9a727169245ec4171f8541b232c4869b62c44e2176e157889dc0029",
-  "sourceMap": "127:590:29:-;;;231:100;8:9:-1;5:2;;;30:1;27;20:12;5:2;231:100:29;;;;;;;;;;;;;285:12;:41;;-1:-1:-1;;;;;285:41:29;;;-1:-1:-1;;;;;;285:41:29;;;;;;;;;127:590;;;;;;",
-  "deployedSourceMap": "127:590:29:-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;383:332;;8:9:-1;5:2;;;30:1;27;20:12;5:2;383:332:29;;;;;;;;;;;;;;;;;;;;263:35:9;;8:9:-1;5:2;;;30:1;27;20:12;5:2;263:35:9;;;;195:31:29;;8:9:-1;5:2;;;30:1;27;20:12;5:2;195:31:29;;;;;;;;;;;;;;;;;;;;;;;383:332;432:4;494:16;516:12;632:22;556:12;;;;;;;;;;;:17;;;:19;;;;;;;;;;;;;;;;;;;;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;556:19:29;;;;8:9:-1;5:2;;;45:16;42:1;39;24:38;77:16;74:1;67:27;5:2;556:19:29;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;-1:-1;556:19:29;;;;;;;;;-1:-1:-1;556:19:29;-1:-1:-1;657:25:29;290:8:9;556:19:29;657:4;:25::i;:::-;632:50;383:332;-1:-1:-1;;;;383:332:29:o;263:35:9:-;290:8;263:35;:::o;195:31:29:-;;;;;;:::o;303:103:9:-;356:6;400:1;374:23;378:11;382:1;290:8;378:3;:11::i;:::-;395:1;391;:5;374:3;:23::i;:::-;:27;;;;;;;;;303:103;-1:-1:-1;;;303:103:9:o;149:110::-;201:6;223;;;:30;;-1:-1:-1;;238:5:9;;;252:1;247;238:5;233:15;;;;;;;;:20;223:30;215:39;;;;;;;;149:110;;;;:::o;50:96::-;129:5;;;124:16;;;;116:25;;;;",
-  "source": "pragma solidity ^0.4.24;\n\nimport \"../dappsys/DSMathWdiv.sol\";\nimport \"./IExchangeRateOracle.sol\";\nimport \"./IMedianizer.sol\";\n\ncontract ExchangeRateOracle is DSMathWdiv, IExchangeRateOracle {\n\n  IMedianizer public mkrPriceFeed;\n\n  constructor(address mkrPriceFeed_)\n    public\n  {\n    mkrPriceFeed = IMedianizer(mkrPriceFeed_);\n  }\n\n  /**\n   * @dev Return wei price of 1 USD\n   */\n  function getWeiPriceOneUsd() public view returns(uint) {\n    // get usd price of 1 eth from maker contract\n    bytes32 priceRaw;\n    bool success;\n    (priceRaw, success) = mkrPriceFeed.peek();\n\n    // convert \"1 eth = X usd\" to \"X eth = 1 usd\"\n    uint256 weiPriceOneUsd = wdiv(WAD, uint(priceRaw));\n\n    return weiPriceOneUsd;\n  }\n}\n",
+  "bytecode": "0x608060405234801561001057600080fd5b506040516020806103568339810180604052602081101561003057600080fd5b8101908080519060200190929190505050806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550506102c5806100916000396000f3fe608060405234801561001057600080fd5b506004361061005e576000357c01000000000000000000000000000000000000000000000000000000009004806350ccf36b146100635780636a14602414610081578063a60c58991461009f575b600080fd5b61006b6100e9565b6040518082815260200191505060405180910390f35b6100896101e0565b6040518082815260200191505060405180910390f35b6100a76101ec565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b60008060008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166359e02dd76040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401604080518083038186803b15801561017057600080fd5b505afa158015610184573d6000803e3d6000fd5b505050506040513d604081101561019a57600080fd5b810190808051906020019092919080519060200190929190505050809250819350505060006101d5670de0b6b3a76400008460019004610211565b905080935050505090565b670de0b6b3a764000081565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60008161023b61022985670de0b6b3a764000061024d565b60028581151561023557fe5b0461027d565b81151561024457fe5b04905092915050565b60008082148061026c5750828283850292508281151561026957fe5b04145b151561027757600080fd5b92915050565b6000828284019150811015151561029357600080fd5b9291505056fea165627a7a7230582065317e3182201df88fb4c551ad98f17477311c20fb586375bbedb16c0d6df5c40029",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b506004361061005e576000357c01000000000000000000000000000000000000000000000000000000009004806350ccf36b146100635780636a14602414610081578063a60c58991461009f575b600080fd5b61006b6100e9565b6040518082815260200191505060405180910390f35b6100896101e0565b6040518082815260200191505060405180910390f35b6100a76101ec565b604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b60008060008060009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff166359e02dd76040518163ffffffff167c0100000000000000000000000000000000000000000000000000000000028152600401604080518083038186803b15801561017057600080fd5b505afa158015610184573d6000803e3d6000fd5b505050506040513d604081101561019a57600080fd5b810190808051906020019092919080519060200190929190505050809250819350505060006101d5670de0b6b3a76400008460019004610211565b905080935050505090565b670de0b6b3a764000081565b6000809054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b60008161023b61022985670de0b6b3a764000061024d565b60028581151561023557fe5b0461027d565b81151561024457fe5b04905092915050565b60008082148061026c5750828283850292508281151561026957fe5b04145b151561027757600080fd5b92915050565b6000828284019150811015151561029357600080fd5b9291505056fea165627a7a7230582065317e3182201df88fb4c551ad98f17477311c20fb586375bbedb16c0d6df5c40029",
+  "sourceMap": "126:590:27:-;;;230:100;8:9:-1;5:2;;;30:1;27;20:12;5:2;230:100:27;;;;;;;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;230:100:27;;;;;;;;;;;;;;;;311:13;284:12;;:41;;;;;;;;;;;;;;;;;;230:100;126:590;;;;;;",
+  "deployedSourceMap": "126:590:27:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;126:590:27;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;382:332;;;:::i;:::-;;;;;;;;;;;;;;;;;;;262:35:9;;;:::i;:::-;;;;;;;;;;;;;;;;;;;194:31:27;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;382:332;431:4;493:16;515:12;555;;;;;;;;;;;:17;;;:19;;;;;;;;;;;;;;;;;;;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;555:19:27;;;;8:9:-1;5:2;;;45:16;42:1;39;24:38;77:16;74:1;67:27;5:2;555:19:27;;;;;;;13:2:-1;8:3;5:11;2:2;;;29:1;26;19:12;2:2;555:19:27;;;;;;;;;;;;;;;;;;;;;;;;;533:41;;;;;;;;631:22;656:25;289:8:9;671::27;666:14;;;656:4;:25::i;:::-;631:50;;695:14;688:21;;;;;382:332;:::o;262:35:9:-;289:8;262:35;:::o;194:31:27:-;;;;;;;;;;;;;:::o;302:103:9:-;355:6;399:1;373:23;377:11;381:1;289:8;377:3;:11::i;:::-;394:1;390;:5;;;;;;;;373:3;:23::i;:::-;:27;;;;;;;;369:31;;302:103;;;;:::o;148:110::-;200:6;227:1;222;:6;:30;;;;251:1;246;241;237;:5;233:9;;;232:15;;;;;;;;:20;222:30;214:39;;;;;;;;148:110;;;;:::o;49:96::-;101:6;138:1;132;128;:5;124:9;;;123:16;;115:25;;;;;;;;49:96;;;;:::o",
+  "source": "pragma solidity ^0.5.3;\n\nimport \"../dappsys/DSMathWdiv.sol\";\nimport \"./IExchangeRateOracle.sol\";\nimport \"./IMedianizer.sol\";\n\ncontract ExchangeRateOracle is DSMathWdiv, IExchangeRateOracle {\n\n  IMedianizer public mkrPriceFeed;\n\n  constructor(address mkrPriceFeed_)\n    public\n  {\n    mkrPriceFeed = IMedianizer(mkrPriceFeed_);\n  }\n\n  /**\n   * @dev Return wei price of 1 USD\n   */\n  function getWeiPriceOneUsd() public view returns(uint) {\n    // get usd price of 1 eth from maker contract\n    bytes32 priceRaw;\n    bool success;\n    (priceRaw, success) = mkrPriceFeed.peek();\n\n    // convert \"1 eth = X usd\" to \"X eth = 1 usd\"\n    uint256 weiPriceOneUsd = wdiv(WAD, uint(priceRaw));\n\n    return weiPriceOneUsd;\n  }\n}\n",
   "sourcePath": "/Users/trip/Projects/detherContracts/contracts/oracle/ExchangeRateOracle.sol",
   "ast": {
     "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/ExchangeRateOracle.sol",
     "exportedSymbols": {
       "ExchangeRateOracle": [
-        8050
+        9476
       ]
     },
-    "id": 8051,
+    "id": 9477,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 7997,
+        "id": 9423,
         "literals": [
           "solidity",
           "^",
-          "0.4",
-          ".24"
+          "0.5",
+          ".3"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:29"
+        "src": "0:23:27"
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dappsys/DSMathWdiv.sol",
         "file": "../dappsys/DSMathWdiv.sol",
-        "id": 7998,
+        "id": 9424,
         "nodeType": "ImportDirective",
-        "scope": 8051,
-        "sourceUnit": 1152,
-        "src": "26:35:29",
+        "scope": 9477,
+        "sourceUnit": 1114,
+        "src": "25:35:27",
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
         "file": "./IExchangeRateOracle.sol",
-        "id": 7999,
+        "id": 9425,
         "nodeType": "ImportDirective",
-        "scope": 8051,
-        "sourceUnit": 8084,
-        "src": "62:35:29",
+        "scope": 9477,
+        "sourceUnit": 9510,
+        "src": "61:35:27",
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IMedianizer.sol",
         "file": "./IMedianizer.sol",
-        "id": 8000,
+        "id": 9426,
         "nodeType": "ImportDirective",
-        "scope": 8051,
-        "sourceUnit": 8094,
-        "src": "98:27:29",
+        "scope": 9477,
+        "sourceUnit": 9520,
+        "src": "97:27:27",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -121,77 +121,77 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 8001,
+              "id": 9427,
               "name": "DSMathWdiv",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1151,
-              "src": "158:10:29",
+              "referencedDeclaration": 1113,
+              "src": "157:10:27",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_DSMathWdiv_$1151",
+                "typeIdentifier": "t_contract$_DSMathWdiv_$1113",
                 "typeString": "contract DSMathWdiv"
               }
             },
-            "id": 8002,
+            "id": 9428,
             "nodeType": "InheritanceSpecifier",
-            "src": "158:10:29"
+            "src": "157:10:27"
           },
           {
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 8003,
+              "id": 9429,
               "name": "IExchangeRateOracle",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 8083,
-              "src": "170:19:29",
+              "referencedDeclaration": 9509,
+              "src": "169:19:27",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_IExchangeRateOracle_$8083",
+                "typeIdentifier": "t_contract$_IExchangeRateOracle_$9509",
                 "typeString": "contract IExchangeRateOracle"
               }
             },
-            "id": 8004,
+            "id": 9430,
             "nodeType": "InheritanceSpecifier",
-            "src": "170:19:29"
+            "src": "169:19:27"
           }
         ],
         "contractDependencies": [
-          1151,
-          8083
+          1113,
+          9509
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 8050,
+        "id": 9476,
         "linearizedBaseContracts": [
-          8050,
-          8083,
-          1151
+          9476,
+          9509,
+          1113
         ],
         "name": "ExchangeRateOracle",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "constant": false,
-            "id": 8006,
+            "id": 9432,
             "name": "mkrPriceFeed",
             "nodeType": "VariableDeclaration",
-            "scope": 8050,
-            "src": "195:31:29",
+            "scope": 9476,
+            "src": "194:31:27",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_contract$_IMedianizer_$8093",
+              "typeIdentifier": "t_contract$_IMedianizer_$9519",
               "typeString": "contract IMedianizer"
             },
             "typeName": {
               "contractScope": null,
-              "id": 8005,
+              "id": 9431,
               "name": "IMedianizer",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 8093,
-              "src": "195:11:29",
+              "referencedDeclaration": 9519,
+              "src": "194:11:27",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                "typeIdentifier": "t_contract$_IMedianizer_$9519",
                 "typeString": "contract IMedianizer"
               }
             },
@@ -200,28 +200,28 @@
           },
           {
             "body": {
-              "id": 8017,
+              "id": 9443,
               "nodeType": "Block",
-              "src": "279:52:29",
+              "src": "278:52:27",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 8015,
+                    "id": 9441,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 8011,
+                      "id": 9437,
                       "name": "mkrPriceFeed",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 8006,
-                      "src": "285:12:29",
+                      "referencedDeclaration": 9432,
+                      "src": "284:12:27",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                        "typeIdentifier": "t_contract$_IMedianizer_$9519",
                         "typeString": "contract IMedianizer"
                       }
                     },
@@ -232,12 +232,12 @@
                       "arguments": [
                         {
                           "argumentTypes": null,
-                          "id": 8013,
+                          "id": 9439,
                           "name": "mkrPriceFeed_",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8008,
-                          "src": "312:13:29",
+                          "referencedDeclaration": 9434,
+                          "src": "311:13:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -251,18 +251,18 @@
                             "typeString": "address"
                           }
                         ],
-                        "id": 8012,
+                        "id": 9438,
                         "name": "IMedianizer",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 8093,
-                        "src": "300:11:29",
+                        "referencedDeclaration": 9519,
+                        "src": "299:11:27",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_contract$_IMedianizer_$8093_$",
+                          "typeIdentifier": "t_type$_t_contract$_IMedianizer_$9519_$",
                           "typeString": "type(contract IMedianizer)"
                         }
                       },
-                      "id": 8014,
+                      "id": 9440,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -270,43 +270,42 @@
                       "lValueRequested": false,
                       "names": [],
                       "nodeType": "FunctionCall",
-                      "src": "300:26:29",
+                      "src": "299:26:27",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                        "typeIdentifier": "t_contract$_IMedianizer_$9519",
                         "typeString": "contract IMedianizer"
                       }
                     },
-                    "src": "285:41:29",
+                    "src": "284:41:27",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                      "typeIdentifier": "t_contract$_IMedianizer_$9519",
                       "typeString": "contract IMedianizer"
                     }
                   },
-                  "id": 8016,
+                  "id": 9442,
                   "nodeType": "ExpressionStatement",
-                  "src": "285:41:29"
+                  "src": "284:41:27"
                 }
               ]
             },
             "documentation": null,
-            "id": 8018,
+            "id": 9444,
             "implemented": true,
-            "isConstructor": true,
-            "isDeclaredConst": false,
+            "kind": "constructor",
             "modifiers": [],
             "name": "",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8009,
+              "id": 9435,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8008,
+                  "id": 9434,
                   "name": "mkrPriceFeed_",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8018,
-                  "src": "243:21:29",
+                  "scope": 9444,
+                  "src": "242:21:27",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -314,10 +313,11 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8007,
+                    "id": 9433,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "243:7:29",
+                    "src": "242:7:27",
+                    "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -327,37 +327,38 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "242:23:29"
+              "src": "241:23:27"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 8010,
+              "id": 9436,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "279:0:29"
+              "src": "278:0:27"
             },
-            "scope": 8050,
-            "src": "231:100:29",
+            "scope": 9476,
+            "src": "230:100:27",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           },
           {
             "body": {
-              "id": 8048,
+              "id": 9474,
               "nodeType": "Block",
-              "src": "438:277:29",
+              "src": "437:277:27",
               "statements": [
                 {
-                  "assignments": [],
+                  "assignments": [
+                    9450
+                  ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 8024,
+                      "id": 9450,
                       "name": "priceRaw",
                       "nodeType": "VariableDeclaration",
-                      "scope": 8049,
-                      "src": "494:16:29",
+                      "scope": 9474,
+                      "src": "493:16:27",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -365,10 +366,10 @@
                         "typeString": "bytes32"
                       },
                       "typeName": {
-                        "id": 8023,
+                        "id": 9449,
                         "name": "bytes32",
                         "nodeType": "ElementaryTypeName",
-                        "src": "494:7:29",
+                        "src": "493:7:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
                           "typeString": "bytes32"
@@ -378,21 +379,23 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 8025,
+                  "id": 9451,
                   "initialValue": null,
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "494:16:29"
+                  "src": "493:16:27"
                 },
                 {
-                  "assignments": [],
+                  "assignments": [
+                    9453
+                  ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 8027,
+                      "id": 9453,
                       "name": "success",
                       "nodeType": "VariableDeclaration",
-                      "scope": 8049,
-                      "src": "516:12:29",
+                      "scope": 9474,
+                      "src": "515:12:27",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -400,10 +403,10 @@
                         "typeString": "bool"
                       },
                       "typeName": {
-                        "id": 8026,
+                        "id": 9452,
                         "name": "bool",
                         "nodeType": "ElementaryTypeName",
-                        "src": "516:4:29",
+                        "src": "515:4:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bool",
                           "typeString": "bool"
@@ -413,15 +416,15 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 8028,
+                  "id": 9454,
                   "initialValue": null,
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "516:12:29"
+                  "src": "515:12:27"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 8035,
+                    "id": 9461,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -431,12 +434,12 @@
                       "components": [
                         {
                           "argumentTypes": null,
-                          "id": 8029,
+                          "id": 9455,
                           "name": "priceRaw",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8024,
-                          "src": "535:8:29",
+                          "referencedDeclaration": 9450,
+                          "src": "534:8:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
                             "typeString": "bytes32"
@@ -444,26 +447,26 @@
                         },
                         {
                           "argumentTypes": null,
-                          "id": 8030,
+                          "id": 9456,
                           "name": "success",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8027,
-                          "src": "545:7:29",
+                          "referencedDeclaration": 9453,
+                          "src": "544:7:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bool",
                             "typeString": "bool"
                           }
                         }
                       ],
-                      "id": 8031,
+                      "id": 9457,
                       "isConstant": false,
                       "isInlineArray": false,
                       "isLValue": true,
                       "isPure": false,
                       "lValueRequested": true,
                       "nodeType": "TupleExpression",
-                      "src": "534:19:29",
+                      "src": "533:19:27",
                       "typeDescriptions": {
                         "typeIdentifier": "t_tuple$_t_bytes32_$_t_bool_$",
                         "typeString": "tuple(bytes32,bool)"
@@ -478,32 +481,32 @@
                         "argumentTypes": [],
                         "expression": {
                           "argumentTypes": null,
-                          "id": 8032,
+                          "id": 9458,
                           "name": "mkrPriceFeed",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8006,
-                          "src": "556:12:29",
+                          "referencedDeclaration": 9432,
+                          "src": "555:12:27",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                            "typeIdentifier": "t_contract$_IMedianizer_$9519",
                             "typeString": "contract IMedianizer"
                           }
                         },
-                        "id": 8033,
+                        "id": 9459,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "memberName": "peek",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 8092,
-                        "src": "556:17:29",
+                        "referencedDeclaration": 9518,
+                        "src": "555:17:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_external_view$__$returns$_t_bytes32_$_t_bool_$",
                           "typeString": "function () view external returns (bytes32,bool)"
                         }
                       },
-                      "id": 8034,
+                      "id": 9460,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -511,34 +514,34 @@
                       "lValueRequested": false,
                       "names": [],
                       "nodeType": "FunctionCall",
-                      "src": "556:19:29",
+                      "src": "555:19:27",
                       "typeDescriptions": {
                         "typeIdentifier": "t_tuple$_t_bytes32_$_t_bool_$",
                         "typeString": "tuple(bytes32,bool)"
                       }
                     },
-                    "src": "534:41:29",
+                    "src": "533:41:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_tuple$__$",
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 8036,
+                  "id": 9462,
                   "nodeType": "ExpressionStatement",
-                  "src": "534:41:29"
+                  "src": "533:41:27"
                 },
                 {
                   "assignments": [
-                    8038
+                    9464
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 8038,
+                      "id": 9464,
                       "name": "weiPriceOneUsd",
                       "nodeType": "VariableDeclaration",
-                      "scope": 8049,
-                      "src": "632:22:29",
+                      "scope": 9474,
+                      "src": "631:22:27",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -546,10 +549,10 @@
                         "typeString": "uint256"
                       },
                       "typeName": {
-                        "id": 8037,
+                        "id": 9463,
                         "name": "uint256",
                         "nodeType": "ElementaryTypeName",
-                        "src": "632:7:29",
+                        "src": "631:7:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -559,18 +562,18 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 8045,
+                  "id": 9471,
                   "initialValue": {
                     "argumentTypes": null,
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 8040,
+                        "id": 9466,
                         "name": "WAD",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 1126,
-                        "src": "662:3:29",
+                        "referencedDeclaration": 1088,
+                        "src": "661:3:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -581,12 +584,12 @@
                         "arguments": [
                           {
                             "argumentTypes": null,
-                            "id": 8042,
+                            "id": 9468,
                             "name": "priceRaw",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 8024,
-                            "src": "672:8:29",
+                            "referencedDeclaration": 9450,
+                            "src": "671:8:27",
                             "typeDescriptions": {
                               "typeIdentifier": "t_bytes32",
                               "typeString": "bytes32"
@@ -600,20 +603,20 @@
                               "typeString": "bytes32"
                             }
                           ],
-                          "id": 8041,
+                          "id": 9467,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
                           "lValueRequested": false,
                           "nodeType": "ElementaryTypeNameExpression",
-                          "src": "667:4:29",
+                          "src": "666:4:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_type$_t_uint256_$",
                             "typeString": "type(uint256)"
                           },
                           "typeName": "uint"
                         },
-                        "id": 8043,
+                        "id": 9469,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -621,7 +624,7 @@
                         "lValueRequested": false,
                         "names": [],
                         "nodeType": "FunctionCall",
-                        "src": "667:14:29",
+                        "src": "666:14:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -639,18 +642,18 @@
                           "typeString": "uint256"
                         }
                       ],
-                      "id": 8039,
+                      "id": 9465,
                       "name": "wdiv",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1150,
-                      "src": "657:4:29",
+                      "referencedDeclaration": 1112,
+                      "src": "656:4:27",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                       }
                     },
-                    "id": 8044,
+                    "id": 9470,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -658,62 +661,60 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "657:25:29",
+                    "src": "656:25:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "632:50:29"
+                  "src": "631:50:27"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 8046,
+                    "id": 9472,
                     "name": "weiPriceOneUsd",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 8038,
-                    "src": "696:14:29",
+                    "referencedDeclaration": 9464,
+                    "src": "695:14:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 8022,
-                  "id": 8047,
+                  "functionReturnParameters": 9448,
+                  "id": 9473,
                   "nodeType": "Return",
-                  "src": "689:21:29"
+                  "src": "688:21:27"
                 }
               ]
             },
             "documentation": "@dev Return wei price of 1 USD",
-            "id": 8049,
+            "id": 9475,
             "implemented": true,
-            "isConstructor": false,
-            "isDeclaredConst": true,
+            "kind": "function",
             "modifiers": [],
             "name": "getWeiPriceOneUsd",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8019,
+              "id": 9445,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "409:2:29"
+              "src": "408:2:27"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 8022,
+              "id": 9448,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8021,
+                  "id": 9447,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8049,
-                  "src": "432:4:29",
+                  "scope": 9475,
+                  "src": "431:4:27",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -721,10 +722,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 8020,
+                    "id": 9446,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "432:4:29",
+                    "src": "431:4:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -734,72 +735,72 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "431:6:29"
+              "src": "430:6:27"
             },
-            "scope": 8050,
-            "src": "383:332:29",
+            "scope": 9476,
+            "src": "382:332:27",
             "stateMutability": "view",
-            "superFunction": 8082,
+            "superFunction": 9508,
             "visibility": "public"
           }
         ],
-        "scope": 8051,
-        "src": "127:590:29"
+        "scope": 9477,
+        "src": "126:590:27"
       }
     ],
-    "src": "0:718:29"
+    "src": "0:717:27"
   },
   "legacyAST": {
     "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/ExchangeRateOracle.sol",
     "exportedSymbols": {
       "ExchangeRateOracle": [
-        8050
+        9476
       ]
     },
-    "id": 8051,
+    "id": 9477,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 7997,
+        "id": 9423,
         "literals": [
           "solidity",
           "^",
-          "0.4",
-          ".24"
+          "0.5",
+          ".3"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:29"
+        "src": "0:23:27"
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dappsys/DSMathWdiv.sol",
         "file": "../dappsys/DSMathWdiv.sol",
-        "id": 7998,
+        "id": 9424,
         "nodeType": "ImportDirective",
-        "scope": 8051,
-        "sourceUnit": 1152,
-        "src": "26:35:29",
+        "scope": 9477,
+        "sourceUnit": 1114,
+        "src": "25:35:27",
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
         "file": "./IExchangeRateOracle.sol",
-        "id": 7999,
+        "id": 9425,
         "nodeType": "ImportDirective",
-        "scope": 8051,
-        "sourceUnit": 8084,
-        "src": "62:35:29",
+        "scope": 9477,
+        "sourceUnit": 9510,
+        "src": "61:35:27",
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IMedianizer.sol",
         "file": "./IMedianizer.sol",
-        "id": 8000,
+        "id": 9426,
         "nodeType": "ImportDirective",
-        "scope": 8051,
-        "sourceUnit": 8094,
-        "src": "98:27:29",
+        "scope": 9477,
+        "sourceUnit": 9520,
+        "src": "97:27:27",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -809,77 +810,77 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 8001,
+              "id": 9427,
               "name": "DSMathWdiv",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1151,
-              "src": "158:10:29",
+              "referencedDeclaration": 1113,
+              "src": "157:10:27",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_DSMathWdiv_$1151",
+                "typeIdentifier": "t_contract$_DSMathWdiv_$1113",
                 "typeString": "contract DSMathWdiv"
               }
             },
-            "id": 8002,
+            "id": 9428,
             "nodeType": "InheritanceSpecifier",
-            "src": "158:10:29"
+            "src": "157:10:27"
           },
           {
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 8003,
+              "id": 9429,
               "name": "IExchangeRateOracle",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 8083,
-              "src": "170:19:29",
+              "referencedDeclaration": 9509,
+              "src": "169:19:27",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_IExchangeRateOracle_$8083",
+                "typeIdentifier": "t_contract$_IExchangeRateOracle_$9509",
                 "typeString": "contract IExchangeRateOracle"
               }
             },
-            "id": 8004,
+            "id": 9430,
             "nodeType": "InheritanceSpecifier",
-            "src": "170:19:29"
+            "src": "169:19:27"
           }
         ],
         "contractDependencies": [
-          1151,
-          8083
+          1113,
+          9509
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 8050,
+        "id": 9476,
         "linearizedBaseContracts": [
-          8050,
-          8083,
-          1151
+          9476,
+          9509,
+          1113
         ],
         "name": "ExchangeRateOracle",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "constant": false,
-            "id": 8006,
+            "id": 9432,
             "name": "mkrPriceFeed",
             "nodeType": "VariableDeclaration",
-            "scope": 8050,
-            "src": "195:31:29",
+            "scope": 9476,
+            "src": "194:31:27",
             "stateVariable": true,
             "storageLocation": "default",
             "typeDescriptions": {
-              "typeIdentifier": "t_contract$_IMedianizer_$8093",
+              "typeIdentifier": "t_contract$_IMedianizer_$9519",
               "typeString": "contract IMedianizer"
             },
             "typeName": {
               "contractScope": null,
-              "id": 8005,
+              "id": 9431,
               "name": "IMedianizer",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 8093,
-              "src": "195:11:29",
+              "referencedDeclaration": 9519,
+              "src": "194:11:27",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                "typeIdentifier": "t_contract$_IMedianizer_$9519",
                 "typeString": "contract IMedianizer"
               }
             },
@@ -888,28 +889,28 @@
           },
           {
             "body": {
-              "id": 8017,
+              "id": 9443,
               "nodeType": "Block",
-              "src": "279:52:29",
+              "src": "278:52:27",
               "statements": [
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 8015,
+                    "id": 9441,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
                     "lValueRequested": false,
                     "leftHandSide": {
                       "argumentTypes": null,
-                      "id": 8011,
+                      "id": 9437,
                       "name": "mkrPriceFeed",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 8006,
-                      "src": "285:12:29",
+                      "referencedDeclaration": 9432,
+                      "src": "284:12:27",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                        "typeIdentifier": "t_contract$_IMedianizer_$9519",
                         "typeString": "contract IMedianizer"
                       }
                     },
@@ -920,12 +921,12 @@
                       "arguments": [
                         {
                           "argumentTypes": null,
-                          "id": 8013,
+                          "id": 9439,
                           "name": "mkrPriceFeed_",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8008,
-                          "src": "312:13:29",
+                          "referencedDeclaration": 9434,
+                          "src": "311:13:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
                             "typeString": "address"
@@ -939,18 +940,18 @@
                             "typeString": "address"
                           }
                         ],
-                        "id": 8012,
+                        "id": 9438,
                         "name": "IMedianizer",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 8093,
-                        "src": "300:11:29",
+                        "referencedDeclaration": 9519,
+                        "src": "299:11:27",
                         "typeDescriptions": {
-                          "typeIdentifier": "t_type$_t_contract$_IMedianizer_$8093_$",
+                          "typeIdentifier": "t_type$_t_contract$_IMedianizer_$9519_$",
                           "typeString": "type(contract IMedianizer)"
                         }
                       },
-                      "id": 8014,
+                      "id": 9440,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -958,43 +959,42 @@
                       "lValueRequested": false,
                       "names": [],
                       "nodeType": "FunctionCall",
-                      "src": "300:26:29",
+                      "src": "299:26:27",
                       "typeDescriptions": {
-                        "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                        "typeIdentifier": "t_contract$_IMedianizer_$9519",
                         "typeString": "contract IMedianizer"
                       }
                     },
-                    "src": "285:41:29",
+                    "src": "284:41:27",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                      "typeIdentifier": "t_contract$_IMedianizer_$9519",
                       "typeString": "contract IMedianizer"
                     }
                   },
-                  "id": 8016,
+                  "id": 9442,
                   "nodeType": "ExpressionStatement",
-                  "src": "285:41:29"
+                  "src": "284:41:27"
                 }
               ]
             },
             "documentation": null,
-            "id": 8018,
+            "id": 9444,
             "implemented": true,
-            "isConstructor": true,
-            "isDeclaredConst": false,
+            "kind": "constructor",
             "modifiers": [],
             "name": "",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8009,
+              "id": 9435,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8008,
+                  "id": 9434,
                   "name": "mkrPriceFeed_",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8018,
-                  "src": "243:21:29",
+                  "scope": 9444,
+                  "src": "242:21:27",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1002,10 +1002,11 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 8007,
+                    "id": 9433,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "243:7:29",
+                    "src": "242:7:27",
+                    "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -1015,37 +1016,38 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "242:23:29"
+              "src": "241:23:27"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 8010,
+              "id": 9436,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "279:0:29"
+              "src": "278:0:27"
             },
-            "scope": 8050,
-            "src": "231:100:29",
+            "scope": 9476,
+            "src": "230:100:27",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           },
           {
             "body": {
-              "id": 8048,
+              "id": 9474,
               "nodeType": "Block",
-              "src": "438:277:29",
+              "src": "437:277:27",
               "statements": [
                 {
-                  "assignments": [],
+                  "assignments": [
+                    9450
+                  ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 8024,
+                      "id": 9450,
                       "name": "priceRaw",
                       "nodeType": "VariableDeclaration",
-                      "scope": 8049,
-                      "src": "494:16:29",
+                      "scope": 9474,
+                      "src": "493:16:27",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -1053,10 +1055,10 @@
                         "typeString": "bytes32"
                       },
                       "typeName": {
-                        "id": 8023,
+                        "id": 9449,
                         "name": "bytes32",
                         "nodeType": "ElementaryTypeName",
-                        "src": "494:7:29",
+                        "src": "493:7:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes32",
                           "typeString": "bytes32"
@@ -1066,21 +1068,23 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 8025,
+                  "id": 9451,
                   "initialValue": null,
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "494:16:29"
+                  "src": "493:16:27"
                 },
                 {
-                  "assignments": [],
+                  "assignments": [
+                    9453
+                  ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 8027,
+                      "id": 9453,
                       "name": "success",
                       "nodeType": "VariableDeclaration",
-                      "scope": 8049,
-                      "src": "516:12:29",
+                      "scope": 9474,
+                      "src": "515:12:27",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -1088,10 +1092,10 @@
                         "typeString": "bool"
                       },
                       "typeName": {
-                        "id": 8026,
+                        "id": 9452,
                         "name": "bool",
                         "nodeType": "ElementaryTypeName",
-                        "src": "516:4:29",
+                        "src": "515:4:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bool",
                           "typeString": "bool"
@@ -1101,15 +1105,15 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 8028,
+                  "id": 9454,
                   "initialValue": null,
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "516:12:29"
+                  "src": "515:12:27"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 8035,
+                    "id": 9461,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -1119,12 +1123,12 @@
                       "components": [
                         {
                           "argumentTypes": null,
-                          "id": 8029,
+                          "id": 9455,
                           "name": "priceRaw",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8024,
-                          "src": "535:8:29",
+                          "referencedDeclaration": 9450,
+                          "src": "534:8:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bytes32",
                             "typeString": "bytes32"
@@ -1132,26 +1136,26 @@
                         },
                         {
                           "argumentTypes": null,
-                          "id": 8030,
+                          "id": 9456,
                           "name": "success",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8027,
-                          "src": "545:7:29",
+                          "referencedDeclaration": 9453,
+                          "src": "544:7:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bool",
                             "typeString": "bool"
                           }
                         }
                       ],
-                      "id": 8031,
+                      "id": 9457,
                       "isConstant": false,
                       "isInlineArray": false,
                       "isLValue": true,
                       "isPure": false,
                       "lValueRequested": true,
                       "nodeType": "TupleExpression",
-                      "src": "534:19:29",
+                      "src": "533:19:27",
                       "typeDescriptions": {
                         "typeIdentifier": "t_tuple$_t_bytes32_$_t_bool_$",
                         "typeString": "tuple(bytes32,bool)"
@@ -1166,32 +1170,32 @@
                         "argumentTypes": [],
                         "expression": {
                           "argumentTypes": null,
-                          "id": 8032,
+                          "id": 9458,
                           "name": "mkrPriceFeed",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 8006,
-                          "src": "556:12:29",
+                          "referencedDeclaration": 9432,
+                          "src": "555:12:27",
                           "typeDescriptions": {
-                            "typeIdentifier": "t_contract$_IMedianizer_$8093",
+                            "typeIdentifier": "t_contract$_IMedianizer_$9519",
                             "typeString": "contract IMedianizer"
                           }
                         },
-                        "id": 8033,
+                        "id": 9459,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "memberName": "peek",
                         "nodeType": "MemberAccess",
-                        "referencedDeclaration": 8092,
-                        "src": "556:17:29",
+                        "referencedDeclaration": 9518,
+                        "src": "555:17:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_function_external_view$__$returns$_t_bytes32_$_t_bool_$",
                           "typeString": "function () view external returns (bytes32,bool)"
                         }
                       },
-                      "id": 8034,
+                      "id": 9460,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": false,
@@ -1199,34 +1203,34 @@
                       "lValueRequested": false,
                       "names": [],
                       "nodeType": "FunctionCall",
-                      "src": "556:19:29",
+                      "src": "555:19:27",
                       "typeDescriptions": {
                         "typeIdentifier": "t_tuple$_t_bytes32_$_t_bool_$",
                         "typeString": "tuple(bytes32,bool)"
                       }
                     },
-                    "src": "534:41:29",
+                    "src": "533:41:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_tuple$__$",
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 8036,
+                  "id": 9462,
                   "nodeType": "ExpressionStatement",
-                  "src": "534:41:29"
+                  "src": "533:41:27"
                 },
                 {
                   "assignments": [
-                    8038
+                    9464
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 8038,
+                      "id": 9464,
                       "name": "weiPriceOneUsd",
                       "nodeType": "VariableDeclaration",
-                      "scope": 8049,
-                      "src": "632:22:29",
+                      "scope": 9474,
+                      "src": "631:22:27",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -1234,10 +1238,10 @@
                         "typeString": "uint256"
                       },
                       "typeName": {
-                        "id": 8037,
+                        "id": 9463,
                         "name": "uint256",
                         "nodeType": "ElementaryTypeName",
-                        "src": "632:7:29",
+                        "src": "631:7:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -1247,18 +1251,18 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 8045,
+                  "id": 9471,
                   "initialValue": {
                     "argumentTypes": null,
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 8040,
+                        "id": 9466,
                         "name": "WAD",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 1126,
-                        "src": "662:3:29",
+                        "referencedDeclaration": 1088,
+                        "src": "661:3:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -1269,12 +1273,12 @@
                         "arguments": [
                           {
                             "argumentTypes": null,
-                            "id": 8042,
+                            "id": 9468,
                             "name": "priceRaw",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
-                            "referencedDeclaration": 8024,
-                            "src": "672:8:29",
+                            "referencedDeclaration": 9450,
+                            "src": "671:8:27",
                             "typeDescriptions": {
                               "typeIdentifier": "t_bytes32",
                               "typeString": "bytes32"
@@ -1288,20 +1292,20 @@
                               "typeString": "bytes32"
                             }
                           ],
-                          "id": 8041,
+                          "id": 9467,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
                           "lValueRequested": false,
                           "nodeType": "ElementaryTypeNameExpression",
-                          "src": "667:4:29",
+                          "src": "666:4:27",
                           "typeDescriptions": {
                             "typeIdentifier": "t_type$_t_uint256_$",
                             "typeString": "type(uint256)"
                           },
                           "typeName": "uint"
                         },
-                        "id": 8043,
+                        "id": 9469,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
@@ -1309,7 +1313,7 @@
                         "lValueRequested": false,
                         "names": [],
                         "nodeType": "FunctionCall",
-                        "src": "667:14:29",
+                        "src": "666:14:27",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -1327,18 +1331,18 @@
                           "typeString": "uint256"
                         }
                       ],
-                      "id": 8039,
+                      "id": 9465,
                       "name": "wdiv",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1150,
-                      "src": "657:4:29",
+                      "referencedDeclaration": 1112,
+                      "src": "656:4:27",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                       }
                     },
-                    "id": 8044,
+                    "id": 9470,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -1346,62 +1350,60 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "657:25:29",
+                    "src": "656:25:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "632:50:29"
+                  "src": "631:50:27"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 8046,
+                    "id": 9472,
                     "name": "weiPriceOneUsd",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 8038,
-                    "src": "696:14:29",
+                    "referencedDeclaration": 9464,
+                    "src": "695:14:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 8022,
-                  "id": 8047,
+                  "functionReturnParameters": 9448,
+                  "id": 9473,
                   "nodeType": "Return",
-                  "src": "689:21:29"
+                  "src": "688:21:27"
                 }
               ]
             },
             "documentation": "@dev Return wei price of 1 USD",
-            "id": 8049,
+            "id": 9475,
             "implemented": true,
-            "isConstructor": false,
-            "isDeclaredConst": true,
+            "kind": "function",
             "modifiers": [],
             "name": "getWeiPriceOneUsd",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 8019,
+              "id": 9445,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "409:2:29"
+              "src": "408:2:27"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 8022,
+              "id": 9448,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 8021,
+                  "id": 9447,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 8049,
-                  "src": "432:4:29",
+                  "scope": 9475,
+                  "src": "431:4:27",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -1409,10 +1411,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 8020,
+                    "id": 9446,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "432:4:29",
+                    "src": "431:4:27",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -1422,26 +1424,36 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "431:6:29"
+              "src": "430:6:27"
             },
-            "scope": 8050,
-            "src": "383:332:29",
+            "scope": 9476,
+            "src": "382:332:27",
             "stateMutability": "view",
-            "superFunction": 8082,
+            "superFunction": 9508,
             "visibility": "public"
           }
         ],
-        "scope": 8051,
-        "src": "127:590:29"
+        "scope": 9477,
+        "src": "126:590:27"
       }
     ],
-    "src": "0:718:29"
+    "src": "0:717:27"
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
+    "version": "0.5.3+commit.10d17f24.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "2.0.1",
-  "updatedAt": "2019-01-29T09:58:57.207Z"
+  "schemaVersion": "3.0.1",
+  "updatedAt": "2019-02-07T14:25:27.346Z",
+  "devdoc": {
+    "methods": {
+      "getWeiPriceOneUsd()": {
+        "details": "Return wei price of 1 USD"
+      }
+    }
+  },
+  "userdoc": {
+    "methods": {}
+  }
 }

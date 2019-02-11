@@ -17,7 +17,7 @@
 // NOTE: added parent ICertifier to SmsCertifier contract
 //
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 import "./CertifierBase.sol";
 

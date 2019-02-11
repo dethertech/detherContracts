@@ -17,7 +17,7 @@
 // NOTE: updated contract name from Certifier to ICertifier
 //
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 contract ICertifier {
 	event Confirmed(address indexed who);

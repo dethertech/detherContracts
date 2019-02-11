@@ -45,19 +45,13 @@ module.exports = {
       // gasPrice: 25000000000,
     },
   },
-  // compilers: { // truffle v5
-  //   solc: {
-  //     version: '0.4.25',
-  //     optimizer: {
-  //       enabled: true,
-  //       runs: 200,
-  //     },
-  //   },
-  // },
-  solc: { // truffle v4
-    optimizer: {
-      enabled: true,
-      runs: 200,
+  compilers: {
+    solc: {
+      version: '0.5.3',
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
     },
   },
 };

@@ -28,28 +28,31 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.4.18;\n\n\n/// @title Contract that supports the receival of ERC223 tokens.\ncontract ERC223ReceivingContract {\n\n    /// @dev Standard ERC223 function that will handle incoming token transfers.\n    /// @param _from  Token sender address.\n    /// @param _value Amount of tokens.\n    /// @param _data  Transaction metadata.\n    function tokenFallback(address _from, uint _value, bytes _data) public;\n\n}\n",
-  "sourcePath": "/Users/trip/Projects/detherContracts/contracts/dth/tokenfoundry/ERC223ReceivingContract.sol",
+  "source": "pragma solidity >=0.4.21 <0.6.0;\n\n\n/// @title Contract that supports the receival of ERC223 tokens.\ncontract ERC223ReceivingContract {\n\n    /// @dev Standard ERC223 function that will handle incoming token transfers.\n    /// @param _from  Token sender address.\n    /// @param _value Amount of tokens.\n    /// @param _data  Transaction metadata.\n    function tokenFallback(address _from, uint _value, bytes memory _data) public;\n\n}\n",
+  "sourcePath": "/Users/trip/Projects/detherContracts/contracts/dth/ERC223ReceivingContract.sol",
   "ast": {
-    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dth/tokenfoundry/ERC223ReceivingContract.sol",
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dth/ERC223ReceivingContract.sol",
     "exportedSymbols": {
       "ERC223ReceivingContract": [
-        132
+        2703
       ]
     },
-    "id": 133,
+    "id": 2704,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 122,
+        "id": 2693,
         "literals": [
           "solidity",
-          "^",
+          ">=",
           "0.4",
-          ".18"
+          ".21",
+          "<",
+          "0.6",
+          ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:3"
+        "src": "0:32:12"
       },
       {
         "baseContracts": [],
@@ -57,9 +60,9 @@
         "contractKind": "contract",
         "documentation": "@title Contract that supports the receival of ERC223 tokens.",
         "fullyImplemented": false,
-        "id": 132,
+        "id": 2703,
         "linearizedBaseContracts": [
-          132
+          2703
         ],
         "name": "ERC223ReceivingContract",
         "nodeType": "ContractDefinition",
@@ -67,24 +70,23 @@
           {
             "body": null,
             "documentation": "@dev Standard ERC223 function that will handle incoming token transfers.\n @param _from  Token sender address.\n @param _value Amount of tokens.\n @param _data  Transaction metadata.",
-            "id": 131,
+            "id": 2702,
             "implemented": false,
-            "isConstructor": false,
-            "isDeclaredConst": false,
+            "kind": "function",
             "modifiers": [],
             "name": "tokenFallback",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 129,
+              "id": 2700,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 124,
+                  "id": 2695,
                   "name": "_from",
                   "nodeType": "VariableDeclaration",
-                  "scope": 131,
-                  "src": "364:13:3",
+                  "scope": 2702,
+                  "src": "372:13:12",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -92,10 +94,11 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 123,
+                    "id": 2694,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "364:7:3",
+                    "src": "372:7:12",
+                    "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -106,11 +109,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 126,
+                  "id": 2697,
                   "name": "_value",
                   "nodeType": "VariableDeclaration",
-                  "scope": 131,
-                  "src": "379:11:3",
+                  "scope": 2702,
+                  "src": "387:11:12",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -118,10 +121,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 125,
+                    "id": 2696,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "379:4:3",
+                    "src": "387:4:12",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -132,22 +135,22 @@
                 },
                 {
                   "constant": false,
-                  "id": 128,
+                  "id": 2699,
                   "name": "_data",
                   "nodeType": "VariableDeclaration",
-                  "scope": 131,
-                  "src": "392:11:3",
+                  "scope": 2702,
+                  "src": "400:18:12",
                   "stateVariable": false,
-                  "storageLocation": "default",
+                  "storageLocation": "memory",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bytes_memory_ptr",
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 127,
+                    "id": 2698,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
-                    "src": "392:5:3",
+                    "src": "400:5:12",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bytes_storage_ptr",
                       "typeString": "bytes"
@@ -157,48 +160,50 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "363:41:3"
+              "src": "371:48:12"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 130,
+              "id": 2701,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "411:0:3"
+              "src": "426:0:12"
             },
-            "scope": 132,
-            "src": "341:71:3",
+            "scope": 2703,
+            "src": "349:78:12",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 133,
-        "src": "92:323:3"
+        "scope": 2704,
+        "src": "100:330:12"
       }
     ],
-    "src": "0:416:3"
+    "src": "0:431:12"
   },
   "legacyAST": {
-    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dth/tokenfoundry/ERC223ReceivingContract.sol",
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dth/ERC223ReceivingContract.sol",
     "exportedSymbols": {
       "ERC223ReceivingContract": [
-        132
+        2703
       ]
     },
-    "id": 133,
+    "id": 2704,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 122,
+        "id": 2693,
         "literals": [
           "solidity",
-          "^",
+          ">=",
           "0.4",
-          ".18"
+          ".21",
+          "<",
+          "0.6",
+          ".0"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:3"
+        "src": "0:32:12"
       },
       {
         "baseContracts": [],
@@ -206,9 +211,9 @@
         "contractKind": "contract",
         "documentation": "@title Contract that supports the receival of ERC223 tokens.",
         "fullyImplemented": false,
-        "id": 132,
+        "id": 2703,
         "linearizedBaseContracts": [
-          132
+          2703
         ],
         "name": "ERC223ReceivingContract",
         "nodeType": "ContractDefinition",
@@ -216,24 +221,23 @@
           {
             "body": null,
             "documentation": "@dev Standard ERC223 function that will handle incoming token transfers.\n @param _from  Token sender address.\n @param _value Amount of tokens.\n @param _data  Transaction metadata.",
-            "id": 131,
+            "id": 2702,
             "implemented": false,
-            "isConstructor": false,
-            "isDeclaredConst": false,
+            "kind": "function",
             "modifiers": [],
             "name": "tokenFallback",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 129,
+              "id": 2700,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 124,
+                  "id": 2695,
                   "name": "_from",
                   "nodeType": "VariableDeclaration",
-                  "scope": 131,
-                  "src": "364:13:3",
+                  "scope": 2702,
+                  "src": "372:13:12",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -241,10 +245,11 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 123,
+                    "id": 2694,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "364:7:3",
+                    "src": "372:7:12",
+                    "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
                       "typeString": "address"
@@ -255,11 +260,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 126,
+                  "id": 2697,
                   "name": "_value",
                   "nodeType": "VariableDeclaration",
-                  "scope": 131,
-                  "src": "379:11:3",
+                  "scope": 2702,
+                  "src": "387:11:12",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -267,10 +272,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 125,
+                    "id": 2696,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "379:4:3",
+                    "src": "387:4:12",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -281,22 +286,22 @@
                 },
                 {
                   "constant": false,
-                  "id": 128,
+                  "id": 2699,
                   "name": "_data",
                   "nodeType": "VariableDeclaration",
-                  "scope": 131,
-                  "src": "392:11:3",
+                  "scope": 2702,
+                  "src": "400:18:12",
                   "stateVariable": false,
-                  "storageLocation": "default",
+                  "storageLocation": "memory",
                   "typeDescriptions": {
                     "typeIdentifier": "t_bytes_memory_ptr",
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 127,
+                    "id": 2698,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
-                    "src": "392:5:3",
+                    "src": "400:5:12",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bytes_storage_ptr",
                       "typeString": "bytes"
@@ -306,33 +311,48 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "363:41:3"
+              "src": "371:48:12"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 130,
+              "id": 2701,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "411:0:3"
+              "src": "426:0:12"
             },
-            "scope": 132,
-            "src": "341:71:3",
+            "scope": 2703,
+            "src": "349:78:12",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 133,
-        "src": "92:323:3"
+        "scope": 2704,
+        "src": "100:330:12"
       }
     ],
-    "src": "0:416:3"
+    "src": "0:431:12"
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
+    "version": "0.5.3+commit.10d17f24.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "2.0.1",
-  "updatedAt": "2019-01-31T17:06:50.190Z"
+  "schemaVersion": "3.0.1",
+  "updatedAt": "2019-02-07T14:25:27.306Z",
+  "devdoc": {
+    "methods": {
+      "tokenFallback(address,uint256,bytes)": {
+        "details": "Standard ERC223 function that will handle incoming token transfers.",
+        "params": {
+          "_data": "Transaction metadata.",
+          "_from": "Token sender address.",
+          "_value": "Amount of tokens."
+        }
+      }
+    },
+    "title": "Contract that supports the receival of ERC223 tokens."
+  },
+  "userdoc": {
+    "methods": {}
+  }
 }

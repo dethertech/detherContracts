@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
@@ -120,7 +120,7 @@ contract Shops is IArbitrable {
   //
   // ------------------------------------------------
 
-  constructor(address _dth, address _geo, address _users, address _control, address _arbitrator, bytes _arbitratorExtraData)
+  constructor(address _dth, address _geo, address _users, address _control, address _arbitrator, bytes memory _arbitratorExtraData)
     public
   {
     require(_dth != address(0), "dth address cannot be 0x0");
@@ -195,7 +195,7 @@ contract Shops is IArbitrable {
   //
   // ------------------------------------------------
 
-  function toBytes1(bytes _bytes, uint _start)
+  function toBytes1(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes1) {
@@ -208,7 +208,7 @@ contract Shops is IArbitrable {
 
       return tempBytes1;
   }
-  function toBytes2(bytes _bytes, uint _start)
+  function toBytes2(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes2) {
@@ -221,7 +221,7 @@ contract Shops is IArbitrable {
 
       return tempBytes2;
   }
-  function toBytes4(bytes _bytes, uint _start)
+  function toBytes4(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes4) {
@@ -234,7 +234,7 @@ contract Shops is IArbitrable {
 
       return tempBytes4;
   }
-  function toBytes7(bytes _bytes, uint _start)
+  function toBytes7(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes7) {
@@ -247,7 +247,7 @@ contract Shops is IArbitrable {
 
       return tempBytes7;
   }
-  function toBytes12(bytes _bytes, uint _start)
+  function toBytes12(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes12) {
@@ -260,7 +260,7 @@ contract Shops is IArbitrable {
 
       return tempBytes12;
   }
-  function toBytes16(bytes _bytes, uint _start)
+  function toBytes16(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes16) {
@@ -273,7 +273,7 @@ contract Shops is IArbitrable {
 
       return tempBytes16;
   }
-  function toBytes32(bytes _bytes, uint _start)
+  function toBytes32(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes32) {
@@ -300,7 +300,7 @@ contract Shops is IArbitrable {
     countryLicensePrice[_countryCode] = _priceDTH;
   }
 
-  function tokenFallback(address _from, uint _value, bytes _data)
+  function tokenFallback(address _from, uint _value, bytes memory _data)
     public
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
@@ -401,7 +401,7 @@ contract Shops is IArbitrable {
   //
 
   // so we can add new types of dispute in the future
-  function addDisputeType(string _disputeTypeLink)
+  function addDisputeType(string calldata _disputeTypeLink)
     external
   {
     require(control.isCEO(msg.sender), "can only be called by CEO");
@@ -435,9 +435,10 @@ contract Shops is IArbitrable {
 
   function getDisputeStatus(uint _disputeID)
     private
+    view
     returns (Arbitrator.DisputeStatus disputeStatus)
   {
-    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
+    ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
     if (dispute.status == Arbitrator.DisputeStatus.Solved) {
       // rule() in this contract was called, it set status to Solved and set the final Ruling
@@ -450,9 +451,10 @@ contract Shops is IArbitrable {
 
   function getDisputeRuling(uint _disputeID)
     private
+    view
     returns (RulingOptions disputeRuling)
   {
-    ShopDispute storage dispute = disputeIdToDispute[_disputeID];
+    ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
     if (dispute.status == Arbitrator.DisputeStatus.Solved) {
       // rule() in this contract was called, it set status to Solved and set the final Ruling
@@ -486,7 +488,7 @@ contract Shops is IArbitrable {
   }
 
   // called by somebody who wants to start a dispute with a shop
-  function createDispute(address _shopAddress, uint _metaEvidenceId, string _evidenceLink)
+  function createDispute(address _shopAddress, uint _metaEvidenceId, string memory _evidenceLink)
     public
     payable
   {
@@ -526,7 +528,7 @@ contract Shops is IArbitrable {
   }
 
 
-  function appealDispute(address _shopAddress, string _evidenceLink)
+  function appealDispute(address _shopAddress, string calldata _evidenceLink)
     external
     payable
   {

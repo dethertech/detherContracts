@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 contract IUsers {
   function updateDailySold(bytes2 _countryCode, address _from, address _to, uint _amount) public;
