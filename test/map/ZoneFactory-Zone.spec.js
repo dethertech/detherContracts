@@ -2,20 +2,17 @@
 /* global artifacts, contract */
 /* eslint-disable max-len, no-multi-spaces, no-unused-expressions */
 
-// https://medium.com/@gus_tavo_guim/beautifying-your-smart-contract-tests-with-javascript-4d284efcb2e8
+const DetherToken = artifacts.require('DetherToken');
+const Control = artifacts.require('Control');
+const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle');
+const SmsCertifier = artifacts.require('SmsCertifier');
+const KycCertifier = artifacts.require('KycCertifier');
+const Users = artifacts.require('Users');
+const GeoRegistry = artifacts.require('GeoRegistry');
+const ZoneFactory = artifacts.require('ZoneFactory');
+const Zone = artifacts.require('Zone');
+const Teller = artifacts.require('Teller');
 
-const DetherToken = artifacts.require('DetherToken.sol');
-const Control = artifacts.require('Control.sol');
-const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle.sol');
-const SmsCertifier = artifacts.require('SmsCertifier.sol');
-const KycCertifier = artifacts.require('KycCertifier.sol');
-const Users = artifacts.require('Users.sol');
-const GeoRegistry = artifacts.require('GeoRegistry.sol');
-const ZoneFactory = artifacts.require('ZoneFactory.sol');
-const Zone = artifacts.require('Zone.sol');
-const Teller = artifacts.require('Teller.sol');
-
-const BigNumber = require('bignumber.js');
 const Web3 = require('web3');
 
 const expect = require('../utils/chai');
@@ -118,7 +115,7 @@ const auctionToObjPretty = auctionArr => ({
   highestBid: auctionArr[5].toString(),
 });
 
-contract('ZoneFactory + Zone', (accounts) => {
+contract.only('ZoneFactory + Zone', (accounts) => {
   let owner;
   let user1;
   let user2;
@@ -281,15 +278,15 @@ contract('ZoneFactory + Zone', (accounts) => {
       it('should succeed otherwise', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
-        const tx = await web3.eth.sendTransaction({
+        await web3.eth.sendTransaction({
           from: user1,
           to: dthInstance.address,
           data: createDthZoneCreateData(zoneFactoryInstance.address, MIN_ZONE_DTH_STAKE, asciiToHex(COUNTRY_CG), asciiToHex(VALID_CG_ZONE_GEOHASH)),
           value: 0,
           gas: 4700000,
         });
-        const zoneInstance = await Zone.at(`0x${tx.logs[1].topics[1].slice(-40)}`);
-        // console.log('create zone gas used:', addNumberDots(tx.gasUsed));
+        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+        const zoneInstance = await Zone.at(zoneAddress);
 
         expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.equal('0');
         expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal('0');
@@ -303,7 +300,6 @@ contract('ZoneFactory + Zone', (accounts) => {
         expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
 
         const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-        const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
 
         const lastBlockTimestamp = await getLastBlockTimestamp();
 
@@ -313,18 +309,11 @@ contract('ZoneFactory + Zone', (accounts) => {
         expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
         expect(zoneOwner.balance).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
         expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
-
-        expect(lastAuction.id).to.be.bignumber.equal('0');
-        expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
-        expect(lastAuction.startTime).to.be.bignumber.equal('0');
-        expect(lastAuction.endTime).to.be.bignumber.equal('0');
-        expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
-        expect(lastAuction.highestBid).to.be.bignumber.equal('0');
       });
     });
   });
 
-  describe.only('Setters', () => {
+  describe('Setters', () => {
     let zoneInstance;
     let tellerInstance;
     beforeEach(async () => {
@@ -382,7 +371,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
 
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
 
           const lastBlockTimestamp = await getLastBlockTimestamp();
 
@@ -392,13 +380,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
           expect(zoneOwner.balance).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
           expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
-
-          expect(lastAuction.id).to.be.bignumber.equal('0');
-          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
-          expect(lastAuction.startTime).to.be.bignumber.equal('0');
-          expect(lastAuction.endTime).to.be.bignumber.equal('0');
-          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
-          expect(lastAuction.highestBid).to.be.bignumber.equal('0');
         });
       });
 
@@ -566,7 +547,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
 
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
 
           const lastBlockTimestamp = await getLastBlockTimestamp();
 
@@ -575,13 +555,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
           expect(zoneOwner.balance).to.be.bignumber.lte(ethToWei(MIN_ZONE_DTH_STAKE + 10));
           expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
-
-          expect(lastAuction.id).to.be.bignumber.equal('0');
-          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
-          expect(lastAuction.startTime).to.be.bignumber.equal('0');
-          expect(lastAuction.endTime).to.be.bignumber.equal('0');
-          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
-          expect(lastAuction.highestBid).to.be.bignumber.equal('0');
         });
       });
 
@@ -623,20 +596,12 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
 
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
 
           expect(zoneOwner.addr).to.equal(ADDRESS_ZERO);
           expect(zoneOwner.lastTaxTime).to.be.bignumber.equal('0');
           expect(zoneOwner.staked).to.be.bignumber.equal('0');
           expect(zoneOwner.balance).to.be.bignumber.equal('0');
           expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
-
-          expect(lastAuction.id).to.be.bignumber.equal('0');
-          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
-          expect(lastAuction.startTime).to.be.bignumber.equal('0');
-          expect(lastAuction.endTime).to.be.bignumber.equal('0');
-          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
-          expect(lastAuction.highestBid).to.be.bignumber.equal('0');
         });
         it('should succeed if there is no running auction and country is disabled', async () => {
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
@@ -655,20 +620,12 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
 
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
 
           expect(zoneOwner.addr).to.equal(ADDRESS_ZERO);
           expect(zoneOwner.lastTaxTime).to.be.bignumber.equal('0');
           expect(zoneOwner.staked).to.be.bignumber.equal('0');
           expect(zoneOwner.balance).to.be.bignumber.equal('0');
           expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
-
-          expect(lastAuction.id).to.be.bignumber.equal('0');
-          expect(lastAuction.state).to.be.bignumber.equal(ZONE_AUCTION_STATE_STARTED);
-          expect(lastAuction.startTime).to.be.bignumber.equal('0');
-          expect(lastAuction.endTime).to.be.bignumber.equal('0');
-          expect(lastAuction.highestBidder).to.equal(ADDRESS_ZERO);
-          expect(lastAuction.highestBid).to.be.bignumber.equal('0');
         });
       });
 
@@ -1648,114 +1605,88 @@ contract('ZoneFactory + Zone', (accounts) => {
         it('returns correct result for 100 dth', async () => {
           const res = await zoneInstance.calcEntryFee(ethToWei(100));
           expect(res.burnAmount).to.be.bignumber.equal(ethToWei(1));
-          expect(res.keepAmount).to.be.bignumber.equal(ethToWei(99));
+          expect(res.bidAmount).to.be.bignumber.equal(ethToWei(99));
         });
         it('returns correct result for 101 dth', async () => {
           const res = await zoneInstance.calcEntryFee(ethToWei(101));
           expect(res.burnAmount).to.be.bignumber.equal(ethToWei(1.01));
-          expect(res.keepAmount).to.be.bignumber.equal(ethToWei(99.99));
+          expect(res.bidAmount).to.be.bignumber.equal(ethToWei(99.99));
         });
       });
       describe('Zone.calcHarbergerTax(uint _startTime, uint _endTime, uint _dthAmount)', () => {
         it('[tax 1 hour] stake 100 dth ', async () => {
           const res = await zoneInstance.calcHarbergerTax(0, ONE_HOUR, ethToWei(100));
-          expect(res[0].toString()).to.equal('41666666666666666');
-          expect(res[1].toString()).to.equal('99958333333333333334');
+          expect(res.taxAmount).to.be.bignumber.equal('41666666666666666');
+          expect(res.keepAmount).to.be.bignumber.equal('99958333333333333334');
         });
         it('[tax 1 day] stake 100 dth ', async () => {
           // with tax being 1% per day, this test should return 1DTH tax2pay after exactly 24 hours
           const res = await zoneInstance.calcHarbergerTax(0, ONE_DAY, ethToWei(100));
-          expect(res[0].toString()).to.equal(ethToWei(1));
-          expect(res[1].toString()).to.equal(ethToWei(99));
+          expect(res.taxAmount).to.be.bignumber.equal(ethToWei(1));
+          expect(res.keepAmount).to.be.bignumber.equal(ethToWei(99));
         });
         it('returns correct result for 101 dth', async () => {
           const res = await zoneInstance.calcHarbergerTax(0, ONE_DAY, ethToWei(101));
-          expect(res[0].toString()).to.equal(ethToWei(1.01));
-          expect(res[1].toString()).to.equal(ethToWei(99.99));
+          expect(res.taxAmount).to.be.bignumber.equal(ethToWei(1.01));
+          expect(res.keepAmount).to.be.bignumber.equal(ethToWei(99.99));
         });
         it('returns correct result 15 second tax time', async () => {
           const res = await zoneInstance.calcHarbergerTax(0, 15, ethToWei(100));
-          expect(res[0].toString()).to.equal('173611111111111');
-          expect(res[1].toString()).to.equal('99999826388888888889');
+          expect(res.taxAmount).to.be.bignumber.equal('173611111111111');
+          expect(res.keepAmount).to.be.bignumber.equal('99999826388888888889');
         });
       });
     });
     describe('[ view ]', () => {
       describe('Zone.getLastAuction()', () => {
-        describe('when Zone just got created (owned by @user1)', () => {
-          let zoneInstance;
+        let zoneInstance;
 
-          beforeEach(async () => {
-            await enableAndLoadCountry(COUNTRY_CG);
-            zoneInstance = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH);
-          });
-          describe('when Zone cooldown period ended', () => {
-            beforeEach(async () => {
-              await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-            });
-            describe('when @user2 (challenger1) started an Auction for this Zone', () => {
-              beforeEach(async () => {
-                await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
-              });
-              it('returns correct newly created Auction 1 values', async () => {
-                const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-                expect(lastAuction.id.toNumber(), 'lastAuction.id should be 1').to.equal(1);
-                expect(lastAuction.state.toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
-                expect(lastAuction.startTime.toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
-                expect(lastAuction.endTime.gt(lastAuction.startTime), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                expect(lastAuction.highestBidder, 'lastAuction.highestBidder should equal @user2').to.equal(user2.toLowerCase());
-              });
-              describe('when @user1 (current zone owner) places a counter bid', () => {
-                beforeEach(async () => {
-                  await placeBid(user1, 20, zoneInstance.address);
-                });
-                it('returns correct updated (highestBidder) Auction 1 values', async () => {
-                  const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-                  expect(lastAuction.id.toNumber(), 'lastAuction.id should be 1').to.equal(1);
-                  expect(lastAuction.state.toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
-                  expect(lastAuction.startTime.toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
-                  expect(lastAuction.endTime.gt(lastAuction.startTime), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                  expect(lastAuction.highestBidder, 'lastAuction.highestBidder should equal @user1').to.equal(user1.toLowerCase());
-                });
-                describe('when @user2 (challenger1) places a counter bid', () => {
-                  beforeEach(async () => {
-                    await placeBid(user2, 20, zoneInstance.address);
-                  });
-                  it('returns correct updated (highestBidder) Auction 1 values', async () => {
-                    const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-                    expect(lastAuction.id.toNumber(), 'lastAuction.id should be 1').to.equal(1);
-                    expect(lastAuction.state.toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
-                    expect(lastAuction.startTime.toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
-                    expect(lastAuction.endTime.gt(lastAuction.startTime), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                    expect(lastAuction.highestBidder, 'lastAuction.highestBidder should equal @user2').to.equal(user2.toLowerCase());
-                  });
-                  describe('when Auction endTime has passed (winner and new zone owner will be @user2)', () => {
-                    beforeEach(async () => {
-                      await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-                    });
-                    describe('when Zone cooldown period ended', () => {
-                      beforeEach(async () => {
-                        await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-                      });
-                      describe('when @user3 (challenger2) started an Auction for this Zone', () => {
-                        beforeEach(async () => {
-                          await placeBid(user3, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address);
-                        });
-                        it('returns correct newly created Auction 2 values', async () => {
-                          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
-                          expect(lastAuction.id.toNumber(), 'lastAuction.id should be 2').to.equal(2);
-                          expect(lastAuction.state.toNumber(), 'lastAuction.state should equal Started(=0)').to.equal(0);
-                          expect(lastAuction.startTime.toNumber(), 'lastAuction.endTime should be greater than 0').to.not.equal(0);
-                          expect(lastAuction.endTime.gt(lastAuction.startTime), 'lastAuction.endTime should be bigger than auction.startTime').to.equal(true);
-                          expect(lastAuction.highestBidder, 'lastAuction.highestBidder should equal @user3').to.equal(user3.toLowerCase());
-                        });
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
+        beforeEach(async () => {
+          await enableAndLoadCountry(COUNTRY_CG);
+          ({ zoneInstance } = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH));
+        });
+        it('throws error when zone just got created', async () => {
+          await expectRevert2(
+            zoneInstance.getLastAuction(),
+            'auction does not exist',
+          );
+        });
+        it('returns correct auction when auction started', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
+
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+          expect(lastAuction.id.toNumber()).to.equal(1);
+          expect(lastAuction.state.toString()).to.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime.toNumber()).to.not.equal(0);
+          expect(lastAuction.endTime.gt(lastAuction.startTime)).to.equal(true);
+          expect(lastAuction.highestBidder.toLowerCase()).to.equal(user2.toLowerCase());
+        });
+        it('returns correct auction when counterbid placed', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
+          await placeBid(user1, 20, zoneInstance.address);
+
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+          expect(lastAuction.id.toNumber()).to.equal(1);
+          expect(lastAuction.state.toString()).to.equal(ZONE_AUCTION_STATE_STARTED);
+          expect(lastAuction.startTime.toNumber()).to.not.equal(0);
+          expect(lastAuction.endTime.gt(lastAuction.startTime)).to.equal(true);
+          expect(lastAuction.highestBidder.toLowerCase()).to.equal(user1.toLowerCase());
+        });
+        it('returns correct auction when auction ended and processed', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address);
+          await placeBid(user1, 20, zoneInstance.address);
+          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+          await zoneInstance.processState();
+
+          const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
+          expect(lastAuction.id.toNumber()).to.equal(1);
+          expect(lastAuction.state.toString()).to.equal(ZONE_AUCTION_STATE_ENDED);
+          expect(lastAuction.startTime.toNumber()).to.not.equal(0);
+          expect(lastAuction.endTime.gt(lastAuction.startTime)).to.equal(true);
+          expect(lastAuction.highestBidder.toLowerCase()).to.equal(user1.toLowerCase());
         });
       });
     });

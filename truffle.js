@@ -10,8 +10,6 @@ module.exports = {
       host: 'localhost',
       port: 8545,
       network_id: '*', // Match any network id
-      gasPrice: 20000000000,
-      gas: 6500000,
     },
     kovan: {
       provider: () => new HDWalletProvider(MNEMONIC, 'https://kovan.infura.io/'),

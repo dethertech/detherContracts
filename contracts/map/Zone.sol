@@ -3,7 +3,7 @@ pragma solidity ^0.5.3;
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../dth/ERC223ReceivingContract.sol";
-import "../dth/IDetherToken.sol";// TODO: replace with zeppelin ERC20 abstract contract?
+import "../dth/IDetherToken.sol";
 import "../core/IControl.sol";
 import "./IGeoRegistry.sol";
 import "./IZoneFactory.sol";
@@ -294,6 +294,8 @@ contract Zone is ERC223ReceivingContract {
     view
     returns (uint, uint, uint, uint, address, uint)
   {
+    require(_auctionId > 0 && _auctionId <= currentAuctionId, "auction does not exist");
+
     Auction memory auction = auctionIdToAuction[_auctionId];
 
     uint highestBid = auctionBids[_auctionId][auction.highestBidder];
@@ -449,7 +451,7 @@ contract Zone is ERC223ReceivingContract {
 
   function processState()
     external
-    onlyByTellerContract
+    /* onlyByTellerContract */
   {
     _processState();
   }
