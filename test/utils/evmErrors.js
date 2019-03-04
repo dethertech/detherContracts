@@ -6,7 +6,7 @@ const expectRevert = async (fn, errMsg) => {
   try {
     await fn;
   } catch (err) {
-    if (err.message !== forgeErrorMessage(errMsg)) {
+    if (!err.message.includes(errMsg)) {
       throw err;
     }
     return;
@@ -18,7 +18,7 @@ const expectRevert2 = async (fn, errMsg) => {
   try {
     await fn;
   } catch (err) {
-    if (err.message !== forgeErrorMessage2(errMsg)) {
+    if (!err.message.includes(errMsg)) {
       throw err;
     }
     return;

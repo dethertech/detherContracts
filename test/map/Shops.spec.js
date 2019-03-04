@@ -2,19 +2,21 @@
 /* global artifacts, contract, expect */
 /* eslint-disable max-len, no-multi-spaces, object-curly-newline */
 
-const DetherToken = artifacts.require('DetherToken.sol');
-const Control = artifacts.require('Control.sol');
-const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle.sol');
-const SmsCertifier = artifacts.require('SmsCertifier.sol');
-const KycCertifier = artifacts.require('KycCertifier.sol');
-const Users = artifacts.require('Users.sol');
-const GeoRegistry = artifacts.require('GeoRegistry.sol');
-const Shops = artifacts.require('Shops.sol');
-const AppealableArbitrator = artifacts.require('AppealableArbitrator.sol');
-const CentralizedArbitrator = artifacts.require('CentralizedArbitrator.sol');
+const DetherToken = artifacts.require('DetherToken');
+const Control = artifacts.require('Control');
+const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle');
+const SmsCertifier = artifacts.require('SmsCertifier');
+const KycCertifier = artifacts.require('KycCertifier');
+const Users = artifacts.require('Users');
+const GeoRegistry = artifacts.require('GeoRegistry');
+const Shops = artifacts.require('Shops');
+const ShopsDispute = artifacts.require('ShopsDispute');
+const AppealableArbitrator = artifacts.require('AppealableArbitrator');
+const CentralizedArbitrator = artifacts.require('CentralizedArbitrator');
 
 const Web3 = require('web3');
 
+const expect = require('../utils/chai');
 const TimeTravel = require('../utils/timeTravel');
 const { addCountry } = require('../utils/geo');
 const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
@@ -67,6 +69,7 @@ contract('Shops', (accounts) => {
   let usersInstance;
   let geoInstance;
   let shopsInstance;
+  let shopsDisputeInstance;
   let appealableArbitratorInstance;
   let centralizedArbitratorInstance;
 
@@ -115,10 +118,19 @@ contract('Shops', (accounts) => {
       geoInstance.address,
       usersInstance.address,
       controlInstance.address,
+      { from: owner },
+    );
+
+    shopsDisputeInstance = await ShopsDispute.new(
+      shopsInstance.address,
+      usersInstance.address,
+      controlInstance.address,
       appealableArbitratorInstance.address,
       KLEROS_ARBITRATOR_EXTRADATA,
       { from: owner },
     );
+
+    await shopsInstance.setShopsDisputeContract(shopsDisputeInstance.address, { from: owner });
 
     shopsInstance.setCountryLicensePrice(asciiToHex(COUNTRY_CG), ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
   });
@@ -472,7 +484,7 @@ contract('Shops', (accounts) => {
         await smsInstance.certify(user2, { from: owner });
         await expectRevert(
           shopsInstance.removeShop({ from: user2 }),
-          'caller does not own shop',
+          'caller is not shop',
         );
       });
       it('[success]', async () => {
@@ -512,13 +524,13 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         await controlInstance.pause({ from: owner });
 
         await expectRevert(
-          shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
           }),
@@ -542,10 +554,10 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
 
         await expectRevert(
-          shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
           }),
@@ -569,11 +581,11 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         await expectRevert(
-          shopsInstance.createDispute(user1, 1, 'my evidence link', {
+          shopsDisputeInstance.createDispute(user1, 1, 'my evidence link', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
           }),
@@ -597,11 +609,11 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         await expectRevert(
-          shopsInstance.createDispute(user1, 0, '', {
+          shopsDisputeInstance.createDispute(user1, 0, '', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
           }),
@@ -625,11 +637,11 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         await expectRevert(
-          shopsInstance.createDispute(ADDRESS_ZERO, 0, 'my evidence link', {
+          shopsDisputeInstance.createDispute(ADDRESS_ZERO, 0, 'my evidence link', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
           }),
@@ -653,10 +665,10 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
 
         await expectRevert(
-          shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
             from: user1,
             value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
           }),
@@ -680,16 +692,16 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
 
         await expectRevert(
-          shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
           }),
@@ -713,11 +725,11 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         await expectRevert(
-          shopsInstance.createDispute(user1, 0, 'my evidence link', {
+          shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
@@ -741,15 +753,15 @@ contract('Shops', (accounts) => {
           },
         );
 
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
 
-        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
+        const disputeBeforeRuling = await shopsDisputeInstance.getDispute(user1);
         const disputeBeforeRulingObj = {
           id: disputeBeforeRuling[0].toNumber(),
           shop: disputeBeforeRuling[1],
@@ -783,12 +795,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -798,7 +810,7 @@ contract('Shops', (accounts) => {
         await controlInstance.pause({ from: owner });
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+          shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
             from: user2, // challenger can appeal ruling that shop won
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
@@ -821,12 +833,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -836,7 +848,7 @@ contract('Shops', (accounts) => {
         await smsInstance.revoke(user2, { from: owner });
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+          shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
             from: user2, // challenger can appeal ruling that shop won
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
@@ -859,12 +871,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -872,7 +884,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, '', {
+          shopsDisputeInstance.appealDispute(user1, '', {
             from: user2, // challenger can appeal ruling that shop won
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
@@ -895,12 +907,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -910,11 +922,11 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // to finalize
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, 'my evidence link', {
+          shopsDisputeInstance.appealDispute(user1, 'my evidence link', {
             from: user2, // challenger can appeal ruling that shop won
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
-          'shop has no active dispute',
+          'shop has no dispute',
         );
       });
 
@@ -934,12 +946,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -947,7 +959,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, 'my evidence link', {
+          shopsDisputeInstance.appealDispute(user1, 'my evidence link', {
             from: user2,
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
@@ -970,12 +982,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -983,7 +995,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, 'my evidence link', {
+          shopsDisputeInstance.appealDispute(user1, 'my evidence link', {
             from: user1,
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
@@ -1006,12 +1018,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -1019,7 +1031,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_NO_RULING, { from: owner }); // dispute 0, shop wins
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, 'my evidence link', {
+          shopsDisputeInstance.appealDispute(user1, 'my evidence link', {
             from: user1,
             value: ethToWei(KLEROS_ARBITRATION_PRICE),
           }),
@@ -1042,12 +1054,12 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         const disputeId = 0;
 
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -1055,7 +1067,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
 
         await expectRevert(
-          shopsInstance.appealDispute(user1, 'my evidence link', {
+          shopsDisputeInstance.appealDispute(user1, 'my evidence link', {
             from: user2, // challenger can appeal ruling that shop won
             value: ethToWei(KLEROS_ARBITRATION_PRICE - 0.1),
           }),
@@ -1079,17 +1091,17 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         //
         // Create dispute
         //
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
-        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
+        const disputeBeforeRuling = await shopsDisputeInstance.getDispute(user1);
         const disputeBeforeRulingObj = {
           id: disputeBeforeRuling[0].toNumber(),
           shop: disputeBeforeRuling[1],
@@ -1109,18 +1121,18 @@ contract('Shops', (accounts) => {
         // Give ruling on dispute
         //
         await appealableArbitratorInstance.giveRuling(0, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
-        const disputeAfterRuling = await shopsInstance.getDispute(user1);
+        const disputeAfterRuling = await shopsDisputeInstance.getDispute(user1);
         expect(disputeAfterRuling[4].toNumber()).equals(1); // shop wins
         expect(disputeAfterRuling[5].toNumber()).equals(1); // Appealable
 
         //
         // Appeal dispute ruling
         //
-        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+        await shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
           from: user2, // challenger can appeal ruling that shop won
           value: ethToWei(KLEROS_ARBITRATION_PRICE),
         });
-        const disputeAfterAppeal = await shopsInstance.getDispute(user1);
+        const disputeAfterAppeal = await shopsDisputeInstance.getDispute(user1);
         expect(disputeAfterAppeal[4].toNumber()).equals(1); // shop wins
         expect(disputeAfterAppeal[5].toNumber()).equals(0); // Waiting
 
@@ -1128,7 +1140,6 @@ contract('Shops', (accounts) => {
         // Give ruling on appeal
         //
         await appealableArbitratorInstance.giveRuling(0, KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, challenger wins
-
         const withdrawableDthUser2 = await shopsInstance.withdrawableDth(user2);
         expect(withdrawableDthUser2.toString()).to.equal(ethToWei(CG_SHOP_LICENSE_PRICE));
 
@@ -1159,17 +1170,17 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
 
         //
         // Create dispute
         //
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
-        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
+        const disputeBeforeRuling = await shopsDisputeInstance.getDispute(user1);
         const disputeBeforeRulingObj = {
           id: disputeBeforeRuling[0].toNumber(),
           shop: disputeBeforeRuling[1],
@@ -1189,18 +1200,18 @@ contract('Shops', (accounts) => {
         // Give ruling on dispute
         //
         await appealableArbitratorInstance.giveRuling(0, KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
-        const disputeAfterRuling = await shopsInstance.getDispute(user1);
+        const disputeAfterRuling = await shopsDisputeInstance.getDispute(user1);
         expect(disputeAfterRuling[4].toNumber()).equals(2); // challenger wins
         expect(disputeAfterRuling[5].toNumber()).equals(1); // Appealable
 
         //
         // Appeal dispute ruling
         //
-        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+        await shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
           from: user1, // shop can appeal ruling that challenger won
           value: ethToWei(KLEROS_ARBITRATION_PRICE),
         });
-        const disputeAfterAppeal = await shopsInstance.getDispute(user1);
+        const disputeAfterAppeal = await shopsDisputeInstance.getDispute(user1);
         expect(disputeAfterAppeal[4].toNumber()).equals(2); // challenger wins
         expect(disputeAfterAppeal[5].toNumber()).equals(0); // Waiting
 
@@ -1246,7 +1257,7 @@ contract('Shops', (accounts) => {
         );
 
         await expectRevert(
-          shopsInstance.getDispute(user1, {
+          shopsDisputeInstance.getDispute(user1, {
             from: user1,
           }),
           'shop has no dispute',
@@ -1271,14 +1282,14 @@ contract('Shops', (accounts) => {
         );
 
         // create a dispute
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
 
-        const disputeBeforeRuling = await shopsInstance.getDispute(user1);
+        const disputeBeforeRuling = await shopsDisputeInstance.getDispute(user1);
         const disputeBeforeRulingObj = {
           id: disputeBeforeRuling[0].toNumber(),
           shop: disputeBeforeRuling[1],
@@ -1314,9 +1325,9 @@ contract('Shops', (accounts) => {
         );
 
         // create a dispute
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -1324,7 +1335,7 @@ contract('Shops', (accounts) => {
         // give ruling on dispute
         await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
 
-        const disputeAfterRuling = await shopsInstance.getDispute(user1);
+        const disputeAfterRuling = await shopsDisputeInstance.getDispute(user1);
         const disputeAfterRulingObj = {
           id: disputeAfterRuling[0].toNumber(),
           shop: disputeAfterRuling[1],
@@ -1360,9 +1371,9 @@ contract('Shops', (accounts) => {
         );
 
         // create a dispute
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -1371,12 +1382,12 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
 
         // appeal
-        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+        await shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
           from: user1, // shop can appeal ruling that challenger won
           value: ethToWei(KLEROS_ARBITRATION_PRICE),
         });
 
-        const disputeAfterAppeal = await shopsInstance.getDispute(user1);
+        const disputeAfterAppeal = await shopsDisputeInstance.getDispute(user1);
         const disputeAfterAppealObj = {
           id: disputeAfterAppeal[0].toNumber(),
           shop: disputeAfterAppeal[1],
@@ -1412,9 +1423,9 @@ contract('Shops', (accounts) => {
         );
 
         // create a dispute
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -1423,7 +1434,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
 
         // appeal
-        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+        await shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
           from: user1, // shop can appeal ruling that challenger won
           value: ethToWei(KLEROS_ARBITRATION_PRICE),
         });
@@ -1432,7 +1443,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling('0', KLEROS_SHOP_WINS, { from: owner }); // dispute 0, challenger wins
 
         await expectRevert(
-          shopsInstance.getDispute(user1),
+          shopsDisputeInstance.getDispute(user1),
           'shop has no dispute',
         );
       });
@@ -1455,9 +1466,9 @@ contract('Shops', (accounts) => {
         );
 
         // create a dispute
-        await shopsInstance.addDisputeType('my first metaevidence line', { from: owner });
+        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
         await smsInstance.certify(user2, { from: owner });
-        await shopsInstance.createDispute(user1, 0, 'my evidence link', {
+        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
           from: user2,
           value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
         });
@@ -1466,7 +1477,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, shop wins
 
         // appeal
-        await shopsInstance.appealDispute(user1, 'my appeal evidence link', {
+        await shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
           from: user1, // shop can appeal ruling that challenger won
           value: ethToWei(KLEROS_ARBITRATION_PRICE),
         });
@@ -1475,7 +1486,7 @@ contract('Shops', (accounts) => {
         await appealableArbitratorInstance.giveRuling('0', KLEROS_CHALLENGER_WINS, { from: owner }); // dispute 0, challenger wins
 
         await expectRevert(
-          shopsInstance.getDispute(user1),
+          shopsDisputeInstance.getDispute(user1),
           'shop does not exist',
         );
       });

@@ -9,6 +9,8 @@ const GeoRegistry = artifacts.require('GeoRegistry.sol');
 const ZoneFactory = artifacts.require('ZoneFactory.sol');
 const Zone = artifacts.require('Zone.sol');
 const Teller = artifacts.require('Teller.sol');
+const Shops = artifacts.require('Shops.sol');
+const ShopsDispute = artifacts.require('ShopsDispute.sol');
 // const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 // const CONTRACT_ADDRESSES = {
@@ -54,6 +56,13 @@ module.exports = async (deployer, network) => {
 
   await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, { gas: 6500000 });
   const zoneFactory = await ZoneFactory.deployed();
+
+  await deployer.deploy(Shops, dth.address, geo.address, users.address, control.address, { gas: 6500000 });
+  const shops = await Shops.deployed();
+
+  await deployer.deploy(ShopsDispute, shops.address, users.address, control.address, '0xffffffffffffffffffffffffffffffffffffffff', '0x0', { gas: 6500000 });
+  const shopsDispute = await ShopsDispute.deployed();
+  await shops.setShopsDisputeContract(shopsDispute.address);
   // });
   // // gas 1,161,360
   // // await deployer.deploy(DetherToken, { gas: 6000000, gasPrice: 26500000000 });

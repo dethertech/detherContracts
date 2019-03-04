@@ -115,7 +115,7 @@ const auctionToObjPretty = auctionArr => ({
   highestBid: auctionArr[5].toString(),
 });
 
-contract.only('ZoneFactory + Zone', (accounts) => {
+contract('ZoneFactory + Zone', (accounts) => {
   let owner;
   let user1;
   let user2;
