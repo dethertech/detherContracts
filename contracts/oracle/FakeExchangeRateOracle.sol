@@ -1,10 +1,10 @@
 pragma solidity ^0.5.3;
 
 import "../dappsys/DSMathWdiv.sol";
-import "./IExchangeRateOracle.sol";
-import "./IMedianizer.sol";
 
-contract FakeExchangeRateOracle is DSMathWdiv, IExchangeRateOracle {
+import "../interfaces/IMedianizer.sol";
+
+contract FakeExchangeRateOracle is DSMathWdiv {
   /**
    * @dev Return wei price of 1 USD
    */

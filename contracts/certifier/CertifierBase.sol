@@ -19,10 +19,9 @@
 
 pragma solidity ^0.5.3;
 
-import "../core/IControl.sol";
-import "./ICertifier.sol";
+import "../interfaces/IControl.sol";
 
-contract CertifierBase is ICertifier {
+contract CertifierBase {
 	// ------------------------------------------------
 	//
 	// Structs

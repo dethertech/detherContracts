@@ -1,8 +1,7 @@
-pragma solidity >=0.4.21 <0.6.0;
-
+pragma solidity ^0.5.3;
 
 /// @title Contract that supports the receival of ERC223 tokens.
-contract ERC223ReceivingContract {
+contract IERC223ReceivingContract {
 
     /// @dev Standard ERC223 function that will handle incoming token transfers.
     /// @param _from  Token sender address.

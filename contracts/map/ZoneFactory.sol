@@ -2,17 +2,17 @@ pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
-import "../dth/ERC223ReceivingContract.sol";
-import "../dth/IDetherToken.sol";
-import "../core/IUsers.sol";
-import "../core/IControl.sol";
-import "./IGeoRegistry.sol";
-import "./IZone.sol";
-import "./ITeller.sol";
+import "../eip1167/EIP1167CloneFactory.sol";
 
-import "../eip1167/CloneFactory.sol";
+import "../interfaces/IERC223ReceivingContract.sol";
+import "../interfaces/IDetherToken.sol";
+import "../interfaces/IUsers.sol";
+import "../interfaces/IControl.sol";
+import "../interfaces/IGeoRegistry.sol";
+import "../interfaces/IZone.sol";
+import "../interfaces/ITeller.sol";
 
-contract ZoneFactory is ERC223ReceivingContract, Ownable, CloneFactory {
+contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
   // ------------------------------------------------
   //

@@ -4,6 +4,34 @@
     {
       "constant": true,
       "inputs": [],
+      "name": "WAD",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "mkrPriceFeed",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
       "name": "getWeiPriceOneUsd",
       "outputs": [
         {
@@ -20,20 +48,20 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.5.3;\n\ncontract IExchangeRateOracle {\n  function getWeiPriceOneUsd() public view returns(uint);\n}\n",
-  "sourcePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
+  "source": "pragma solidity ^0.5.3;\n\ncontract IExchangeRateOracle {\n    function WAD() view external returns(uint256);\n    function mkrPriceFeed() view external returns(address);\n    function getWeiPriceOneUsd() view external returns(uint256);\n}\n",
+  "sourcePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IExchangeRateOracle.sol",
   "ast": {
-    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IExchangeRateOracle.sol",
     "exportedSymbols": {
       "IExchangeRateOracle": [
-        9509
+        2978
       ]
     },
-    "id": 9510,
+    "id": 2979,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 9503,
+        "id": 2962,
         "literals": [
           "solidity",
           "^",
@@ -41,7 +69,7 @@
           ".3"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:23:29"
+        "src": "0:23:14"
       },
       {
         "baseContracts": [],
@@ -49,9 +77,9 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 9509,
+        "id": 2978,
         "linearizedBaseContracts": [
-          9509
+          2978
         ],
         "name": "IExchangeRateOracle",
         "nodeType": "ContractDefinition",
@@ -59,29 +87,29 @@
           {
             "body": null,
             "documentation": null,
-            "id": 9508,
+            "id": 2967,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
-            "name": "getWeiPriceOneUsd",
+            "name": "WAD",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9504,
+              "id": 2963,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "84:2:29"
+              "src": "72:2:14"
             },
             "returnParameters": {
-              "id": 9507,
+              "id": 2966,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9506,
+                  "id": 2965,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9508,
-                  "src": "107:4:29",
+                  "scope": 2967,
+                  "src": "97:7:14",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -89,10 +117,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9505,
-                    "name": "uint",
+                    "id": 2964,
+                    "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "107:4:29",
+                    "src": "97:7:14",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -102,33 +130,142 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "106:6:29"
+              "src": "96:9:14"
             },
-            "scope": 9509,
-            "src": "58:55:29",
+            "scope": 2978,
+            "src": "60:46:14",
             "stateMutability": "view",
             "superFunction": null,
-            "visibility": "public"
+            "visibility": "external"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 2972,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "mkrPriceFeed",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2968,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "132:2:14"
+            },
+            "returnParameters": {
+              "id": 2971,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2970,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2972,
+                  "src": "157:7:14",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 2969,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "157:7:14",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "156:9:14"
+            },
+            "scope": 2978,
+            "src": "111:55:14",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "external"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 2977,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getWeiPriceOneUsd",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2973,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "197:2:14"
+            },
+            "returnParameters": {
+              "id": 2976,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2975,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2977,
+                  "src": "222:7:14",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 2974,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "222:7:14",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "221:9:14"
+            },
+            "scope": 2978,
+            "src": "171:60:14",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "external"
           }
         ],
-        "scope": 9510,
-        "src": "25:90:29"
+        "scope": 2979,
+        "src": "25:208:14"
       }
     ],
-    "src": "0:116:29"
+    "src": "0:234:14"
   },
   "legacyAST": {
-    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
+    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IExchangeRateOracle.sol",
     "exportedSymbols": {
       "IExchangeRateOracle": [
-        9509
+        2978
       ]
     },
-    "id": 9510,
+    "id": 2979,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 9503,
+        "id": 2962,
         "literals": [
           "solidity",
           "^",
@@ -136,7 +273,7 @@
           ".3"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:23:29"
+        "src": "0:23:14"
       },
       {
         "baseContracts": [],
@@ -144,9 +281,9 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 9509,
+        "id": 2978,
         "linearizedBaseContracts": [
-          9509
+          2978
         ],
         "name": "IExchangeRateOracle",
         "nodeType": "ContractDefinition",
@@ -154,29 +291,29 @@
           {
             "body": null,
             "documentation": null,
-            "id": 9508,
+            "id": 2967,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
-            "name": "getWeiPriceOneUsd",
+            "name": "WAD",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 9504,
+              "id": 2963,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "84:2:29"
+              "src": "72:2:14"
             },
             "returnParameters": {
-              "id": 9507,
+              "id": 2966,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 9506,
+                  "id": 2965,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 9508,
-                  "src": "107:4:29",
+                  "scope": 2967,
+                  "src": "97:7:14",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -184,10 +321,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 9505,
-                    "name": "uint",
+                    "id": 2964,
+                    "name": "uint256",
                     "nodeType": "ElementaryTypeName",
-                    "src": "107:4:29",
+                    "src": "97:7:14",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -197,28 +334,137 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "106:6:29"
+              "src": "96:9:14"
             },
-            "scope": 9509,
-            "src": "58:55:29",
+            "scope": 2978,
+            "src": "60:46:14",
             "stateMutability": "view",
             "superFunction": null,
-            "visibility": "public"
+            "visibility": "external"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 2972,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "mkrPriceFeed",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2968,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "132:2:14"
+            },
+            "returnParameters": {
+              "id": 2971,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2970,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2972,
+                  "src": "157:7:14",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 2969,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "157:7:14",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "156:9:14"
+            },
+            "scope": 2978,
+            "src": "111:55:14",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "external"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 2977,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getWeiPriceOneUsd",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 2973,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "197:2:14"
+            },
+            "returnParameters": {
+              "id": 2976,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 2975,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 2977,
+                  "src": "222:7:14",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 2974,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "222:7:14",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "221:9:14"
+            },
+            "scope": 2978,
+            "src": "171:60:14",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "external"
           }
         ],
-        "scope": 9510,
-        "src": "25:90:29"
+        "scope": 2979,
+        "src": "25:208:14"
       }
     ],
-    "src": "0:116:29"
+    "src": "0:234:14"
   },
   "compiler": {
     "name": "solc",
     "version": "0.5.3+commit.10d17f24.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.1",
-  "updatedAt": "2019-02-07T14:25:27.352Z",
+  "schemaVersion": "3.0.2",
+  "updatedAt": "2019-03-11T12:45:43.505Z",
   "devdoc": {
     "methods": {}
   },

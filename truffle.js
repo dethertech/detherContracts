@@ -43,9 +43,10 @@ module.exports = {
       // gasPrice: 25000000000,
     },
   },
+  plugins: ['truffle-security'],
   compilers: {
     solc: {
-      version: '0.5.3',
+      version: '0.5.5',
       optimizer: {
         enabled: true,
         runs: 200,

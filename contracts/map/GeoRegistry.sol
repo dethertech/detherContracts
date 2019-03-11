@@ -1,6 +1,6 @@
 pragma solidity ^0.5.3;
 
-import "../core/IControl.sol";
+import "../interfaces/IControl.sol";
 
 contract GeoRegistry {
 

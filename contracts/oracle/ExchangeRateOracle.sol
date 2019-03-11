@@ -1,10 +1,10 @@
 pragma solidity ^0.5.3;
 
 import "../dappsys/DSMathWdiv.sol";
-import "./IExchangeRateOracle.sol";
-import "./IMedianizer.sol";
 
-contract ExchangeRateOracle is DSMathWdiv, IExchangeRateOracle {
+import "../interfaces/IMedianizer.sol";
+
+contract ExchangeRateOracle is DSMathWdiv {
 
   IMedianizer public mkrPriceFeed;
 

@@ -2,10 +2,10 @@ pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-import "../core/IControl.sol";
-import "./IGeoRegistry.sol";
-import "./IZone.sol";
-import "./ITeller.sol";
+import "../interfaces/IControl.sol";
+import "../interfaces/IGeoRegistry.sol";
+import "../interfaces/IZone.sol";
+import "../interfaces/ITeller.sol";
 
 contract Teller {
   // ------------------------------------------------

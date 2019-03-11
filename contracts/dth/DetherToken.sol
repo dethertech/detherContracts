@@ -1,6 +1,6 @@
 pragma solidity >=0.4.21 <0.6.0;
 
-import "./ERC223ReceivingContract.sol";
+import "../interfaces/IERC223ReceivingContract.sol";
 
 // ------- zeppelin-solidity/contracts/ownership/Ownable.sol [npm] zeppelin-solidity@1.6.0
 
@@ -382,7 +382,7 @@ contract ERC223BasicToken is ERC223Basic, BasicToken {
         require(super.transfer(_to, _value));
 
         if(codeLength>0) {
-            ERC223ReceivingContract receiver = ERC223ReceivingContract(_to);
+            IERC223ReceivingContract receiver = IERC223ReceivingContract(_to);
             receiver.tokenFallback(msg.sender, _value, _data);
         }
         emit Transfer(msg.sender, _to, _value, _data);
@@ -424,4 +424,9 @@ contract DetherToken is DetailedERC20, MintableToken, ERC223BasicToken {
         DetailedERC20(NAME, SYMBOL, DECIMALS)
         public
     {}
+
+
+    function cowboy(uint _a) public returns (string memory) {
+      return "neo";
+    }
 }

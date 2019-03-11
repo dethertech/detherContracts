@@ -9,7 +9,7 @@ pragma solidity ^0.5.3;
  *
  * https://eips.ethereum.org/EIPS/eip-1167
  */
-contract CloneFactory {
+contract EIP1167CloneFactory {
   function createClone(address target) internal returns (address result) {
     bytes20 targetBytes = bytes20(target);
     assembly {

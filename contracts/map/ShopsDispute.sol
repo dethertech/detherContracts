@@ -2,29 +2,10 @@ pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-import "../core/IUsers.sol";
-import "../core/IControl.sol";
-
-contract IShops {
-  function getShopDisputeID(address) external view returns (uint);
-  function hasDispute(address) external view returns (bool);
-  function getShopStaked(address) external view returns (uint);
-  function removeShop(address) external;
-  function setDispute(address, uint) external;
-  function unsetDispute(address) external;
-  function removeDisputedShop(address, address) external;
-}
-
-contract IArbitrable {
-  enum DisputeStatus {Waiting, Appealable, Solved} // copied from IArbitrable.sol
-  function createDispute(uint _choices, bytes memory _extraData) public payable returns(uint disputeID);
-  function arbitrationCost(bytes memory _extraData) public view returns(uint fee);
-  function appeal(uint _disputeID, bytes memory _extraData) public payable;
-  function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint fee);
-  function appealPeriod(uint _disputeID) public view returns(uint start, uint end) {}
-  function disputeStatus(uint _disputeID) public view returns(DisputeStatus status);
-  function currentRuling(uint _disputeID) public view returns(uint ruling);
-}
+import "../interfaces/IUsers.sol";
+import "../interfaces/IControl.sol";
+import "../interfaces/IShops.sol";
+import "../interfaces/IKlerosArbitrable.sol";
 
 contract ShopsDispute {
   // ------------------------------------------------
@@ -42,7 +23,7 @@ contract ShopsDispute {
   // ------------------------------------------------
 
   enum RulingOptions {NoRuling, ShopWins, ChallengerWins}
-  /* enum DisputeStatus {Waiting, Appealable, Solved} // copied from IArbitrable.sol */
+  /* enum DisputeStatus {Waiting, Appealable, Solved} // copied from IKlerosArbitrable.sol */
 
   // ------------------------------------------------
   //
@@ -56,7 +37,7 @@ contract ShopsDispute {
     address challenger;
     uint disputeType;
     RulingOptions ruling;
-    IArbitrable.DisputeStatus status;
+    IKlerosArbitrable.DisputeStatus status;
   }
 
   // ------------------------------------------------
@@ -69,7 +50,7 @@ contract ShopsDispute {
   IShops public shops;
   IUsers public users;
   IControl public control;
-  IArbitrable public arbitrator; // <-- kleros
+  IKlerosArbitrable public arbitrator; // <-- kleros
 
   // kleros related
   string public constant RULING_OPTIONS = "Shop wins;Challenger wins";
@@ -148,7 +129,7 @@ contract ShopsDispute {
     control = IControl(_control);
 
     // kleros
-    arbitrator = IArbitrable(_arbitrator);
+    arbitrator = IKlerosArbitrable(_arbitrator);
     arbitratorExtraData = _arbitratorExtraData;
   }
 
@@ -179,16 +160,16 @@ contract ShopsDispute {
   function getDisputeStatus(uint _disputeID)
     private
     view
-    returns (IArbitrable.DisputeStatus disputeStatus)
+    returns (IKlerosArbitrable.DisputeStatus disputeStatus)
   {
     ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
-    if (dispute.status == IArbitrable.DisputeStatus.Solved) {
+    if (dispute.status == IKlerosArbitrable.DisputeStatus.Solved) {
       // rule() in this contract was called, it set status to Solved and set the final Ruling
       disputeStatus = dispute.status;
     } else {
       // dispute is not yet finalized, get current values from arbitrator contract
-      disputeStatus = arbitrator.disputeStatus(_disputeID); // returns IArbitrable.DisputeStatus
+      disputeStatus = arbitrator.disputeStatus(_disputeID); // returns IKlerosArbitrable.DisputeStatus
     }
   }
 
@@ -199,7 +180,7 @@ contract ShopsDispute {
   {
     ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
-    if (dispute.status == IArbitrable.DisputeStatus.Solved) {
+    if (dispute.status == IKlerosArbitrable.DisputeStatus.Solved) {
       // rule() in this contract was called, it set status to Solved and set the final Ruling
       disputeRuling = dispute.ruling;
     } else {
@@ -269,7 +250,7 @@ contract ShopsDispute {
     dispute.shop = _shopAddress;
     dispute.disputeType = _metaEvidenceId;
     dispute.ruling = RulingOptions.NoRuling;
-    dispute.status = IArbitrable.DisputeStatus.Waiting;
+    dispute.status = IKlerosArbitrable.DisputeStatus.Waiting;
 
     shops.setDispute(_shopAddress, disputeID);
 
@@ -291,7 +272,7 @@ contract ShopsDispute {
     uint disputeID = shops.getShopDisputeID(_shopAddress);
 
     ShopDispute storage dispute = disputeIdToDispute[disputeID];
-    require(getDisputeStatus(dispute.id) == IArbitrable.DisputeStatus.Appealable, "dispute is not appealable");
+    require(getDisputeStatus(dispute.id) == IKlerosArbitrable.DisputeStatus.Appealable, "dispute is not appealable");
 
     RulingOptions currentRuling = getDisputeRuling(dispute.id);
     if (currentRuling == RulingOptions.ShopWins) {
@@ -313,7 +294,7 @@ contract ShopsDispute {
     if (excessEth > 0) msg.sender.transfer(excessEth);
   }
 
-  // called by rule() which is called by Kleros IArbitrable contract
+  // called by rule() which is called by Kleros IKlerosArbitrable contract
   function executeRuling(uint _disputeID, uint _ruling)
     private
   {

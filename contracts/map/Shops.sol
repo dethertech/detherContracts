@@ -1,12 +1,11 @@
 pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-/* import "openzeppelin-solidity/contracts/ownership/Ownable.sol"; */
 
-import "../dth/IDetherToken.sol";
-import "../core/IUsers.sol";
-import "../core/IControl.sol";
-import "./IGeoRegistry.sol";
+import "../interfaces/IDetherToken.sol";
+import "../interfaces/IUsers.sol";
+import "../interfaces/IControl.sol";
+import "../interfaces/IGeoRegistry.sol";
 
 contract Shops {
   // ------------------------------------------------
