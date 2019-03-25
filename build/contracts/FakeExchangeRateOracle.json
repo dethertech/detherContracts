@@ -30,63 +30,52 @@
       "type": "function"
     }
   ],
-  "bytecode": "0x608060405234801561001057600080fd5b50610152806100206000396000f30060806040526004361061004b5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166350ccf36b81146100505780636a14602414610077575b600080fd5b34801561005c57600080fd5b5061006561008c565b60408051918252519081900360200190f35b34801561008357600080fd5b506100656100b0565b6000806100aa670de0b6b3a7640000681bd635979fa725c0006100bc565b92915050565b670de0b6b3a764000081565b6000816100dd6100d485670de0b6b3a76400006100ee565b60028504610116565b8115156100e657fe5b049392505050565b600081158061010b57505080820282828281151561010857fe5b04145b15156100aa57600080fd5b808201828110156100aa57600080fd00a165627a7a723058204c16bfa84da671c7e8d37e52e3ba3b0e5e9aecc9d2b2ee70c2eeb5f556bdd3510029",
-  "deployedBytecode": "0x60806040526004361061004b5763ffffffff7c010000000000000000000000000000000000000000000000000000000060003504166350ccf36b81146100505780636a14602414610077575b600080fd5b34801561005c57600080fd5b5061006561008c565b60408051918252519081900360200190f35b34801561008357600080fd5b506100656100b0565b6000806100aa670de0b6b3a7640000681bd635979fa725c0006100bc565b92915050565b670de0b6b3a764000081565b6000816100dd6100d485670de0b6b3a76400006100ee565b60028504610116565b8115156100e657fe5b049392505050565b600081158061010b57505080820282828281151561010857fe5b04145b15156100aa57600080fd5b808201828110156100aa57600080fd00a165627a7a723058204c16bfa84da671c7e8d37e52e3ba3b0e5e9aecc9d2b2ee70c2eeb5f556bdd3510029",
-  "sourceMap": "127:369:22:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;127:369:22;;;;;;;",
-  "deployedSourceMap": "127:369:22:-;;;;;;;;;;;;;;;;;;;;;;;;;;;;246:248;;8:9:-1;5:2;;;30:1;27;20:12;5:2;246:248:22;;;;;;;;;;;;;;;;;;;;263:35:9;;8:9:-1;5:2;;;30:1;27;20:12;5:2;263:35:9;;;;246:248:22;295:4;404:22;429:32;290:8:9;439:21:22;429:4;:32::i;:::-;404:57;246:248;-1:-1:-1;;246:248:22:o;263:35:9:-;290:8;263:35;:::o;303:103::-;356:6;400:1;374:23;378:11;382:1;290:8;378:3;:11::i;:::-;395:1;391;:5;374:3;:23::i;:::-;:27;;;;;;;;;303:103;-1:-1:-1;;;303:103:9:o;149:110::-;201:6;223;;;:30;;-1:-1:-1;;238:5:9;;;252:1;247;238:5;233:15;;;;;;;;:20;223:30;215:39;;;;;;;50:96;129:5;;;124:16;;;;116:25;;;;",
-  "source": "pragma solidity ^0.4.24;\n\nimport \"../dappsys/DSMathWdiv.sol\";\nimport \"./IExchangeRateOracle.sol\";\nimport \"./IMedianizer.sol\";\n\ncontract FakeExchangeRateOracle is DSMathWdiv, IExchangeRateOracle {\n  /**\n   * @dev Return wei price of 1 USD\n   */\n  function getWeiPriceOneUsd() public view returns(uint) {\n    // we fake it here so we can test it, the value represents:\n    // 513 dollar and 4975 cents\n    uint256 weiPriceOneUsd = wdiv(WAD, 513497500000000000000);\n\n    return weiPriceOneUsd;\n  }\n}\n",
+  "bytecode": "0x608060405234801561001057600080fd5b5061017b806100206000396000f3fe608060405234801561001057600080fd5b5060043610610053576000357c01000000000000000000000000000000000000000000000000000000009004806350ccf36b146100585780636a14602414610076575b600080fd5b610060610094565b6040518082815260200191505060405180910390f35b61007e6100bb565b6040518082815260200191505060405180910390f35b6000806100b2670de0b6b3a7640000681bd635979fa725c0006100c7565b90508091505090565b670de0b6b3a764000081565b6000816100f16100df85670de0b6b3a7640000610103565b6002858115156100eb57fe5b04610133565b8115156100fa57fe5b04905092915050565b6000808214806101225750828283850292508281151561011f57fe5b04145b151561012d57600080fd5b92915050565b6000828284019150811015151561014957600080fd5b9291505056fea165627a7a723058203614d0b230441db14243019c01580d0aa5822e26567847739b3de67828eeae0e0029",
+  "deployedBytecode": "0x608060405234801561001057600080fd5b5060043610610053576000357c01000000000000000000000000000000000000000000000000000000009004806350ccf36b146100585780636a14602414610076575b600080fd5b610060610094565b6040518082815260200191505060405180910390f35b61007e6100bb565b6040518082815260200191505060405180910390f35b6000806100b2670de0b6b3a7640000681bd635979fa725c0006100c7565b90508091505090565b670de0b6b3a764000081565b6000816100f16100df85670de0b6b3a7640000610103565b6002858115156100eb57fe5b04610133565b8115156100fa57fe5b04905092915050565b6000808214806101225750828283850292508281151561011f57fe5b04145b151561012d57600080fd5b92915050565b6000828284019150811015151561014957600080fd5b9291505056fea165627a7a723058203614d0b230441db14243019c01580d0aa5822e26567847739b3de67828eeae0e0029",
+  "sourceMap": "103:348:36:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;103:348:36;;;;;;;",
+  "deployedSourceMap": "103:348:36:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;103:348:36;;;;;;;;;;;;;;;;;;;;;;;;;201:248;;;:::i;:::-;;;;;;;;;;;;;;;;;;;262:35:6;;;:::i;:::-;;;;;;;;;;;;;;;;;;;201:248:36;250:4;359:22;384:32;289:8:6;394:21:36;384:4;:32::i;:::-;359:57;;430:14;423:21;;;201:248;:::o;262:35:6:-;289:8;262:35;:::o;302:103::-;355:6;399:1;373:23;377:11;381:1;289:8;377:3;:11::i;:::-;394:1;390;:5;;;;;;;;373:3;:23::i;:::-;:27;;;;;;;;369:31;;302:103;;;;:::o;148:110::-;200:6;227:1;222;:6;:30;;;;251:1;246;241;237;:5;233:9;;;232:15;;;;;;;;:20;222:30;214:39;;;;;;;;148:110;;;;:::o;49:96::-;101:6;138:1;132;128;:5;124:9;;;123:16;;115:25;;;;;;;;49:96;;;;:::o",
+  "source": "pragma solidity ^0.5.3;\n\nimport \"../dappsys/DSMathWdiv.sol\";\n\nimport \"../interfaces/IMedianizer.sol\";\n\ncontract FakeExchangeRateOracle is DSMathWdiv {\n  /**\n   * @dev Return wei price of 1 USD\n   */\n  function getWeiPriceOneUsd() public view returns(uint) {\n    // we fake it here so we can test it, the value represents:\n    // 513 dollar and 4975 cents\n    uint256 weiPriceOneUsd = wdiv(WAD, 513497500000000000000);\n\n    return weiPriceOneUsd;\n  }\n}\n",
   "sourcePath": "/Users/trip/Projects/detherContracts/contracts/oracle/FakeExchangeRateOracle.sol",
   "ast": {
     "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/FakeExchangeRateOracle.sol",
     "exportedSymbols": {
       "FakeExchangeRateOracle": [
-        4906
+        10981
       ]
     },
-    "id": 4907,
+    "id": 10982,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 4883,
+        "id": 10961,
         "literals": [
           "solidity",
           "^",
-          "0.4",
-          ".24"
+          "0.5",
+          ".3"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:22"
+        "src": "0:23:36"
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dappsys/DSMathWdiv.sol",
         "file": "../dappsys/DSMathWdiv.sol",
-        "id": 4884,
+        "id": 10962,
         "nodeType": "ImportDirective",
-        "scope": 4907,
-        "sourceUnit": 1120,
-        "src": "26:35:22",
+        "scope": 10982,
+        "sourceUnit": 1022,
+        "src": "25:35:36",
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
-        "file": "./IExchangeRateOracle.sol",
-        "id": 4885,
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IMedianizer.sol",
+        "file": "../interfaces/IMedianizer.sol",
+        "id": 10963,
         "nodeType": "ImportDirective",
-        "scope": 4907,
-        "sourceUnit": 4915,
-        "src": "62:35:22",
-        "symbolAliases": [],
-        "unitAlias": ""
-      },
-      {
-        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IMedianizer.sol",
-        "file": "./IMedianizer.sol",
-        "id": 4886,
-        "nodeType": "ImportDirective",
-        "scope": 4907,
-        "sourceUnit": 4925,
-        "src": "98:27:22",
+        "scope": 10982,
+        "sourceUnit": 3161,
+        "src": "62:39:36",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -96,73 +85,53 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 4887,
+              "id": 10964,
               "name": "DSMathWdiv",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1119,
-              "src": "162:10:22",
+              "referencedDeclaration": 1021,
+              "src": "138:10:36",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_DSMathWdiv_$1119",
+                "typeIdentifier": "t_contract$_DSMathWdiv_$1021",
                 "typeString": "contract DSMathWdiv"
               }
             },
-            "id": 4888,
+            "id": 10965,
             "nodeType": "InheritanceSpecifier",
-            "src": "162:10:22"
-          },
-          {
-            "arguments": null,
-            "baseName": {
-              "contractScope": null,
-              "id": 4889,
-              "name": "IExchangeRateOracle",
-              "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 4914,
-              "src": "174:19:22",
-              "typeDescriptions": {
-                "typeIdentifier": "t_contract$_IExchangeRateOracle_$4914",
-                "typeString": "contract IExchangeRateOracle"
-              }
-            },
-            "id": 4890,
-            "nodeType": "InheritanceSpecifier",
-            "src": "174:19:22"
+            "src": "138:10:36"
           }
         ],
         "contractDependencies": [
-          1119,
-          4914
+          1021
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 4906,
+        "id": 10981,
         "linearizedBaseContracts": [
-          4906,
-          4914,
-          1119
+          10981,
+          1021
         ],
         "name": "FakeExchangeRateOracle",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 4904,
+              "id": 10979,
               "nodeType": "Block",
-              "src": "301:193:22",
+              "src": "256:193:36",
               "statements": [
                 {
                   "assignments": [
-                    4896
+                    10971
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 4896,
+                      "id": 10971,
                       "name": "weiPriceOneUsd",
                       "nodeType": "VariableDeclaration",
-                      "scope": 4905,
-                      "src": "404:22:22",
+                      "scope": 10979,
+                      "src": "359:22:36",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -170,10 +139,10 @@
                         "typeString": "uint256"
                       },
                       "typeName": {
-                        "id": 4895,
+                        "id": 10970,
                         "name": "uint256",
                         "nodeType": "ElementaryTypeName",
-                        "src": "404:7:22",
+                        "src": "359:7:36",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -183,18 +152,18 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 4901,
+                  "id": 10976,
                   "initialValue": {
                     "argumentTypes": null,
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 4898,
+                        "id": 10973,
                         "name": "WAD",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 1094,
-                        "src": "434:3:22",
+                        "referencedDeclaration": 996,
+                        "src": "389:3:36",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -203,14 +172,14 @@
                       {
                         "argumentTypes": null,
                         "hexValue": "353133343937353030303030303030303030303030",
-                        "id": 4899,
+                        "id": 10974,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
                         "kind": "number",
                         "lValueRequested": false,
                         "nodeType": "Literal",
-                        "src": "439:21:22",
+                        "src": "394:21:36",
                         "subdenomination": null,
                         "typeDescriptions": {
                           "typeIdentifier": "t_rational_513497500000000000000_by_1",
@@ -230,18 +199,18 @@
                           "typeString": "int_const 513497500000000000000"
                         }
                       ],
-                      "id": 4897,
+                      "id": 10972,
                       "name": "wdiv",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1118,
-                      "src": "429:4:22",
+                      "referencedDeclaration": 1020,
+                      "src": "384:4:36",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                       }
                     },
-                    "id": 4900,
+                    "id": 10975,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -249,62 +218,60 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "429:32:22",
+                    "src": "384:32:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "404:57:22"
+                  "src": "359:57:36"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 4902,
+                    "id": 10977,
                     "name": "weiPriceOneUsd",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 4896,
-                    "src": "475:14:22",
+                    "referencedDeclaration": 10971,
+                    "src": "430:14:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 4894,
-                  "id": 4903,
+                  "functionReturnParameters": 10969,
+                  "id": 10978,
                   "nodeType": "Return",
-                  "src": "468:21:22"
+                  "src": "423:21:36"
                 }
               ]
             },
             "documentation": "@dev Return wei price of 1 USD",
-            "id": 4905,
+            "id": 10980,
             "implemented": true,
-            "isConstructor": false,
-            "isDeclaredConst": true,
+            "kind": "function",
             "modifiers": [],
             "name": "getWeiPriceOneUsd",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 4891,
+              "id": 10966,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "272:2:22"
+              "src": "227:2:36"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 4894,
+              "id": 10969,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4893,
+                  "id": 10968,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4905,
-                  "src": "295:4:22",
+                  "scope": 10980,
+                  "src": "250:4:36",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -312,10 +279,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4892,
+                    "id": 10967,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "295:4:22",
+                    "src": "250:4:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -325,72 +292,61 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "294:6:22"
+              "src": "249:6:36"
             },
-            "scope": 4906,
-            "src": "246:248:22",
+            "scope": 10981,
+            "src": "201:248:36",
             "stateMutability": "view",
-            "superFunction": 4913,
+            "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 4907,
-        "src": "127:369:22"
+        "scope": 10982,
+        "src": "103:348:36"
       }
     ],
-    "src": "0:497:22"
+    "src": "0:452:36"
   },
   "legacyAST": {
     "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/FakeExchangeRateOracle.sol",
     "exportedSymbols": {
       "FakeExchangeRateOracle": [
-        4906
+        10981
       ]
     },
-    "id": 4907,
+    "id": 10982,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 4883,
+        "id": 10961,
         "literals": [
           "solidity",
           "^",
-          "0.4",
-          ".24"
+          "0.5",
+          ".3"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:22"
+        "src": "0:23:36"
       },
       {
         "absolutePath": "/Users/trip/Projects/detherContracts/contracts/dappsys/DSMathWdiv.sol",
         "file": "../dappsys/DSMathWdiv.sol",
-        "id": 4884,
+        "id": 10962,
         "nodeType": "ImportDirective",
-        "scope": 4907,
-        "sourceUnit": 1120,
-        "src": "26:35:22",
+        "scope": 10982,
+        "sourceUnit": 1022,
+        "src": "25:35:36",
         "symbolAliases": [],
         "unitAlias": ""
       },
       {
-        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IExchangeRateOracle.sol",
-        "file": "./IExchangeRateOracle.sol",
-        "id": 4885,
+        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IMedianizer.sol",
+        "file": "../interfaces/IMedianizer.sol",
+        "id": 10963,
         "nodeType": "ImportDirective",
-        "scope": 4907,
-        "sourceUnit": 4915,
-        "src": "62:35:22",
-        "symbolAliases": [],
-        "unitAlias": ""
-      },
-      {
-        "absolutePath": "/Users/trip/Projects/detherContracts/contracts/oracle/IMedianizer.sol",
-        "file": "./IMedianizer.sol",
-        "id": 4886,
-        "nodeType": "ImportDirective",
-        "scope": 4907,
-        "sourceUnit": 4925,
-        "src": "98:27:22",
+        "scope": 10982,
+        "sourceUnit": 3161,
+        "src": "62:39:36",
         "symbolAliases": [],
         "unitAlias": ""
       },
@@ -400,73 +356,53 @@
             "arguments": null,
             "baseName": {
               "contractScope": null,
-              "id": 4887,
+              "id": 10964,
               "name": "DSMathWdiv",
               "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 1119,
-              "src": "162:10:22",
+              "referencedDeclaration": 1021,
+              "src": "138:10:36",
               "typeDescriptions": {
-                "typeIdentifier": "t_contract$_DSMathWdiv_$1119",
+                "typeIdentifier": "t_contract$_DSMathWdiv_$1021",
                 "typeString": "contract DSMathWdiv"
               }
             },
-            "id": 4888,
+            "id": 10965,
             "nodeType": "InheritanceSpecifier",
-            "src": "162:10:22"
-          },
-          {
-            "arguments": null,
-            "baseName": {
-              "contractScope": null,
-              "id": 4889,
-              "name": "IExchangeRateOracle",
-              "nodeType": "UserDefinedTypeName",
-              "referencedDeclaration": 4914,
-              "src": "174:19:22",
-              "typeDescriptions": {
-                "typeIdentifier": "t_contract$_IExchangeRateOracle_$4914",
-                "typeString": "contract IExchangeRateOracle"
-              }
-            },
-            "id": 4890,
-            "nodeType": "InheritanceSpecifier",
-            "src": "174:19:22"
+            "src": "138:10:36"
           }
         ],
         "contractDependencies": [
-          1119,
-          4914
+          1021
         ],
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": true,
-        "id": 4906,
+        "id": 10981,
         "linearizedBaseContracts": [
-          4906,
-          4914,
-          1119
+          10981,
+          1021
         ],
         "name": "FakeExchangeRateOracle",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 4904,
+              "id": 10979,
               "nodeType": "Block",
-              "src": "301:193:22",
+              "src": "256:193:36",
               "statements": [
                 {
                   "assignments": [
-                    4896
+                    10971
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 4896,
+                      "id": 10971,
                       "name": "weiPriceOneUsd",
                       "nodeType": "VariableDeclaration",
-                      "scope": 4905,
-                      "src": "404:22:22",
+                      "scope": 10979,
+                      "src": "359:22:36",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -474,10 +410,10 @@
                         "typeString": "uint256"
                       },
                       "typeName": {
-                        "id": 4895,
+                        "id": 10970,
                         "name": "uint256",
                         "nodeType": "ElementaryTypeName",
-                        "src": "404:7:22",
+                        "src": "359:7:36",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -487,18 +423,18 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 4901,
+                  "id": 10976,
                   "initialValue": {
                     "argumentTypes": null,
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 4898,
+                        "id": 10973,
                         "name": "WAD",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 1094,
-                        "src": "434:3:22",
+                        "referencedDeclaration": 996,
+                        "src": "389:3:36",
                         "typeDescriptions": {
                           "typeIdentifier": "t_uint256",
                           "typeString": "uint256"
@@ -507,14 +443,14 @@
                       {
                         "argumentTypes": null,
                         "hexValue": "353133343937353030303030303030303030303030",
-                        "id": 4899,
+                        "id": 10974,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
                         "kind": "number",
                         "lValueRequested": false,
                         "nodeType": "Literal",
-                        "src": "439:21:22",
+                        "src": "394:21:36",
                         "subdenomination": null,
                         "typeDescriptions": {
                           "typeIdentifier": "t_rational_513497500000000000000_by_1",
@@ -534,18 +470,18 @@
                           "typeString": "int_const 513497500000000000000"
                         }
                       ],
-                      "id": 4897,
+                      "id": 10972,
                       "name": "wdiv",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [],
-                      "referencedDeclaration": 1118,
-                      "src": "429:4:22",
+                      "referencedDeclaration": 1020,
+                      "src": "384:4:36",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_internal_pure$_t_uint256_$_t_uint256_$returns$_t_uint256_$",
                         "typeString": "function (uint256,uint256) pure returns (uint256)"
                       }
                     },
-                    "id": 4900,
+                    "id": 10975,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -553,62 +489,60 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "429:32:22",
+                    "src": "384:32:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "404:57:22"
+                  "src": "359:57:36"
                 },
                 {
                   "expression": {
                     "argumentTypes": null,
-                    "id": 4902,
+                    "id": 10977,
                     "name": "weiPriceOneUsd",
                     "nodeType": "Identifier",
                     "overloadedDeclarations": [],
-                    "referencedDeclaration": 4896,
-                    "src": "475:14:22",
+                    "referencedDeclaration": 10971,
+                    "src": "430:14:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
                     }
                   },
-                  "functionReturnParameters": 4894,
-                  "id": 4903,
+                  "functionReturnParameters": 10969,
+                  "id": 10978,
                   "nodeType": "Return",
-                  "src": "468:21:22"
+                  "src": "423:21:36"
                 }
               ]
             },
             "documentation": "@dev Return wei price of 1 USD",
-            "id": 4905,
+            "id": 10980,
             "implemented": true,
-            "isConstructor": false,
-            "isDeclaredConst": true,
+            "kind": "function",
             "modifiers": [],
             "name": "getWeiPriceOneUsd",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 4891,
+              "id": 10966,
               "nodeType": "ParameterList",
               "parameters": [],
-              "src": "272:2:22"
+              "src": "227:2:36"
             },
-            "payable": false,
             "returnParameters": {
-              "id": 4894,
+              "id": 10969,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 4893,
+                  "id": 10968,
                   "name": "",
                   "nodeType": "VariableDeclaration",
-                  "scope": 4905,
-                  "src": "295:4:22",
+                  "scope": 10980,
+                  "src": "250:4:36",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -616,10 +550,10 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 4892,
+                    "id": 10967,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
-                    "src": "295:4:22",
+                    "src": "250:4:36",
                     "typeDescriptions": {
                       "typeIdentifier": "t_uint256",
                       "typeString": "uint256"
@@ -629,26 +563,67 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "294:6:22"
+              "src": "249:6:36"
             },
-            "scope": 4906,
-            "src": "246:248:22",
+            "scope": 10981,
+            "src": "201:248:36",
             "stateMutability": "view",
-            "superFunction": 4913,
+            "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 4907,
-        "src": "127:369:22"
+        "scope": 10982,
+        "src": "103:348:36"
       }
     ],
-    "src": "0:497:22"
+    "src": "0:452:36"
   },
   "compiler": {
     "name": "solc",
-    "version": "0.4.24+commit.e67f0147.Emscripten.clang"
+    "version": "0.5.3+commit.10d17f24.Emscripten.clang"
   },
-  "networks": {},
-  "schemaVersion": "2.0.1",
-  "updatedAt": "2018-11-28T16:15:51.939Z"
+  "networks": {
+    "17": {
+      "events": {},
+      "links": {},
+      "address": "0xAe1afdd9Cb7be939c3013e4D2c94f6524118b974",
+      "transactionHash": "0x684c51e7312e7fb5f2fa58b0128f4660012b81aee4b437be6e713e29c7709145"
+    },
+    "1549543374518": {
+      "events": {},
+      "links": {},
+      "address": "0x6Fd99AFcE996cA6768F84d3cC863312F56126939",
+      "transactionHash": "0xf4839de89352d41a94319f523010fdb73e57ff7419290fbbe2b7a690dcff4c3e"
+    },
+    "1549546480694": {
+      "events": {},
+      "links": {},
+      "address": "0x1C3a500d0c6acDF5454F8504BCf7f02e4d8f2bA5",
+      "transactionHash": "0x97e7077d9741397331384d8f6298ab57d94581864fefe3e5414b5898bf915543"
+    },
+    "1549831006081": {
+      "events": {},
+      "links": {},
+      "address": "0x53c00348aC27b3E6ed9eb3B727a478B4466E482c",
+      "transactionHash": "0x291297ea2cd755eace4456044560d384652ea8f44230c90b191ca4ff03f6e195"
+    },
+    "1551627137659": {
+      "events": {},
+      "links": {},
+      "address": "0x0737f9220772135E4657b1E4613B55F37d710efc",
+      "transactionHash": "0xeb82579304a114017b868e507672534170badcf2c3f9514c71f240bc33f676ee"
+    }
+  },
+  "schemaVersion": "3.0.2",
+  "updatedAt": "2019-03-11T12:45:43.578Z",
+  "devdoc": {
+    "methods": {
+      "getWeiPriceOneUsd()": {
+        "details": "Return wei price of 1 USD"
+      }
+    }
+  },
+  "userdoc": {
+    "methods": {}
+  }
 }

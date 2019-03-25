@@ -17,12 +17,11 @@
 // NOTE: added parent ICertifier to SmsCertifier contract
 //
 
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
-import "../core/IControl.sol";
-import "./ICertifier.sol";
+import "../interfaces/IControl.sol";
 
-contract CertifierBase is ICertifier {
+contract CertifierBase {
 	// ------------------------------------------------
 	//
 	// Structs
@@ -123,7 +122,7 @@ contract CertifierBase is ICertifier {
 
 	function isDelegate(address _who) public view returns (bool) { return delegate[_who].active; }
 	function certified(address _who) public  view returns (bool) { return certs[_who].active; }
-	function get(address _who, string _field) public view returns (bytes32) { return certs[_who].meta[_field]; }
-	function getAddress(address _who, string _field) public view returns (address) { return address(certs[_who].meta[_field]); }
-	function getUint(address _who, string _field) public view returns (uint) { return uint(certs[_who].meta[_field]); }
+	function get(address _who, string memory _field) public view returns (bytes32) { return certs[_who].meta[_field]; }
+	// function getAddress(address _who, string memory _field) public view returns (address) { return address(certs[_who].meta[_field]); }
+	// function getUint(address _who, string memory _field) public view returns (uint) { return uint(certs[_who].meta[_field]); }
 }

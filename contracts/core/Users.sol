@@ -1,12 +1,13 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "ethereum-datetime/contracts/DateTime.sol";
 
-import "../oracle/IExchangeRateOracle.sol";
-import "../certifier/ICertifier.sol";
-import "../map/IGeoRegistry.sol";
-import "./IControl.sol";
+import "../datetime/DateTime.sol";
+
+import "../interfaces/IExchangeRateOracle.sol";
+import "../interfaces/ICertifier.sol";
+import "../interfaces/IGeoRegistry.sol";
+import "../interfaces/IControl.sol";
 
 contract Users is DateTime {
   // ------------------------------------------------

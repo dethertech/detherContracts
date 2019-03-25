@@ -1,6 +1,6 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
-import "../core/IControl.sol";
+import "../interfaces/IControl.sol";
 
 contract GeoRegistry {
 
@@ -99,7 +99,7 @@ contract GeoRegistry {
   //
   // ------------------------------------------------
 
-  function toBytes1(bytes _bytes, uint _start)
+  function toBytes1(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes1)
@@ -114,7 +114,7 @@ contract GeoRegistry {
     return tempBytes1;
   }
 
-  function toBytes3(bytes _bytes, uint _start)
+  function toBytes3(bytes memory _bytes, uint _start)
     private
     pure
     returns (bytes3)
@@ -135,7 +135,7 @@ contract GeoRegistry {
   //
   // ------------------------------------------------
 
-  function validGeohashChars(bytes _bytes)
+  function validGeohashChars(bytes memory _bytes)
     public
     returns (bool)
   {
@@ -202,7 +202,7 @@ contract GeoRegistry {
     require(control.isCEO(msg.sender), "caller needs to be CEO");
     level_2[_countryCode][_letter] = _subLetters;
   }
-  function updateLevel2batch(bytes2 _countryCode, bytes3[] _letters, bytes4[] _subLetters)
+  function updateLevel2batch(bytes2 _countryCode, bytes3[] memory _letters, bytes4[] memory _subLetters)
     public
   {
 

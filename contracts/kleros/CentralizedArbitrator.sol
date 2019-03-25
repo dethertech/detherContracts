@@ -6,7 +6,7 @@
  *  @deployments: []
  */
 
-pragma solidity ^0.4.15;
+pragma solidity ^0.5.3;
 
 import "./Arbitrator.sol";
 
@@ -49,7 +49,7 @@ contract CentralizedArbitrator is Arbitrator {
      *  @param _extraData Not used by this contract.
      *  @return fee Amount to be paid.
      */
-    function arbitrationCost(bytes _extraData) public view returns(uint fee) {
+    function arbitrationCost(bytes memory _extraData) public view returns(uint fee) {
         return arbitrationPrice;
     }
 
@@ -58,7 +58,7 @@ contract CentralizedArbitrator is Arbitrator {
      *  @param _extraData Not used by this contract.
      *  @return fee Amount to be paid.
      */
-    function appealCost(uint _disputeID, bytes _extraData) public view returns(uint fee) {
+    function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint fee) {
         return NOT_PAYABLE_VALUE;
     }
 
@@ -68,7 +68,7 @@ contract CentralizedArbitrator is Arbitrator {
      *  @param _extraData Can be used to give additional info on the dispute to be created.
      *  @return disputeID ID of the dispute created.
      */
-    function createDispute(uint _choices, bytes _extraData) public payable returns(uint disputeID)  {
+    function createDispute(uint _choices, bytes memory _extraData) public payable returns(uint disputeID)  {
         super.createDispute(_choices, _extraData);
         disputeID = disputes.push(DisputeStruct({
             arbitrated: Arbitrable(msg.sender),

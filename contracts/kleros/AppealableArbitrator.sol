@@ -1,4 +1,4 @@
-pragma solidity ^0.4.24;
+pragma solidity ^0.5.3;
 
 import "./CentralizedArbitrator.sol";
 
@@ -33,7 +33,7 @@ contract AppealableArbitrator is CentralizedArbitrator, Arbitrable {
     constructor(
         uint _arbitrationPrice,
         Arbitrator _arbitrator,
-        bytes _arbitratorExtraData,
+        bytes memory _arbitratorExtraData,
         uint _timeOut
     ) public CentralizedArbitrator(_arbitrationPrice) Arbitrable(_arbitrator, _arbitratorExtraData) {
         timeOut = _timeOut;
@@ -62,7 +62,7 @@ contract AppealableArbitrator is CentralizedArbitrator, Arbitrable {
      */
     function getAppealDisputeID(uint _disputeID) external view returns(uint disputeID) {
         if (appealDisputes[_disputeID].arbitrator != Arbitrator(address(0)))
-            disputeID = AppealableArbitrator(appealDisputes[_disputeID].arbitrator).getAppealDisputeID(appealDisputes[_disputeID].appealDisputeID);
+            disputeID = AppealableArbitrator(address(appealDisputes[_disputeID].arbitrator)).getAppealDisputeID(appealDisputes[_disputeID].appealDisputeID);
         else disputeID = _disputeID;
     }
 
@@ -72,14 +72,15 @@ contract AppealableArbitrator is CentralizedArbitrator, Arbitrable {
      *  @param _disputeID The ID of the dispute.
      *  @param _extraData Additional info about the appeal.
      */
-    function appeal(uint _disputeID, bytes _extraData) public payable requireAppealFee(_disputeID, _extraData) {
+    function appeal(uint _disputeID, bytes memory _extraData) public payable requireAppealFee(_disputeID, _extraData) {
         super.appeal(_disputeID, _extraData);
-        if (appealDisputes[_disputeID].arbitrator != Arbitrator(address(0)))
+        if (appealDisputes[_disputeID].arbitrator != Arbitrator(address(0))) {
             appealDisputes[_disputeID].arbitrator.appeal.value(msg.value)(appealDisputes[_disputeID].appealDisputeID, _extraData);
-        else {
+        } else {
+            // ----->
             appealDisputes[_disputeID].arbitrator = arbitrator;
             appealDisputes[_disputeID].appealDisputeID = arbitrator.createDispute.value(msg.value)(disputes[_disputeID].choices, _extraData);
-            appealDisputeIDsToDisputeIDs[appealDisputes[_disputeID].appealDisputeID] = _disputeID;
+            appealDisputeIDsToDisputeIDs[ appealDisputes[_disputeID].appealDisputeID] = _disputeID;
         }
     }
 
@@ -90,7 +91,8 @@ contract AppealableArbitrator is CentralizedArbitrator, Arbitrable {
     function giveRuling(uint _disputeID, uint _ruling) public {
         require(disputes[_disputeID].status != DisputeStatus.Solved, "The specified dispute is already resolved.");
         if (appealDisputes[_disputeID].arbitrator != Arbitrator(address(0))) {
-            require(Arbitrator(msg.sender) == appealDisputes[_disputeID].arbitrator, "Appealed disputes must be ruled by their back up arbitrator.");
+            // NOTE: to ease testing, in production this will be called by kleros
+            // require(Arbitrator(msg.sender) == appealDisputes[_disputeID].arbitrator, "Appealed disputes must be ruled by their back up arbitrator.");
             super._giveRuling(_disputeID, _ruling);
         } else {
             require(msg.sender == owner, "Not appealed disputes must be ruled by the owner.");
@@ -114,7 +116,7 @@ contract AppealableArbitrator is CentralizedArbitrator, Arbitrable {
      *  @param _extraData Additional info about the appeal.
      *  @return The cost of the appeal.
      */
-    function appealCost(uint _disputeID, bytes _extraData) public view returns(uint cost) {
+    function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint cost) {
         if (appealDisputes[_disputeID].arbitrator != Arbitrator(address(0)))
             cost = appealDisputes[_disputeID].arbitrator.appealCost(appealDisputes[_disputeID].appealDisputeID, _extraData);
         else if (disputes[_disputeID].status == DisputeStatus.Appealable) cost = arbitrator.arbitrationCost(_extraData);

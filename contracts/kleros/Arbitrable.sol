@@ -4,7 +4,7 @@
  *  Bug Bounties: This code hasn't undertaken a bug bounty program yet.
  */
 
-pragma solidity ^0.4.15;
+pragma solidity ^0.5.3;
 
 import "./IArbitrable.sol";
 
@@ -26,7 +26,7 @@ contract Arbitrable is IArbitrable {
      *  @param _arbitrator The arbitrator of the contract.
      *  @param _arbitratorExtraData Extra data for the arbitrator.
      */
-    constructor(Arbitrator _arbitrator, bytes _arbitratorExtraData) public {
+    constructor(Arbitrator _arbitrator, bytes memory _arbitratorExtraData) public {
         arbitrator = _arbitrator;
         arbitratorExtraData = _arbitratorExtraData;
     }
