@@ -175,7 +175,7 @@ contract('ZoneFactory + Zone', (accounts) => {
 
   const createZone = async (from, dthAmount, countryCode, geohash) => {
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
-    await web3.eth.sendTransaction({
+    const txCreate = await web3.eth.sendTransaction({
       from,
       to: dthInstance.address,
       data: createDthZoneCreateData(zoneFactoryInstance.address, dthAmount, asciiToHex(countryCode), asciiToHex(geohash)),
@@ -249,8 +249,8 @@ contract('ZoneFactory + Zone', (accounts) => {
       it('should revert if creating a zone with geohash 0x0', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await expectRevert2(
-          createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, BYTES7_ZERO),
-          'createAndClaim expects 10 bytes as data',
+          createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, BYTES1_ZERO),
+          'createAndClaim expects 9 bytes as data',
         );
       });
       it('should revert if zone is not inside country', async () => {

@@ -22,8 +22,8 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
   //      geohash   zoneContractAddress or 0x0 if it doesnt exist
   // TODO: now we can use computeCSC() to get CSC, do we need it? not really
-  mapping(bytes7 => address) public geohashToZone;
-  mapping(address => bytes7) public zoneToGeohash;
+  mapping(bytes6 => address) public geohashToZone;
+  mapping(address => bytes6) public zoneToGeohash;
 
   IDetherToken public dth;
   IGeoRegistry public geo;
@@ -116,7 +116,20 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
     return tempBytes7;
   }
+  function toBytes6(bytes memory _bytes, uint _start)
+    private
+    pure
+    returns (bytes6)
+  {
+    require(_bytes.length >= (_start + 6), " not long enough");
+    bytes6 tempBytes6;
 
+    assembly {
+        tempBytes6 := mload(add(add(_bytes, 0x20), _start))
+    }
+
+    return tempBytes6;
+  }
   function slice(bytes memory _bytes, uint _start, uint _length)
     private
     pure
@@ -157,7 +170,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   // ------------------------------------------------
 
 
-  function zoneExists(bytes7 _geohash)
+  function zoneExists(bytes6 _geohash)
     external
     view
     returns (bool)
@@ -174,7 +187,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   function proxyUpdateUserDailySold(bytes2 _countryCode, address _from, address _to, uint _amount)
     external
   {
-    require(zoneToGeohash[msg.sender] != bytes7(0), "can only be called by a registered zone");
+    require(zoneToGeohash[msg.sender] != bytes6(0), "can only be called by a registered zone");
 
     users.updateDailySold(_countryCode, _from, _to, _amount);
   }
@@ -186,7 +199,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
     require(msg.sender == address(dth), "can only be called by dth contract");
 
     require(control.paused() == false, "contract is paused");
-    require(_data.length == 10, "createAndClaim expects 10 bytes as data");
+    require(_data.length == 9, "createAndClaim expects 9 bytes as data");
 
     // we only expect 1 function to be called, createAndClaim, encoded as bytes1(0x40)
     require(toBytes1(_data, 0) == bytes1(0x40), "incorrect first byte in data, expected 0x40");
@@ -195,7 +208,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
     uint dthAmount = _value;
 
     bytes2 country = toBytes2(_data, 1);
-    bytes7 geohash = toBytes7(_data, 3);
+    bytes6 geohash = toBytes6(_data, 3);
 
     require(geo.countryIsEnabled(country), "country is disabled");
     require(geo.zoneInsideCountry(country, bytes4(geohash)), "zone is not inside country");

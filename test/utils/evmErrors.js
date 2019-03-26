@@ -25,8 +25,21 @@ const expectRevert2 = async (fn, errMsg) => {
   }
   throw new Error('should have thrown');
 };
-
+const expectRevert3 = async (fn, errMsg) => {
+  try {
+    const ret = await fn;
+    console.log('ret => ', ret);
+  } catch (err) {
+    console.log('err', err);
+    // if (!err.message.includes(errMsg)) {
+    //   throw err;
+    // }
+    return;
+  }
+  throw new Error('should have thrown');
+};
 module.exports = {
   expectRevert,
   expectRevert2,
+  expectRevert3,
 };

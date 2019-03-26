@@ -89,7 +89,7 @@ contract Zone is IERC223ReceivingContract {
   ITeller public teller;
 
   bytes2 public country;
-  bytes7 public geohash;
+  bytes6 public geohash;
 
   mapping(address => uint) public withdrawableDth;
   mapping(address => uint) public withdrawableEth;
@@ -180,7 +180,7 @@ contract Zone is IERC223ReceivingContract {
   // executed by ZoneFactory.sol when this Zone does not yet exist (= not yet deployed)
   function init(
     bytes2 _countryCode,
-    bytes7 _geohash,
+    bytes6 _geohash,
     address _zoneOwner,
     uint _dthAmount,
     address _dth,
@@ -234,7 +234,7 @@ contract Zone is IERC223ReceivingContract {
     return zoneOwner.addr;
   }
 
-  function computeCSC(bytes7 _geohash, address _addr)
+  function computeCSC(bytes6 _geohash, address _addr)
     public
     pure
     returns (bytes12)
@@ -354,6 +354,20 @@ contract Zone is IERC223ReceivingContract {
       }
 
       return tempBytes7;
+  }
+    function toBytes6(bytes memory _bytes, uint _start)
+    private
+    pure
+    returns (bytes6)
+  {
+    require(_bytes.length >= (_start + 6), " not long enough");
+    bytes6 tempBytes6;
+
+    assembly {
+        tempBytes6 := mload(add(add(_bytes, 0x20), _start))
+    }
+
+    return tempBytes6;
   }
   function toBytes12(bytes memory _bytes, uint _start)
     private pure

@@ -1,4 +1,5 @@
 const BYTES1_ZERO = '0x00';
+const BYTES6_ZERO = '0x000000000000';
 const BYTES7_ZERO = '0x00000000000000';
 const BYTES12_ZERO = '0x000000000000000000000000';
 const BYTES16_ZERO = '0x00000000000000000000000000000000';
@@ -7,9 +8,11 @@ const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 const ADDRESS_BURN = '0xffffffffffffffffffffffffffffffffffffffff';
 
 const COUNTRY_CG = 'CG';
-const VALID_CG_ZONE_GEOHASH = 'krcztse'; // krcz is in CG
-const INVALID_CG_ZONE_GEOHASH = 'krcttse'; // krct is not in CG
-const NONEXISTING_CG_ZONE_GEOHASH = 'krcatse'; // krca, a is not a valid geohash char
+// const VALID_CG_ZONE_GEOHASH = 'krcztse'; // krcz is in CG
+// const INVALID_CG_ZONE_GEOHASH = 'krcttse'; // krct is not in CG
+const VALID_CG_ZONE_GEOHASH = 'krczts'; // krcz is in CG
+const INVALID_CG_ZONE_GEOHASH = 'krctts'; // krct is not in CG
+const NONEXISTING_CG_ZONE_GEOHASH = 'krcats'; // krca, a is not a valid geohash char
 const VALID_CG_SHOP_GEOHASH = 'krcztseeeeee'; // krcz is in CG
 const VALID_CG_SHOP_GEOHASH_2 = 'krcytseeeeee'; // krcy is alo in CG
 const INVALID_CG_SHOP_GEOHASH = 'krcatseeeeee'; // krca, a is not a valid geohash char
@@ -42,6 +45,7 @@ const TELLER_CG_SETTINGS = '0x03'; // 0000 0011 <-- both buyer and seller bit se
 
 module.exports = {
   BYTES1_ZERO,
+  BYTES6_ZERO,
   BYTES7_ZERO,
   BYTES12_ZERO,
   BYTES16_ZERO,

@@ -231,6 +231,20 @@ contract Teller {
 
       return tempBytes7;
   }
+    function toBytes6(bytes memory _bytes, uint _start)
+    private
+    pure
+    returns (bytes6)
+  {
+    require(_bytes.length >= (_start + 6), " not long enough");
+    bytes6 tempBytes6;
+
+    assembly {
+        tempBytes6 := mload(add(add(_bytes, 0x20), _start))
+    }
+
+    return tempBytes6;
+  }
   function toBytes12(bytes memory _bytes, uint _start)
     private
     pure
@@ -318,7 +332,7 @@ contract Teller {
     onlyWhenHasNoTeller
   {
     require(_position.length == 12, "expected position to be 12 bytes");
-    require(toBytes7(_position, 0) == zone.geohash(), "position is not inside this zone");
+    require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
 
     require(_currencyId >= 1 && _currencyId <= 100, "currency id must be in range 1-100");

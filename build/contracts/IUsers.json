@@ -185,6 +185,14 @@
         {
           "name": "day",
           "type": "uint8"
+        },
+        {
+          "name": "hour",
+          "type": "uint8"
+        },
+        {
+          "name": "minute",
+          "type": "uint8"
         }
       ],
       "name": "toTimestamp",
@@ -215,6 +223,33 @@
         },
         {
           "name": "hour",
+          "type": "uint8"
+        }
+      ],
+      "name": "toTimestamp",
+      "outputs": [
+        {
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "year",
+          "type": "uint16"
+        },
+        {
+          "name": "month",
+          "type": "uint8"
+        },
+        {
+          "name": "day",
           "type": "uint8"
         }
       ],
@@ -254,41 +289,6 @@
         },
         {
           "name": "second",
-          "type": "uint8"
-        }
-      ],
-      "name": "toTimestamp",
-      "outputs": [
-        {
-          "name": "timestamp",
-          "type": "uint256"
-        }
-      ],
-      "payable": false,
-      "stateMutability": "pure",
-      "type": "function"
-    },
-    {
-      "constant": true,
-      "inputs": [
-        {
-          "name": "year",
-          "type": "uint16"
-        },
-        {
-          "name": "month",
-          "type": "uint8"
-        },
-        {
-          "name": "day",
-          "type": "uint8"
-        },
-        {
-          "name": "hour",
-          "type": "uint8"
-        },
-        {
-          "name": "minute",
           "type": "uint8"
         }
       ],
@@ -560,9 +560,9 @@
   "sourceMap": "",
   "deployedSourceMap": "",
   "source": "pragma solidity ^0.5.3;\n\ncontract IUsers {\n    function zoneFactoryAddress() view public returns(address);\n    function kycCertifier() view public returns(address);\n    function priceOracle() view public returns(address);\n    function smsCertifier() view public returns(address);\n    function getHour(uint256 timestamp) pure public returns(uint8);\n    function volumeSell(address) view public returns(uint256);\n    function nbTrade(address) view public returns(uint256);\n    function getWeekday(uint256 timestamp) pure public returns(uint8);\n    function toTimestamp(uint16 year, uint8 month, uint8 day, uint8 hour, uint8 minute) pure public returns(uint256 timestamp);\n    function getDay(uint256 timestamp) pure public returns(uint8);\n    function toTimestamp(uint16 year, uint8 month, uint8 day, uint8 hour) pure public returns(uint256 timestamp);\n    function getSecond(uint256 timestamp) pure public returns(uint8);\n    function toTimestamp(uint16 year, uint8 month, uint8 day) pure public returns(uint256 timestamp);\n    function toTimestamp(uint16 year, uint8 month, uint8 day, uint8 hour, uint8 minute, uint8 second) pure public returns(uint256 timestamp);\n    function getYear(uint256 timestamp) pure public returns(uint16);\n    function getMonth(uint256 timestamp) pure public returns(uint8);\n    function isLeapYear(uint16 year) pure public returns(bool);\n    function leapYearsBefore(uint256 year) pure public returns(uint256);\n    function getDaysInMonth(uint8 month, uint16 year) pure public returns(uint8);\n    function control() view public returns(address);\n    function geo() view public returns(address);\n    function volumeBuy(address) view public returns(uint256);\n    function getMinute(uint256 timestamp) pure public returns(uint8);\n    function setZoneFactory(address _zoneFactory) external;\n    function updateDailySold(bytes2 _countryCode, address _from, address _to, uint256 _amount) external;\n    function getUserTier(address _who) view public returns(uint256 foundTier);\n    function getDateInfo(uint256 timestamp) pure external returns(uint16, uint16, uint16);\n}\n",
-  "sourcePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IUsers.sol",
+  "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IUsers.sol",
   "ast": {
-    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IUsers.sol",
+    "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IUsers.sol",
     "exportedSymbols": {
       "IUsers": [
         3796
@@ -3107,7 +3107,7 @@
     "src": "0:2093:21"
   },
   "legacyAST": {
-    "absolutePath": "/Users/trip/Projects/detherContracts/contracts/interfaces/IUsers.sol",
+    "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IUsers.sol",
     "exportedSymbols": {
       "IUsers": [
         3796
@@ -5653,11 +5653,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.3+commit.10d17f24.Emscripten.clang"
+    "version": "0.5.5+commit.47a71e8f.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.2",
-  "updatedAt": "2019-03-11T12:45:43.507Z",
+  "schemaVersion": "3.0.3",
+  "updatedAt": "2019-03-26T16:58:54.049Z",
   "devdoc": {
     "methods": {}
   },

@@ -2,7 +2,7 @@ pragma solidity ^0.5.3;
 
 contract IZone {
     function dth() view public returns(address);
-    function geohash() view public returns(bytes7);
+    function geohash() view public returns(bytes6);
     function currentAuctionId() view public returns(uint256);
     function auctionBids(uint256, address) view public returns(uint256);
     function withdrawableDth(address) view public returns(uint256);
@@ -13,10 +13,10 @@ contract IZone {
     function control() view public returns(address);
     function geo() view public returns(address);
     function withdrawableEth(address) view public returns(uint256);
-    function init(bytes2 _countryCode, bytes7 _geohash, address _zoneOwner, uint256 _dthAmount, address _dth, address _geo, address _control, address _zoneFactory) external;
+    function init(bytes2 _countryCode, bytes6 _geohash, address _zoneOwner, uint256 _dthAmount, address _dth, address _geo, address _control, address _zoneFactory) external;
     function connectToTellerContract(address _teller) external;
     function ownerAddr() view external returns(address);
-    function computeCSC(bytes7 _geohash, address _addr) pure public returns(bytes12);
+    function computeCSC(bytes6 _geohash, address _addr) pure public returns(bytes12);
     function calcHarbergerTax(uint256 _startTime, uint256 _endTime, uint256 _dthAmount) view public returns(uint256 taxAmount, uint256 keepAmount);
     function calcEntryFee(uint256 _value) view public returns(uint256 burnAmount, uint256 bidAmount);
     function auctionExists(uint256 _auctionId) view external returns(bool);
