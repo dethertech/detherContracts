@@ -4,6 +4,7 @@ const Control = artifacts.require('Control.sol');
 const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle.sol');
 const SmsCertifier = artifacts.require('SmsCertifier.sol');
 const KycCertifier = artifacts.require('KycCertifier.sol');
+const CertifierRegistry = artifacts.require('CertifierRegistry');
 const Users = artifacts.require('Users.sol');
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
 const ZoneFactory = artifacts.require('ZoneFactory.sol');
@@ -42,6 +43,9 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(KycCertifier, control.address, { gas: 6500000 });
   const kyc = await KycCertifier.deployed();
 
+  await deployer.deploy(CertifierRegistry, { gas: 6500000 });
+  const certifierRegistry = await CertifierRegistry.deployed();
+
   await deployer.deploy(GeoRegistry, control.address, { gas: 6500000 });
   const geo = await GeoRegistry.deployed();
 
@@ -51,7 +55,7 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(Teller, { gas: 6500000 });
   const tellerImplementation = await Teller.deployed();
 
-  await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, control.address, { gas: 6500000 });
+  await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, control.address, certifierRegistry.address, { gas: 6500000 });
   const users = await Users.deployed();
 
   await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, { gas: 6500000 });

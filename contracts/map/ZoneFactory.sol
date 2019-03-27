@@ -32,6 +32,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
   address public zoneImplementation;
   address public tellerImplementation;
+  
 
   // ------------------------------------------------
   //

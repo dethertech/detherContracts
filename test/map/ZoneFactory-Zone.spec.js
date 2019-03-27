@@ -8,6 +8,7 @@ const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle');
 const SmsCertifier = artifacts.require('SmsCertifier');
 const KycCertifier = artifacts.require('KycCertifier');
 const Users = artifacts.require('Users');
+const CertifierRegistry = artifacts.require('CertifierRegistry');
 const GeoRegistry = artifacts.require('GeoRegistry');
 const ZoneFactory = artifacts.require('ZoneFactory');
 const Zone = artifacts.require('Zone');
@@ -135,6 +136,7 @@ contract('ZoneFactory + Zone', (accounts) => {
   let zoneFactoryInstance;
   let zoneImplementationInstance;
   let tellerImplementationInstance;
+  let certifierRegistryInstance;
 
   before(async () => {
     __rootState__ = await timeTravel.saveState();
@@ -148,6 +150,7 @@ contract('ZoneFactory + Zone', (accounts) => {
     controlInstance = await Control.new({ from: owner });
     smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
     kycInstance = await KycCertifier.new(controlInstance.address, { from: owner });
+    certifierRegistryInstance = await CertifierRegistry.new({ from: owner });
     geoInstance = await GeoRegistry.new(controlInstance.address, { from: owner });
     zoneImplementationInstance = await Zone.new({ from: owner });
     tellerImplementationInstance = await Teller.new({ from: owner });
@@ -157,6 +160,7 @@ contract('ZoneFactory + Zone', (accounts) => {
       smsInstance.address,
       kycInstance.address,
       controlInstance.address,
+      certifierRegistryInstance.address,
       { from: owner },
     );
     zoneFactoryInstance = await ZoneFactory.new(
@@ -1690,5 +1694,85 @@ contract('ZoneFactory + Zone', (accounts) => {
         });
       });
     });
+    // test certifierregistry contract
+    describe('certifierRegistry.sol', () => {
+      describe('certifierRegistry.sol', () => {
+        it('should register a new certifier', async () => {
+          const urlCert = 'dether.io/certifier';
+          const tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
+          const myCertifier = await certifierRegistryInstance.certifier(user1);
+          assert.equal(myCertifier.owner, user1, 'certifier was not well registered');
+        });
+        it('should add url', async () => {
+          const urlCert = 'dether.io/certifier';
+          let tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
+          const urlNew = 'dether.io/newpage';
+          tsx = await certifierRegistryInstance.modifyUrl(user1, urlNew, { from: user1 });
+          const myCertifier = await certifierRegistryInstance.certifier(user1);
+          assert.equal(myCertifier.url, urlNew, 'url was well modified');
+        });
+        it('should add delegate', async () => {
+          const urlCert = 'dether.io/certifier';
+          let tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
+          cert = await certifierRegistryInstance.isDelegate(user1, user2);
+          assert.equal(cert, false, 'should not be delegate');
+          tsx = await certifierRegistryInstance.addDelegate(user1, user2, { from: user1 });
+          cert = await certifierRegistryInstance.isDelegate(user1, user2);
+          assert.equal(cert, true, 'should be delegate');
+        });
+        it('should remove delegate', async () => {
+          const urlCert = 'dether.io/certifier';
+          let tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
+          tsx = await certifierRegistryInstance.addDelegate(user1, user2, { from: user1 });
+          let cert = await certifierRegistryInstance.isDelegate(user1, user2);
+          assert.equal(cert, true, 'should be delegate');
+          tsx = await certifierRegistryInstance.removeDelegate(user1, user2, { from: user1 });
+          cert = await certifierRegistryInstance.isDelegate(user1, user2);
+          assert.equal(cert, false, 'should not be delegate');
+        });
+        it('should add certification Type', async () => {
+          const urlCert = 'dether.io/certifier';
+          let tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
+          const certType = 'sms verification';
+          tsx = await certifierRegistryInstance.addCertificationType(user1, 1, 'sms verification', { from: user1 });
+          cert = await certifierRegistryInstance.getCertificationType(user1, 1);
+          assert.equal(certType, cert, 'should not be delegate');
+        });
+        it('add certification to an address', async () => {
+          const urlCert = 'dether.io/certifier';
+          let tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
+          tsx = await certifierRegistryInstance.addDelegate(user1, user2, { from: user1 });
+          tsx = await certifierRegistryInstance.addCertificationType(user1, 1, 'sms verification', { from: user1 });
+          tsx = await certifierRegistryInstance.addCertificationType(user1, 2, 'kyc verification', { from: user1 });
+
+          tsx = await certifierRegistryInstance.certify(user1, user3, 1, { from: user2 })
+          tsx = await certifierRegistryInstance.certify(user1, user3, 2, { from: user2 })
+
+          const certs = await certifierRegistryInstance.getCerts(user3);
+          assert.equal(certs[0].ref, 1, 'ref should be type 1');
+          assert.equal(certs[0].certifier, user1, 'certifier address should be the one who create it');
+          assert.equal(certs[1].ref, 2, 'ref should be type 2');
+          assert.equal(certs[1].certifier, user1, 'certifier address should be the one who create it');
+
+        });
+      })
+      describe('certifierRegistry from Users.sol', () => {
+        it('should get good result when calling throug Users instance', async () => {
+                    const urlCert = 'dether.io/certifier';
+          let tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
+          tsx = await certifierRegistryInstance.addDelegate(user1, user2, { from: user1 });
+          tsx = await certifierRegistryInstance.addCertificationType(user1, 1, 'sms verification', { from: user1 });
+          tsx = await certifierRegistryInstance.addCertificationType(user1, 2, 'kyc verification', { from: user1 });
+
+          tsx = await certifierRegistryInstance.certify(user1, user3, 1, { from: user2 })
+          tsx = await certifierRegistryInstance.certify(user1, user3, 2, { from: user2 })
+
+          const certs = await certifierRegistryInstance.getCerts(user3);
+
+          const certsFromUsersInstance = await usersInstance.getCertifications(user3);
+          expect(certs).to.eql(certsFromUsersInstance);
+        })
+      })
+    })
   });
 });

@@ -1,4 +1,5 @@
 pragma solidity ^0.5.3;
+pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -8,6 +9,7 @@ import "../interfaces/IExchangeRateOracle.sol";
 import "../interfaces/ICertifier.sol";
 import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IControl.sol";
+import "../interfaces/ICertifierRegistry.sol";
 
 contract Users is DateTime {
   // ------------------------------------------------
@@ -28,7 +30,9 @@ contract Users is DateTime {
   IGeoRegistry public geo;
   ICertifier public smsCertifier;
   ICertifier public kycCertifier;
+  ICertifierRegistry public certifierRegistry;
   IControl public control;
+
 
   address public zoneFactoryAddress;
 
@@ -47,13 +51,14 @@ contract Users is DateTime {
   //
   // ------------------------------------------------
 
-  constructor(address _priceOracle, address _geo, address _smsCertifier, address _kycCertifier, address _control)
+  constructor(address _priceOracle, address _geo, address _smsCertifier, address _kycCertifier, address _control, address _certifierRegistry)
     public
   {
     priceOracle = IExchangeRateOracle(_priceOracle);
     geo = IGeoRegistry(_geo);
     smsCertifier = ICertifier(_smsCertifier);
     kycCertifier = ICertifier(_kycCertifier);
+    certifierRegistry = ICertifierRegistry(_certifierRegistry);
     control = IControl(_control);
   }
 
@@ -102,7 +107,12 @@ contract Users is DateTime {
     if (kycCertifier.certified(_who)) foundTier = 2;
     else if (smsCertifier.certified(_who)) foundTier = 1;
   }
-
+  function getCertifications(address _who)
+    external view
+    returns ( ICertifierRegistry.Certification[] memory)
+    {
+      return certifierRegistry.getCerts(_who);
+    }
   function getDateInfo(uint timestamp)
     external
     pure

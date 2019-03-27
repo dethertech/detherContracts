@@ -1,11 +1,13 @@
 pragma solidity ^0.5.3;
 
+
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../interfaces/IControl.sol";
 import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZone.sol";
 import "../interfaces/ITeller.sol";
+
 
 contract Teller {
   // ------------------------------------------------
@@ -57,6 +59,7 @@ contract Teller {
   IZone public zone;
   IGeoRegistry public geo;
   IControl public control;
+ 
 
   //      who        ethAmount
   mapping(address => uint) public withdrawableEth;
@@ -157,7 +160,6 @@ contract Teller {
     zone = IZone(_zone);
     geo = IGeoRegistry(_geo);
     control = IControl(_control);
-
     inited = true;
   }
 

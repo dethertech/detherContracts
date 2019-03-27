@@ -7,6 +7,7 @@ const Control = artifacts.require('Control');
 const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle');
 const SmsCertifier = artifacts.require('SmsCertifier');
 const KycCertifier = artifacts.require('KycCertifier');
+const CertifierRegistry = artifacts.require('CertifierRegistry');
 const Users = artifacts.require('Users');
 const GeoRegistry = artifacts.require('GeoRegistry');
 const Shops = artifacts.require('Shops');
@@ -72,6 +73,8 @@ contract('Shops', (accounts) => {
   let shopsDisputeInstance;
   let appealableArbitratorInstance;
   let centralizedArbitratorInstance;
+  let certifierRegistryInstance;
+
 
   before(async () => {
     __rootState__ = await timeTravel.saveState();
@@ -85,6 +88,8 @@ contract('Shops', (accounts) => {
     controlInstance = await Control.new({ from: owner });
     smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
     kycInstance = await KycCertifier.new(controlInstance.address, { from: owner });
+    certifierRegistryInstance = await CertifierRegistry.new({ from: owner });
+
     geoInstance = await GeoRegistry.new(controlInstance.address, { from: owner });
 
     usersInstance = await Users.new(
@@ -93,6 +98,7 @@ contract('Shops', (accounts) => {
       smsInstance.address,
       kycInstance.address,
       controlInstance.address,
+      certifierRegistryInstance.address,
       { from: owner },
     );
 
