@@ -40,6 +40,9 @@ contract Users is DateTime {
   mapping(address => uint) public volumeSell;
   mapping(address => uint) public nbTrade;
 
+  mapping(address => int8) public userTiers;
+  mapping(int8 => uint) public tierDailyLimit;
+
   // per country, per user, per day, keep track of amount of eth sold (since we have max limits per country)
   //
   //      country           user               day               month             year      weiSold
@@ -60,6 +63,9 @@ contract Users is DateTime {
     kycCertifier = ICertifier(_kycCertifier);
     certifierRegistry = ICertifierRegistry(_certifierRegistry);
     control = IControl(_control);
+    tierDailyLimit[1] = 1000;
+    tierDailyLimit[2] = 10000;
+    tierDailyLimit[3] = 1000000;
   }
 
   // ------------------------------------------------
@@ -75,12 +81,30 @@ contract Users is DateTime {
     zoneFactoryAddress = _zoneFactory;
   }
 
+  function setUserTier(address _who, int8 _num) 
+    external
+  {
+    require(msg.sender == zoneFactoryAddress, "can only be called by zoneFactory");
+    userTiers[_who] = _num;
+  }
+
+  function modifyUserTier(int8 _num) 
+    public
+  {
+    require(userTiers[msg.sender] > 0, "can only be called by an existing user");
+    require(_num > 0, "tier should be greater than 0");
+    userTiers[msg.sender] = _num;
+  }
+
   function updateDailySold(bytes2 _countryCode, address _from, address _to, uint _amount)
     external
   {
     require(msg.sender == zoneFactoryAddress, "can only be called by zoneFactory");
+
     // if country code or user does not exist, we get back 0
-    uint sellDailyLimitUsd = geo.countryTierDailyLimit(_countryCode, getUserTier(_from));
+    // uint sellDailyLimitUsd = geo.countryTierDailyLimit(_countryCode, getUserTier(_from));
+
+    uint sellDailyLimitUsd = tierDailyLimit[userTiers[_from]];
     uint sellDailyLimitEth = priceOracle.getWeiPriceOneUsd().mul(sellDailyLimitUsd);
     _DateTime memory dateNow = parseTimestamp(block.timestamp);
     uint newSoldTodayEth = ethSellsUserToday[_countryCode][_from][dateNow.day][dateNow.month][dateNow.year].add(_amount);
@@ -98,15 +122,16 @@ contract Users is DateTime {
   //
   // ------------------------------------------------
 
-  function getUserTier(address _who)
-    public
-    view
-    returns (uint foundTier)
-  {
-    foundTier = 0;
-    if (kycCertifier.certified(_who)) foundTier = 2;
-    else if (smsCertifier.certified(_who)) foundTier = 1;
-  }
+  // function getUserTier(address _who)
+  //   public
+  //   view
+  //   returns (uint)
+  // {
+  //   // foundTier = 0;
+  //   // if (kycCertifier.certified(_who)) foundTier = 2;
+  //   // else if (smsCertifier.certified(_who)) foundTier = 1;
+  //   return userTiers[_who];
+  // }
   function getCertifications(address _who)
     external view
     returns ( ICertifierRegistry.Certification[] memory)

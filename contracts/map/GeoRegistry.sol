@@ -26,7 +26,7 @@ contract GeoRegistry {
 
   // mapping for limiting the sell amount for tellers, per tier
   //      countryCode        tier    usdDailyLimit
-  mapping(bytes2 => mapping (uint => uint)) public countryTierDailyLimit;
+  // mapping(bytes2 => mapping (uint => uint)) public countryTierDailyLimit;
 
   //      countryCode licensePriceUSD
   mapping(bytes2 => uint) public shopLicensePrice;
@@ -137,6 +137,7 @@ contract GeoRegistry {
 
   function validGeohashChars(bytes memory _bytes)
     public
+    view
     returns (bool)
   {
     require(_bytes.length > 0, "_bytes geohash chars is empty array");
@@ -151,6 +152,7 @@ contract GeoRegistry {
   }
   function validGeohashChars12(bytes12 _bytes)
     public
+    view
     returns (bool)
   {
     for (uint i = 0; i < 12; i += 1) {
@@ -187,13 +189,13 @@ contract GeoRegistry {
   //
   // ------------------------------------------------
 
-  function setCountryTierDailyLimit(bytes2 _countryCode, uint _tier, uint _limitUsd)
-    public
-  {
-    // can exec while paused
-    require(control.isCEO(msg.sender), "caller needs to be CEO");
-    countryTierDailyLimit[_countryCode][_tier] = _limitUsd;
-  }
+  // function setCountryTierDailyLimit(bytes2 _countryCode, uint _tier, uint _limitUsd)
+  //   public
+  // {
+  //   // can exec while paused
+  //   require(control.isCEO(msg.sender), "caller needs to be CEO");
+  //   countryTierDailyLimit[_countryCode][_tier] = _limitUsd;
+  // }
 
   function updateLevel2(bytes2 _countryCode, bytes3 _letter, bytes4 _subLetters)
     public

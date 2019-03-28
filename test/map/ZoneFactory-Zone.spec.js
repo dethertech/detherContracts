@@ -15,12 +15,13 @@ const Zone = artifacts.require('Zone');
 const Teller = artifacts.require('Teller');
 
 const Web3 = require('web3');
+const truffleAssert = require('truffle-assertions');
 
 const expect = require('../utils/chai');
 const TimeTravel = require('../utils/timeTravel');
 const { addCountry } = require('../utils/geo');
 const { ethToWei, asciiToHex, str } = require('../utils/convert');
-const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
+const { expectRevert, expectRevert2, expectRevert3 } = require('../utils/evmErrors');
 const { getRandomBytes32 } = require('../utils/ipfs');
 const {
   BYTES7_ZERO, VALID_CG_ZONE_GEOHASH, INVALID_CG_ZONE_GEOHASH, MIN_ZONE_DTH_STAKE,
@@ -39,7 +40,15 @@ const createDthZoneCreateData = (zoneFactoryAddr, bid, countryCode, geohash) => 
   const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
   const params = web3.eth.abi.encodeParameters(
     ['address', 'uint256', 'bytes'],
-    [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}`],
+    [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}01`],
+  );
+  return [fnSig, params.slice(2)].join('');
+};
+const createDthZoneCreateDataWithTier = (zoneFactoryAddr, bid, countryCode, geohash, tier) => {
+  const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
+  const params = web3.eth.abi.encodeParameters(
+    ['address', 'uint256', 'bytes'],
+    [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}${tier}`],
   );
   return [fnSig, params.slice(2)].join('');
 };
@@ -192,7 +201,21 @@ contract('ZoneFactory + Zone', (accounts) => {
     const tellerInstance = await Teller.at(tellerAddress);
     return { zoneInstance, tellerInstance };
   };
-
+  const createZoneWithTier = async (from, dthAmount, countryCode, geohash, tier) => {
+    await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
+    const txCreate = await web3.eth.sendTransaction({
+      from,
+      to: dthInstance.address,
+      data: createDthZoneCreateDataWithTier(zoneFactoryInstance.address, dthAmount, asciiToHex(countryCode), asciiToHex(geohash), tier),
+      value: 0,
+      gas: 4700000,
+    });
+    const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(geohash));
+    const zoneInstance = await Zone.at(zoneAddress);
+    const tellerAddress = await zoneInstance.teller();
+    const tellerInstance = await Teller.at(tellerAddress);
+    return { zoneInstance, tellerInstance };
+  };
   const placeBid = async (from, dthAmount, zoneAddress) => {
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
@@ -254,7 +277,7 @@ contract('ZoneFactory + Zone', (accounts) => {
         await enableAndLoadCountry(COUNTRY_CG);
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, BYTES1_ZERO),
-          'createAndClaim expects 9 bytes as data',
+          'createAndClaim expects 10 bytes as data',
         );
       });
       it('should revert if zone is not inside country', async () => {
@@ -315,6 +338,80 @@ contract('ZoneFactory + Zone', (accounts) => {
         expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
       });
     });
+    describe.only('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
+      it('should succeed with tier 1', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+
+        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+
+        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
+
+        await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
+        await tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
+
+        expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(1);
+        expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
+      });
+      it('should failed with tier 1', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+
+        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+
+        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        await tellerInstance.addFunds({ from: user1, value: ethToWei(20) });
+
+        try {
+          await tellerInstance.sellEth(user2, ethToWei(20), { from: user1 })
+        } catch (err) {
+          if (!err.message.includes('exceeded daily sell limit'))
+            throw err;
+        }
+      });
+      it('should succeed with tier 2', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '02'));
+
+        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+
+        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        await tellerInstance.addFunds({ from: user1, value: ethToWei(20) });
+
+        await tellerInstance.sellEth(user2, ethToWei(20), { from: user1 })
+        await tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
+
+        expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(1);
+        expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
+      });
+      it('should failed with tier 2', async () => {
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '02'));
+
+        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+
+        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        await tellerInstance.addFunds({ from: user1, value: ethToWei(120) });
+
+        try {
+          await tellerInstance.sellEth(user2, ethToWei(120), { from: user1 })
+        } catch (err) {
+          if (!err.message.includes('exceeded daily sell limit'))
+            throw err;
+          return;
+        }
+        throw 'should have thrown';
+      });
+    });
   });
 
   describe('Setters', () => {
@@ -324,7 +421,7 @@ contract('ZoneFactory + Zone', (accounts) => {
       // create a zone with a zone owner
       await enableAndLoadCountry(COUNTRY_CG);
       ({ zoneInstance, tellerInstance } = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH));
-      await geoInstance.setCountryTierDailyLimit(asciiToHex(COUNTRY_CG), '0', '1000', { from: owner });
+      // await geoInstance.setCountryTierDailyLimit(asciiToHex(COUNTRY_CG), '0', '1000', { from: owner });
     });
     describe('AUCTION', () => {
       describe('[ERC223] Zone.claimFreeZone(address _from, uint _dthAmount)', () => {
@@ -1758,7 +1855,7 @@ contract('ZoneFactory + Zone', (accounts) => {
       })
       describe('certifierRegistry from Users.sol', () => {
         it('should get good result when calling throug Users instance', async () => {
-                    const urlCert = 'dether.io/certifier';
+          const urlCert = 'dether.io/certifier';
           let tsx = await certifierRegistryInstance.createCertifier(urlCert, { from: user1 });
           tsx = await certifierRegistryInstance.addDelegate(user1, user2, { from: user1 });
           tsx = await certifierRegistryInstance.addCertificationType(user1, 1, 'sms verification', { from: user1 });

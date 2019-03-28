@@ -425,8 +425,4 @@ contract DetherToken is DetailedERC20, MintableToken, ERC223BasicToken {
         public
     {}
 
-
-    function cowboy(uint _a) public returns (string memory) {
-      return "neo";
-    }
 }

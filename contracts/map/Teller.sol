@@ -24,7 +24,7 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  struct Teller {
+  struct Teller_t {
     address addr;
     uint8 currencyId;  // 1 - 100 , see README
     bytes16 messenger; // telegrame nickname
@@ -44,7 +44,7 @@ contract Teller {
   uint private constant REFERRER_FEE_PERCENTAGE = 1; // 0.1%
   address private constant ADDRESS_BURN = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
-  Teller private teller;
+  Teller_t private teller;
   bytes1 private constant isSellerBitMask = hex"01";
   bytes1 private constant isBuyerBitMask = hex"02";
 
@@ -184,7 +184,7 @@ contract Teller {
   }
 
   function calcReferrerFee(uint _value)
-    public view
+    public pure
     returns (uint referrerAmount)
   {
     referrerAmount = _value.div(1000).mul(REFERRER_FEE_PERCENTAGE); // 0.1%

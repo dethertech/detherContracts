@@ -28,4 +28,6 @@ contract IUsers {
     function updateDailySold(bytes2 _countryCode, address _from, address _to, uint256 _amount) external;
     function getUserTier(address _who) view public returns(uint256 foundTier);
     function getDateInfo(uint256 timestamp) pure external returns(uint16, uint16, uint16);
+    function setUserTier(address _who, int8 _num) external;
+    function modifyUserTier(int8 _num) public;
 }

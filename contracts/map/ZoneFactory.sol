@@ -200,7 +200,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
     require(msg.sender == address(dth), "can only be called by dth contract");
 
     require(control.paused() == false, "contract is paused");
-    require(_data.length == 9, "createAndClaim expects 9 bytes as data");
+    require(_data.length == 10, "createAndClaim expects 10 bytes as data");
 
     // we only expect 1 function to be called, createAndClaim, encoded as bytes1(0x40)
     require(toBytes1(_data, 0) == bytes1(0x40), "incorrect first byte in data, expected 0x40");
@@ -210,7 +210,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
     bytes2 country = toBytes2(_data, 1);
     bytes6 geohash = toBytes6(_data, 3);
-
+    int8 tier = int8(toBytes1(_data, 9)); // should be 1 2 or 3
     require(geo.countryIsEnabled(country), "country is disabled");
     require(geo.zoneInsideCountry(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
@@ -225,9 +225,11 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
       country, geohash, sender, dthAmount,
       address(dth), address(geo), address(control), address(this)
     );
-
     ITeller(newTellerAddress).init(address(geo), address(control), newZoneAddress);
     IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
+
+    // add teller tier
+    users.setUserTier(sender, tier);
 
     // store references
     geohashToZone[geohash] = newZoneAddress;

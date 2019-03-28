@@ -256,25 +256,25 @@ contract('Shops', (accounts) => {
           'country is disabled',
         );
       });
-      it('[error] -- user not certified', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await expectRevert2(
-          sendDthShopCreate(
-            user1, dthInstance.address, shopsInstance.address,
-            CG_SHOP_LICENSE_PRICE,
-            {
-              country: asciiToHex(COUNTRY_CG),
-              position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-              category: BYTES16_ZERO,
-              name: BYTES16_ZERO,
-              description: BYTES32_ZERO,
-              opening: BYTES16_ZERO,
-            },
-          ),
-          'user not certified',
-        );
-      });
+      // it('[error] -- user not certified', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await expectRevert2(
+      //     sendDthShopCreate(
+      //       user1, dthInstance.address, shopsInstance.address,
+      //       CG_SHOP_LICENSE_PRICE,
+      //       {
+      //         country: asciiToHex(COUNTRY_CG),
+      //         position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //         category: BYTES16_ZERO,
+      //         name: BYTES16_ZERO,
+      //         description: BYTES32_ZERO,
+      //         opening: BYTES16_ZERO,
+      //       },
+      //     ),
+      //     'user not certified',
+      //   );
+      // });
       it('[error] -- user already has shop', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await smsInstance.certify(user1, { from: owner });
@@ -449,28 +449,28 @@ contract('Shops', (accounts) => {
           'contract is paused',
         );
       });
-      it('[error] -- user not certified', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await sendDthShopCreate(
-          user1, dthInstance.address, shopsInstance.address,
-          CG_SHOP_LICENSE_PRICE,
-          {
-            country: asciiToHex(COUNTRY_CG),
-            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-            category: BYTES16_ZERO,
-            name: BYTES16_ZERO,
-            description: BYTES32_ZERO,
-            opening: BYTES16_ZERO,
-          },
-        );
-        await smsInstance.revoke(user1, { from: owner });
-        await expectRevert(
-          shopsInstance.removeShop({ from: user1 }),
-          'user not certified',
-        );
-      });
+      // it('[error] -- user not certified', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await smsInstance.certify(user1, { from: owner });
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await sendDthShopCreate(
+      //     user1, dthInstance.address, shopsInstance.address,
+      //     CG_SHOP_LICENSE_PRICE,
+      //     {
+      //       country: asciiToHex(COUNTRY_CG),
+      //       position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //       category: BYTES16_ZERO,
+      //       name: BYTES16_ZERO,
+      //       description: BYTES32_ZERO,
+      //       opening: BYTES16_ZERO,
+      //     },
+      //   );
+      //   await smsInstance.revoke(user1, { from: owner });
+      //   await expectRevert(
+      //     shopsInstance.removeShop({ from: user1 }),
+      //     'user not certified',
+      //   );
+      // });
       it('[error] -- caller does not own shop', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await smsInstance.certify(user1, { from: owner });
@@ -543,33 +543,33 @@ contract('Shops', (accounts) => {
           'contract is paused',
         );
       });
-      it('[error] -- user not certified', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await sendDthShopCreate(
-          user1, dthInstance.address, shopsInstance.address,
-          CG_SHOP_LICENSE_PRICE,
-          {
-            country: asciiToHex(COUNTRY_CG),
-            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-            category: BYTES16_ZERO,
-            name: BYTES16_ZERO,
-            description: BYTES32_ZERO,
-            opening: BYTES16_ZERO,
-          },
-        );
+      // it('[error] -- user not certified', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await smsInstance.certify(user1, { from: owner });
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await sendDthShopCreate(
+      //     user1, dthInstance.address, shopsInstance.address,
+      //     CG_SHOP_LICENSE_PRICE,
+      //     {
+      //       country: asciiToHex(COUNTRY_CG),
+      //       position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //       category: BYTES16_ZERO,
+      //       name: BYTES16_ZERO,
+      //       description: BYTES32_ZERO,
+      //       opening: BYTES16_ZERO,
+      //     },
+      //   );
 
-        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
+      //   await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
 
-        await expectRevert(
-          shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
-            from: user2,
-            value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
-          }),
-          'user not certified',
-        );
-      });
+      //   await expectRevert(
+      //     shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
+      //       from: user2,
+      //       value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+      //     }),
+      //     'user not certified',
+      //   );
+      // });
       it('[error] -- dispute type does not exist', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await smsInstance.certify(user1, { from: owner });
@@ -823,44 +823,44 @@ contract('Shops', (accounts) => {
           'contract is paused',
         );
       });
-      it('[error] -- user not certified', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await sendDthShopCreate(
-          user1, dthInstance.address, shopsInstance.address,
-          CG_SHOP_LICENSE_PRICE,
-          {
-            country: asciiToHex(COUNTRY_CG),
-            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-            category: BYTES16_ZERO,
-            name: BYTES16_ZERO,
-            description: BYTES32_ZERO,
-            opening: BYTES16_ZERO,
-          },
-        );
-        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
-        await smsInstance.certify(user2, { from: owner });
+      // it('[error] -- user not certified', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await smsInstance.certify(user1, { from: owner });
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await sendDthShopCreate(
+      //     user1, dthInstance.address, shopsInstance.address,
+      //     CG_SHOP_LICENSE_PRICE,
+      //     {
+      //       country: asciiToHex(COUNTRY_CG),
+      //       position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //       category: BYTES16_ZERO,
+      //       name: BYTES16_ZERO,
+      //       description: BYTES32_ZERO,
+      //       opening: BYTES16_ZERO,
+      //     },
+      //   );
+      //   await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
+      //   await smsInstance.certify(user2, { from: owner });
 
-        const disputeId = 0;
+      //   const disputeId = 0;
 
-        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
-          from: user2,
-          value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
-        });
+      //   await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
+      //     from: user2,
+      //     value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+      //   });
 
-        await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
+      //   await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
 
-        await smsInstance.revoke(user2, { from: owner });
+      //   await smsInstance.revoke(user2, { from: owner });
 
-        await expectRevert(
-          shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
-            from: user2, // challenger can appeal ruling that shop won
-            value: ethToWei(KLEROS_ARBITRATION_PRICE),
-          }),
-          'user not certified',
-        );
-      });
+      //   await expectRevert(
+      //     shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
+      //       from: user2, // challenger can appeal ruling that shop won
+      //       value: ethToWei(KLEROS_ARBITRATION_PRICE),
+      //     }),
+      //     'user not certified',
+      //   );
+      // });
       it('[error] -- empty evidence link', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await smsInstance.certify(user1, { from: owner });

@@ -345,7 +345,7 @@ contract Shops {
     bytes16 opening = toBytes16(_data, 79);
 
     require(geo.countryIsEnabled(country), "country is disabled");
-    require(users.getUserTier(sender) > 0, "user not certified");
+    // require(users.getUserTier(sender) > 0, "user not certified");
     require(shopAddressToShop[sender].position == bytes12(0), "caller already has shop");
     require(positionToShopAddress[position] == address(0), "shop already exists at position");
     require(geo.validGeohashChars12(position), "invalid geohash characters in position");
@@ -400,7 +400,7 @@ contract Shops {
     onlyWhenNotPaused
     onlyWhenShopsDisputeSet
     onlyWhenCallerIsShop
-    onlyWhenCallerIsCertified
+    // onlyWhenCallerIsCertified
     onlyWhenNoDispute(msg.sender)
   {
     uint shopStake = shopAddressToShop[msg.sender].staked;

@@ -10,8 +10,8 @@ contract FakeExchangeRateOracle is DSMathWdiv {
    */
   function getWeiPriceOneUsd() public view returns(uint) {
     // we fake it here so we can test it, the value represents:
-    // 513 dollar and 4975 cents
-    uint256 weiPriceOneUsd = wdiv(WAD, 513497500000000000000);
+    // 150 dollar and 4975 cents
+    uint256 weiPriceOneUsd = wdiv(WAD, 150497500000000000000);
 
     return weiPriceOneUsd;
   }

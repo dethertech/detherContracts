@@ -231,7 +231,7 @@ contract ShopsDispute {
     public
     payable
     onlyWhenNotPaused
-    onlyWhenCallerIsCertified
+    // onlyWhenCallerIsCertified
   {
     require(_metaEvidenceId < disputeTypes.length, "dispute type does not exist");
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
@@ -265,7 +265,7 @@ contract ShopsDispute {
     external
     payable
     onlyWhenNotPaused
-    onlyWhenCallerIsCertified
+    // onlyWhenCallerIsCertified
   {
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
 
