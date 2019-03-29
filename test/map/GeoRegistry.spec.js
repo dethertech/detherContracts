@@ -9,6 +9,8 @@ const Web3 = require('web3');
 const { addNumberDots } = require('../utils/output');
 const { getAccounts } = require('../utils/accounts');
 const { addCountry } = require('../utils/geo');
+const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
+
 
 const Control = artifacts.require('Control.sol');
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
@@ -312,7 +314,7 @@ contract('GeoRegistry', () => {
     const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
     await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
     const countryCodeBytes = web3.utils.asciiToHex(countryCode);
-
+    await geoRegistryContract.endInit(countryCodeBytes);
     assert.equal(
       await geoRegistryContract.zoneInsideCountry(countryCodeBytes, web3.utils.asciiToHex('kr0ttse')),
       true,
@@ -337,4 +339,26 @@ contract('GeoRegistry', () => {
       'should not be inside',
     );
   });
+
+  it.only('impossible to add new geohash to already filled up country', async () => {
+    const countryCode = 'CG';
+    const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
+    await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
+    const countryCodeBytes = web3.utils.asciiToHex(countryCode);
+    await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE); // possible to add more geohash in an not filled country
+
+    await geoRegistryContract.endInit(countryCodeBytes);
+
+    // should be now impossible to add new one in this countryCode
+    try {
+      await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE)
+    } catch (err) {
+      if (!err.message.includes('country must not be filled'))
+        throw err;
+      return;
+    }
+    throw 'should have thrown';
+  });
+
+
 });

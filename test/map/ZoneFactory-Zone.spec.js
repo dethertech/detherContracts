@@ -372,7 +372,9 @@ contract('ZoneFactory + Zone', (accounts) => {
         } catch (err) {
           if (!err.message.includes('exceeded daily sell limit'))
             throw err;
+          return;
         }
+        throw 'should have thrown';
       });
       it('should succeed with tier 2', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
