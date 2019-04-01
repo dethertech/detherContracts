@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 contract ITeller {
     function funds() view public returns(uint256);

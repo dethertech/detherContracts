@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 contract IControl {
     function cmo() view public returns(address);
@@ -16,8 +16,8 @@ contract IControl {
     function removeShopModerator(address _who) external;
     function setTellerModerator(address _who) external;
     function removeTellerModerator(address _who) external;
-    function pause() external;
-    function unpause() external;
+    // function pause() external;
+    // function unpause() external;
     function isCEO(address _who) view external returns(bool);
     function isCSO(address _who) view external returns(bool);
     function isCMO(address _who) view external returns(bool);

@@ -14,6 +14,9 @@ const Shops = artifacts.require('Shops');
 const ShopsDispute = artifacts.require('ShopsDispute');
 const AppealableArbitrator = artifacts.require('AppealableArbitrator');
 const CentralizedArbitrator = artifacts.require('CentralizedArbitrator');
+const ZoneFactory = artifacts.require('ZoneFactory');
+const Zone = artifacts.require('Zone');
+const Teller = artifacts.require('Teller');
 
 const Web3 = require('web3');
 
@@ -23,10 +26,11 @@ const { addCountry } = require('../utils/geo');
 const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
 const { ethToWei, asciiToHex, remove0x } = require('../utils/convert');
 const {
-  BYTES16_ZERO, BYTES32_ZERO, COUNTRY_CG, VALID_CG_SHOP_GEOHASH,
+  BYTES16_ZERO, BYTES32_ZERO, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, VALID_CG_SHOP_GEOHASH,
   VALID_CG_SHOP_GEOHASH_2, INVALID_CG_SHOP_GEOHASH, NONEXISTING_CG_SHOP_GEOHASH,
   CG_SHOP_LICENSE_PRICE, KLEROS_ARBITRATION_PRICE, ADDRESS_ZERO, KLEROS_DISPUTE_TIMEOUT,
   KLEROS_ARBITRATOR_EXTRADATA, KLEROS_SHOP_WINS, KLEROS_CHALLENGER_WINS, KLEROS_NO_RULING,
+  MIN_ZONE_DTH_STAKE,
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
@@ -35,7 +39,16 @@ const timeTravel = new TimeTravel(web3);
 const createDthShopCreateDataBytes = (fnByte, shopData) => (
   `${fnByte}${Object.keys(shopData).map(k => remove0x(shopData[k])).join('')}`
 );
-
+// zoning creation helpers
+const createDthZoneCreateDataWithTier = (zoneFactoryAddr, bid, countryCode, geohash, tier) => {
+  const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
+  const params = web3.eth.abi.encodeParameters(
+    ['address', 'uint256', 'bytes'],
+    [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}${tier}`],
+  );
+  return [fnSig, params.slice(2)].join('');
+};
+//
 const createDthShopCreateData = (shopsAddr, dthAmount, shopData, fnByte) => {
   const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
   const data = createDthShopCreateDataBytes(fnByte, shopData);
@@ -74,6 +87,8 @@ contract('Shops', (accounts) => {
   let appealableArbitratorInstance;
   let centralizedArbitratorInstance;
   let certifierRegistryInstance;
+  let zoneImplementationInstance;
+  let tellerImplementationInstance;
 
 
   before(async () => {
@@ -89,6 +104,9 @@ contract('Shops', (accounts) => {
     smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
     kycInstance = await KycCertifier.new(controlInstance.address, { from: owner });
     certifierRegistryInstance = await CertifierRegistry.new({ from: owner });
+
+    zoneImplementationInstance = await Zone.new({ from: owner });
+    tellerImplementationInstance = await Teller.new({ from: owner });
 
     geoInstance = await GeoRegistry.new(controlInstance.address, { from: owner });
 
@@ -118,12 +136,22 @@ contract('Shops', (accounts) => {
     );
 
     await appealableArbitratorInstance.changeArbitrator(appealableArbitratorInstance.address, { from: owner });
+    zoneFactoryInstance = await ZoneFactory.new(
+      dthInstance.address,
+      geoInstance.address,
+      usersInstance.address,
+      controlInstance.address,
+      zoneImplementationInstance.address,
+      tellerImplementationInstance.address,
+      { from: owner },
+    );
 
     shopsInstance = await Shops.new(
       dthInstance.address,
       geoInstance.address,
       usersInstance.address,
       controlInstance.address,
+      zoneFactoryInstance.address,
       { from: owner },
     );
 
@@ -135,11 +163,28 @@ contract('Shops', (accounts) => {
       KLEROS_ARBITRATOR_EXTRADATA,
       { from: owner },
     );
+    await usersInstance.setZoneFactory(zoneFactoryInstance.address, { from: owner });
 
     await shopsInstance.setShopsDisputeContract(shopsDisputeInstance.address, { from: owner });
 
     shopsInstance.setCountryLicensePrice(asciiToHex(COUNTRY_CG), ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
   });
+
+  const createZoneWithTier = async (from, dthAmount, countryCode, geohash, tier) => {
+    await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
+    const txCreate = await web3.eth.sendTransaction({
+      from,
+      to: dthInstance.address,
+      data: createDthZoneCreateDataWithTier(zoneFactoryInstance.address, dthAmount, asciiToHex(countryCode), asciiToHex(geohash), tier),
+      value: 0,
+      gas: 4700000,
+    });
+    const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(geohash));
+    const zoneInstance = await Zone.at(zoneAddress);
+    const tellerAddress = await zoneInstance.teller();
+    const tellerInstance = await Teller.at(tellerAddress);
+    return { zoneInstance, tellerInstance };
+  };
 
   const enableAndLoadCountry = async (countryCode) => {
     await addCountry(owner, web3, geoInstance, countryCode, 300);
@@ -176,27 +221,27 @@ contract('Shops', (accounts) => {
           'can only be called by dth contract',
         );
       });
-      it('[error] -- global pause enabled', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await controlInstance.pause({ from: owner });
-        await expectRevert2(
-          sendDthShopCreate(
-            user1, dthInstance.address, shopsInstance.address,
-            CG_SHOP_LICENSE_PRICE,
-            {
-              country: asciiToHex(COUNTRY_CG),
-              position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-              category: BYTES16_ZERO,
-              name: BYTES16_ZERO,
-              description: BYTES32_ZERO,
-              opening: BYTES16_ZERO,
-            },
-          ),
-          'contract is paused',
-        );
-      });
+      // it('[error] -- global pause enabled', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await smsInstance.certify(user1, { from: owner });
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await controlInstance.pause({ from: owner });
+      //   await expectRevert2(
+      //     sendDthShopCreate(
+      //       user1, dthInstance.address, shopsInstance.address,
+      //       CG_SHOP_LICENSE_PRICE,
+      //       {
+      //         country: asciiToHex(COUNTRY_CG),
+      //         position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //         category: BYTES16_ZERO,
+      //         name: BYTES16_ZERO,
+      //         description: BYTES32_ZERO,
+      //         opening: BYTES16_ZERO,
+      //       },
+      //     ),
+      //     'contract is paused',
+      //   );
+      // });
       it('[error] -- bytes arg does not have length 95', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await smsInstance.certify(user1, { from: owner });
@@ -423,32 +468,102 @@ contract('Shops', (accounts) => {
           },
         );
       });
-    });
-    describe('removeShop(bytes12 _position)', () => {
-      it('[error] -- contract is paused', async () => {
+      it('[error] -- dth stake less than license price, with a bigger price', async () => {
+        // register zone
         await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 } );
+
+        // try the shop registration
         await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await sendDthShopCreate(
-          user1, dthInstance.address, shopsInstance.address,
-          CG_SHOP_LICENSE_PRICE,
-          {
-            country: asciiToHex(COUNTRY_CG),
-            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-            category: BYTES16_ZERO,
-            name: BYTES16_ZERO,
-            description: BYTES32_ZERO,
-            opening: BYTES16_ZERO,
-          },
-        );
-
-        await controlInstance.pause({ from: owner });
-
-        await expectRevert(
-          shopsInstance.removeShop({ from: user1 }),
-          'contract is paused',
+        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE + 1), { from: owner });
+        await expectRevert2(
+          sendDthShopCreate(
+            user1, dthInstance.address, shopsInstance.address,
+            CG_SHOP_LICENSE_PRICE + 1,
+            {
+              country: asciiToHex(COUNTRY_CG),
+              position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+              category: BYTES16_ZERO,
+              name: BYTES16_ZERO,
+              description: BYTES32_ZERO,
+              opening: BYTES16_ZERO,
+            },
+          ),
+          'send dth is less than shop license price',
         );
       });
+      it('[succes] -- dth stake the good amount of license price, with a bigger price', async () => {
+        // register zone
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 } );
+
+        // try the shop registration
+        await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+            user1, dthInstance.address, shopsInstance.address,
+            111,
+            {
+              country: asciiToHex(COUNTRY_CG),
+              position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+              category: BYTES16_ZERO,
+              name: BYTES16_ZERO,
+              description: BYTES32_ZERO,
+              opening: BYTES16_ZERO,
+            },
+          )
+      });
+      it('[error] -- zone modification price - error cases', async () => {
+        // register zone
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+        await expectRevert2(
+          shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user3 } ),
+          'only zone owner can modify the licence price'
+        )
+        await expectRevert2(
+          shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(10), { from: user2 } ),
+          'price should be superior to the floor price'
+        )
+        await expectRevert2(
+          shopsInstance.setZoneLicensePrice(asciiToHex('abcdef'), ethToWei(120), { from: user2 } ),
+          'zone is not already owned'
+        )
+      });
+    });
+    describe('removeShop(bytes12 _position)', () => {
+      // it('[error] -- contract is paused', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await smsInstance.certify(user1, { from: owner });
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await sendDthShopCreate(
+      //     user1, dthInstance.address, shopsInstance.address,
+      //     CG_SHOP_LICENSE_PRICE,
+      //     {
+      //       country: asciiToHex(COUNTRY_CG),
+      //       position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //       category: BYTES16_ZERO,
+      //       name: BYTES16_ZERO,
+      //       description: BYTES32_ZERO,
+      //       opening: BYTES16_ZERO,
+      //     },
+      //   );
+
+      //   await controlInstance.pause({ from: owner });
+
+      //   await expectRevert(
+      //     shopsInstance.removeShop({ from: user1 }),
+      //     'contract is paused',
+      //   );
+      // });
       // it('[error] -- user not certified', async () => {
       //   await enableAndLoadCountry(COUNTRY_CG);
       //   await smsInstance.certify(user1, { from: owner });
@@ -513,36 +628,36 @@ contract('Shops', (accounts) => {
       });
     });
     describe('createDispute(bytes12 _position, uint _disputeTypeId, string _evidenceLink)', () => {
-      it('[error] -- contract is paused', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await sendDthShopCreate(
-          user1, dthInstance.address, shopsInstance.address,
-          CG_SHOP_LICENSE_PRICE,
-          {
-            country: asciiToHex(COUNTRY_CG),
-            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-            category: BYTES16_ZERO,
-            name: BYTES16_ZERO,
-            description: BYTES32_ZERO,
-            opening: BYTES16_ZERO,
-          },
-        );
+      // it('[error] -- contract is paused', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await smsInstance.certify(user1, { from: owner });
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await sendDthShopCreate(
+      //     user1, dthInstance.address, shopsInstance.address,
+      //     CG_SHOP_LICENSE_PRICE,
+      //     {
+      //       country: asciiToHex(COUNTRY_CG),
+      //       position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //       category: BYTES16_ZERO,
+      //       name: BYTES16_ZERO,
+      //       description: BYTES32_ZERO,
+      //       opening: BYTES16_ZERO,
+      //     },
+      //   );
 
-        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
-        await smsInstance.certify(user2, { from: owner });
+      //   await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
+      //   await smsInstance.certify(user2, { from: owner });
 
-        await controlInstance.pause({ from: owner });
+      //   await controlInstance.pause({ from: owner });
 
-        await expectRevert(
-          shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
-            from: user2,
-            value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
-          }),
-          'contract is paused',
-        );
-      });
+      //   await expectRevert(
+      //     shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
+      //       from: user2,
+      //       value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+      //     }),
+      //     'contract is paused',
+      //   );
+      // });
       // it('[error] -- user not certified', async () => {
       //   await enableAndLoadCountry(COUNTRY_CG);
       //   await smsInstance.certify(user1, { from: owner });
@@ -785,44 +900,44 @@ contract('Shops', (accounts) => {
       });
     });
     describe('appealDispute(uint _disputeID, string _evidenceLink)', () => {
-      it('[error] -- contract is paused', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await smsInstance.certify(user1, { from: owner });
-        await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
-        await sendDthShopCreate(
-          user1, dthInstance.address, shopsInstance.address,
-          CG_SHOP_LICENSE_PRICE,
-          {
-            country: asciiToHex(COUNTRY_CG),
-            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-            category: BYTES16_ZERO,
-            name: BYTES16_ZERO,
-            description: BYTES32_ZERO,
-            opening: BYTES16_ZERO,
-          },
-        );
-        await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
-        await smsInstance.certify(user2, { from: owner });
+      // it('[error] -- contract is paused', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await smsInstance.certify(user1, { from: owner });
+      //   await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
+      //   await sendDthShopCreate(
+      //     user1, dthInstance.address, shopsInstance.address,
+      //     CG_SHOP_LICENSE_PRICE,
+      //     {
+      //       country: asciiToHex(COUNTRY_CG),
+      //       position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+      //       category: BYTES16_ZERO,
+      //       name: BYTES16_ZERO,
+      //       description: BYTES32_ZERO,
+      //       opening: BYTES16_ZERO,
+      //     },
+      //   );
+      //   await shopsDisputeInstance.addDisputeType('my first metaevidence line', { from: owner });
+      //   await smsInstance.certify(user2, { from: owner });
 
-        const disputeId = 0;
+      //   const disputeId = 0;
 
-        await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
-          from: user2,
-          value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
-        });
+      //   await shopsDisputeInstance.createDispute(user1, 0, 'my evidence link', {
+      //     from: user2,
+      //     value: ethToWei(KLEROS_ARBITRATION_PRICE * 2),
+      //   });
 
-        await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
+      //   await appealableArbitratorInstance.giveRuling(disputeId, KLEROS_SHOP_WINS, { from: owner }); // dispute 0, shop wins
 
-        await controlInstance.pause({ from: owner });
+      //   await controlInstance.pause({ from: owner });
 
-        await expectRevert(
-          shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
-            from: user2, // challenger can appeal ruling that shop won
-            value: ethToWei(KLEROS_ARBITRATION_PRICE),
-          }),
-          'contract is paused',
-        );
-      });
+      //   await expectRevert(
+      //     shopsDisputeInstance.appealDispute(user1, 'my appeal evidence link', {
+      //       from: user2, // challenger can appeal ruling that shop won
+      //       value: ethToWei(KLEROS_ARBITRATION_PRICE),
+      //     }),
+      //     'contract is paused',
+      //   );
+      // });
       // it('[error] -- user not certified', async () => {
       //   await enableAndLoadCountry(COUNTRY_CG);
       //   await smsInstance.certify(user1, { from: owner });

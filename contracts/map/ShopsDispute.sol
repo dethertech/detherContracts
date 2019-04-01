@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -99,10 +99,6 @@ contract ShopsDispute {
     _;
   }
 
-  modifier onlyWhenNotPaused {
-    require(control.paused() == false, "contract is paused");
-    _;
-  }
 
   // ------------------------------------------------
   //
@@ -230,7 +226,6 @@ contract ShopsDispute {
   function createDispute(address _shopAddress, uint _metaEvidenceId, string memory _evidenceLink)
     public
     payable
-    onlyWhenNotPaused
     // onlyWhenCallerIsCertified
   {
     require(_metaEvidenceId < disputeTypes.length, "dispute type does not exist");
@@ -264,7 +259,6 @@ contract ShopsDispute {
   function appealDispute(address _shopAddress, string calldata _evidenceLink)
     external
     payable
-    onlyWhenNotPaused
     // onlyWhenCallerIsCertified
   {
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");

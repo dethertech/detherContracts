@@ -18,7 +18,6 @@ const expectRevert2 = async (fn, errMsg) => {
   try {
     await fn;
   } catch (err) {
-    console.log('error =>', err);
     if (!err.message.includes(errMsg)) {
       throw err;
     }
@@ -29,9 +28,7 @@ const expectRevert2 = async (fn, errMsg) => {
 const expectRevert3 = async (fn, errMsg) => {
   try {
     const ret = await fn;
-    console.log('ret => ', ret);
   } catch (err) {
-    console.log('err', err);
     // if (!err.message.includes(errMsg)) {
     //   throw err;
     // }

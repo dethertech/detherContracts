@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 contract IKlerosArbitrable {
   enum DisputeStatus {Waiting, Appealable, Solved} // copied from IArbitrable.sol

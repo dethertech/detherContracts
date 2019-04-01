@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -109,11 +109,6 @@ contract Teller {
 
   modifier onlyByZoneContract {
     require(msg.sender == address(zone), "can only be called by zone");
-    _;
-  }
-
-  modifier onlyWhenNotPaused {
-    require(control.paused() == false, "contract is paused");
     _;
   }
 
@@ -305,7 +300,6 @@ contract Teller {
   function removeTeller()
     external
     onlyWhenInited
-    onlyWhenNotPaused
     updateState
     onlyWhenCallerIsZoneOwner
     onlyWhenHasTeller
@@ -327,7 +321,6 @@ contract Teller {
   )
     external
     onlyWhenInited
-    onlyWhenNotPaused
     onlyWhenCountryEnabled
     updateState
     onlyWhenCallerIsZoneOwner
@@ -366,7 +359,6 @@ contract Teller {
   function addFunds() // GAS COST +/- 59.809
     external payable
     onlyWhenInited
-    onlyWhenNotPaused
     onlyWhenCountryEnabled
     updateState
     onlyWhenCallerIsZoneOwner
@@ -382,7 +374,6 @@ contract Teller {
   function sellEth(address _to, uint _amount) // GAS COST +/- 147.310
     external
     onlyWhenInited
-    onlyWhenNotPaused
     onlyWhenCountryEnabled
     updateState
     onlyWhenCallerIsZoneOwner
@@ -411,7 +402,6 @@ contract Teller {
   function addCertifiedComment(bytes32 _commentHash)
     external
     onlyWhenInited
-    onlyWhenNotPaused
     onlyWhenCountryEnabled
     updateState
     onlyWhenZoneHasOwner
@@ -429,7 +419,6 @@ contract Teller {
   function addComment(bytes32 _commentHash)
     external
     onlyWhenInited
-    onlyWhenNotPaused
     onlyWhenCountryEnabled
     updateState
     onlyWhenZoneHasOwner

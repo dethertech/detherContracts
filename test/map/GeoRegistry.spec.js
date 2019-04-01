@@ -340,7 +340,7 @@ contract('GeoRegistry', () => {
     );
   });
 
-  it.only('impossible to add new geohash to already filled up country', async () => {
+  it('impossible to add new geohash to already filled up country', async () => {
     const countryCode = 'CG';
     const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
     await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);

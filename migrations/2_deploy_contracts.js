@@ -61,7 +61,7 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, { gas: 6500000 });
   const zoneFactory = await ZoneFactory.deployed();
 
-  await deployer.deploy(Shops, dth.address, geo.address, users.address, control.address, { gas: 6500000 });
+  await deployer.deploy(Shops, dth.address, geo.address, users.address, control.address, zoneFactory.address, { gas: 6500000 });
   const shops = await Shops.deployed();
 
   await deployer.deploy(ShopsDispute, shops.address, users.address, control.address, '0xffffffffffffffffffffffffffffffffffffffff', '0x0', { gas: 6500000 });

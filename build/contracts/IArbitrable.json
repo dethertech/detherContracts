@@ -112,25 +112,25 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "/**\n *  @title IArbitrable\n *  @author Enrique Piqueras - <enrique@kleros.io>\n *  Bug Bounties: This code hasn't undertaken a bug bounty program yet.\n */\n\npragma solidity ^0.5.3;\n\nimport \"./Arbitrator.sol\";\n\n/** @title IArbitrable\n *  Arbitrable interface.\n *  When developing arbitrable contracts, we need to:\n *  -Define the action taken when a ruling is received by the contract. We should do so in executeRuling.\n *  -Allow dispute creation. For this a function must:\n *      -Call arbitrator.createDispute.value(_fee)(_choices,_extraData);\n *      -Create the event Dispute(_arbitrator,_disputeID,_rulingOptions);\n */\ncontract IArbitrable {\n    /** @dev To be emmited when meta-evidence is submitted.\n     *  @param _metaEvidenceID Unique identifier of meta-evidence.\n     *  @param _evidence A link to the meta-evidence JSON.\n     */\n    event MetaEvidence(uint indexed _metaEvidenceID, string _evidence);\n\n    /** @dev To be emmited when a dispute is created to link the correct meta-evidence to the disputeID\n     *  @param _arbitrator The arbitrator of the contract.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _metaEvidenceID Unique identifier of meta-evidence.\n     */\n    event Dispute(Arbitrator indexed _arbitrator, uint indexed _disputeID, uint _metaEvidenceID);\n\n    /** @dev To be raised when evidence are submitted. Should point to the ressource (evidences are not to be stored on chain due to gas considerations).\n     *  @param _arbitrator The arbitrator of the contract.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _party The address of the party submiting the evidence. Note that 0x0 refers to evidence not submitted by any party.\n     *  @param _evidence A URI to the evidence JSON file whose name should be its keccak256 hash followed by .json.\n     */\n    event Evidence(Arbitrator indexed _arbitrator, uint indexed _disputeID, address indexed _party, string _evidence);\n\n    /** @dev To be raised when a ruling is given.\n     *  @param _arbitrator The arbitrator giving the ruling.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _ruling The ruling which was given.\n     */\n    event Ruling(Arbitrator indexed _arbitrator, uint indexed _disputeID, uint _ruling);\n\n    /** @dev Give a ruling for a dispute. Must be called by the arbitrator.\n     *  The purpose of this function is to ensure that the address calling it has the right to rule on the contract.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _ruling Ruling given by the arbitrator. Note that 0 is reserved for \"Not able/wanting to make a decision\".\n     */\n    function rule(uint _disputeID, uint _ruling) public;\n}\n",
+  "source": "/**\n *  @title IArbitrable\n *  @author Enrique Piqueras - <enrique@kleros.io>\n *  Bug Bounties: This code hasn't undertaken a bug bounty program yet.\n */\n\npragma solidity ^0.5.5;\n\nimport \"./Arbitrator.sol\";\n\n/** @title IArbitrable\n *  Arbitrable interface.\n *  When developing arbitrable contracts, we need to:\n *  -Define the action taken when a ruling is received by the contract. We should do so in executeRuling.\n *  -Allow dispute creation. For this a function must:\n *      -Call arbitrator.createDispute.value(_fee)(_choices,_extraData);\n *      -Create the event Dispute(_arbitrator,_disputeID,_rulingOptions);\n */\ncontract IArbitrable {\n    /** @dev To be emmited when meta-evidence is submitted.\n     *  @param _metaEvidenceID Unique identifier of meta-evidence.\n     *  @param _evidence A link to the meta-evidence JSON.\n     */\n    event MetaEvidence(uint indexed _metaEvidenceID, string _evidence);\n\n    /** @dev To be emmited when a dispute is created to link the correct meta-evidence to the disputeID\n     *  @param _arbitrator The arbitrator of the contract.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _metaEvidenceID Unique identifier of meta-evidence.\n     */\n    event Dispute(Arbitrator indexed _arbitrator, uint indexed _disputeID, uint _metaEvidenceID);\n\n    /** @dev To be raised when evidence are submitted. Should point to the ressource (evidences are not to be stored on chain due to gas considerations).\n     *  @param _arbitrator The arbitrator of the contract.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _party The address of the party submiting the evidence. Note that 0x0 refers to evidence not submitted by any party.\n     *  @param _evidence A URI to the evidence JSON file whose name should be its keccak256 hash followed by .json.\n     */\n    event Evidence(Arbitrator indexed _arbitrator, uint indexed _disputeID, address indexed _party, string _evidence);\n\n    /** @dev To be raised when a ruling is given.\n     *  @param _arbitrator The arbitrator giving the ruling.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _ruling The ruling which was given.\n     */\n    event Ruling(Arbitrator indexed _arbitrator, uint indexed _disputeID, uint _ruling);\n\n    /** @dev Give a ruling for a dispute. Must be called by the arbitrator.\n     *  The purpose of this function is to ensure that the address calling it has the right to rule on the contract.\n     *  @param _disputeID ID of the dispute in the Arbitrator contract.\n     *  @param _ruling Ruling given by the arbitrator. Note that 0 is reserved for \"Not able/wanting to make a decision\".\n     */\n    function rule(uint _disputeID, uint _ruling) public;\n}\n",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/kleros/IArbitrable.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/kleros/IArbitrable.sol",
     "exportedSymbols": {
       "IArbitrable": [
-        5431
+        5425
       ]
     },
-    "id": 5432,
+    "id": 5426,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 5390,
+        "id": 5384,
         "literals": [
           "solidity",
           "^",
           "0.5",
-          ".3"
+          ".5"
         ],
         "nodeType": "PragmaDirective",
         "src": "155:23:30"
@@ -138,10 +138,10 @@
       {
         "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/kleros/Arbitrator.sol",
         "file": "./Arbitrator.sol",
-        "id": 5391,
+        "id": 5385,
         "nodeType": "ImportDirective",
-        "scope": 5432,
-        "sourceUnit": 5149,
+        "scope": 5426,
+        "sourceUnit": 5143,
         "src": "180:26:30",
         "symbolAliases": [],
         "unitAlias": ""
@@ -152,9 +152,9 @@
         "contractKind": "contract",
         "documentation": "@title IArbitrable\n Arbitrable interface.\n When developing arbitrable contracts, we need to:\n -Define the action taken when a ruling is received by the contract. We should do so in executeRuling.\n -Allow dispute creation. For this a function must:\n     -Call arbitrator.createDispute.value(_fee)(_choices,_extraData);\n     -Create the event Dispute(_arbitrator,_disputeID,_rulingOptions);",
         "fullyImplemented": false,
-        "id": 5431,
+        "id": 5425,
         "linearizedBaseContracts": [
-          5431
+          5425
         ],
         "name": "IArbitrable",
         "nodeType": "ContractDefinition",
@@ -162,20 +162,20 @@
           {
             "anonymous": false,
             "documentation": "@dev To be emmited when meta-evidence is submitted.\n @param _metaEvidenceID Unique identifier of meta-evidence.\n @param _evidence A link to the meta-evidence JSON.",
-            "id": 5397,
+            "id": 5391,
             "name": "MetaEvidence",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5396,
+              "id": 5390,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5393,
+                  "id": 5387,
                   "indexed": true,
                   "name": "_metaEvidenceID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5397,
+                  "scope": 5391,
                   "src": "863:28:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -184,7 +184,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5392,
+                    "id": 5386,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "863:4:30",
@@ -198,11 +198,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5395,
+                  "id": 5389,
                   "indexed": false,
                   "name": "_evidence",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5397,
+                  "scope": 5391,
                   "src": "893:16:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -211,7 +211,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 5394,
+                    "id": 5388,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "893:6:30",
@@ -231,36 +231,36 @@
           {
             "anonymous": false,
             "documentation": "@dev To be emmited when a dispute is created to link the correct meta-evidence to the disputeID\n @param _arbitrator The arbitrator of the contract.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _metaEvidenceID Unique identifier of meta-evidence.",
-            "id": 5405,
+            "id": 5399,
             "name": "Dispute",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5404,
+              "id": 5398,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5399,
+                  "id": 5393,
                   "indexed": true,
                   "name": "_arbitrator",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5405,
+                  "scope": 5399,
                   "src": "1241:30:30",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                    "typeIdentifier": "t_contract$_Arbitrator_$5142",
                     "typeString": "contract Arbitrator"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5398,
+                    "id": 5392,
                     "name": "Arbitrator",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5148,
+                    "referencedDeclaration": 5142,
                     "src": "1241:10:30",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                      "typeIdentifier": "t_contract$_Arbitrator_$5142",
                       "typeString": "contract Arbitrator"
                     }
                   },
@@ -269,11 +269,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5401,
+                  "id": 5395,
                   "indexed": true,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5405,
+                  "scope": 5399,
                   "src": "1273:23:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -282,7 +282,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5400,
+                    "id": 5394,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1273:4:30",
@@ -296,11 +296,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5403,
+                  "id": 5397,
                   "indexed": false,
                   "name": "_metaEvidenceID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5405,
+                  "scope": 5399,
                   "src": "1298:20:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -309,7 +309,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5402,
+                    "id": 5396,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1298:4:30",
@@ -329,36 +329,36 @@
           {
             "anonymous": false,
             "documentation": "@dev To be raised when evidence are submitted. Should point to the ressource (evidences are not to be stored on chain due to gas considerations).\n @param _arbitrator The arbitrator of the contract.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _party The address of the party submiting the evidence. Note that 0x0 refers to evidence not submitted by any party.\n @param _evidence A URI to the evidence JSON file whose name should be its keccak256 hash followed by .json.",
-            "id": 5415,
+            "id": 5409,
             "name": "Evidence",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5414,
+              "id": 5408,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5407,
+                  "id": 5401,
                   "indexed": true,
                   "name": "_arbitrator",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1882:30:30",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                    "typeIdentifier": "t_contract$_Arbitrator_$5142",
                     "typeString": "contract Arbitrator"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5406,
+                    "id": 5400,
                     "name": "Arbitrator",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5148,
+                    "referencedDeclaration": 5142,
                     "src": "1882:10:30",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                      "typeIdentifier": "t_contract$_Arbitrator_$5142",
                       "typeString": "contract Arbitrator"
                     }
                   },
@@ -367,11 +367,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5409,
+                  "id": 5403,
                   "indexed": true,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1914:23:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -380,7 +380,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5408,
+                    "id": 5402,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1914:4:30",
@@ -394,11 +394,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5411,
+                  "id": 5405,
                   "indexed": true,
                   "name": "_party",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1939:22:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -407,7 +407,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5410,
+                    "id": 5404,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "1939:7:30",
@@ -422,11 +422,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5413,
+                  "id": 5407,
                   "indexed": false,
                   "name": "_evidence",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1963:16:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -435,7 +435,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 5412,
+                    "id": 5406,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "1963:6:30",
@@ -455,36 +455,36 @@
           {
             "anonymous": false,
             "documentation": "@dev To be raised when a ruling is given.\n @param _arbitrator The arbitrator giving the ruling.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _ruling The ruling which was given.",
-            "id": 5423,
+            "id": 5417,
             "name": "Ruling",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5422,
+              "id": 5416,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5417,
+                  "id": 5411,
                   "indexed": true,
                   "name": "_arbitrator",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5423,
+                  "scope": 5417,
                   "src": "2242:30:30",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                    "typeIdentifier": "t_contract$_Arbitrator_$5142",
                     "typeString": "contract Arbitrator"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5416,
+                    "id": 5410,
                     "name": "Arbitrator",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5148,
+                    "referencedDeclaration": 5142,
                     "src": "2242:10:30",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                      "typeIdentifier": "t_contract$_Arbitrator_$5142",
                       "typeString": "contract Arbitrator"
                     }
                   },
@@ -493,11 +493,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5419,
+                  "id": 5413,
                   "indexed": true,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5423,
+                  "scope": 5417,
                   "src": "2274:23:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -506,7 +506,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5418,
+                    "id": 5412,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2274:4:30",
@@ -520,11 +520,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5421,
+                  "id": 5415,
                   "indexed": false,
                   "name": "_ruling",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5423,
+                  "scope": 5417,
                   "src": "2299:12:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -533,7 +533,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5420,
+                    "id": 5414,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2299:4:30",
@@ -553,22 +553,22 @@
           {
             "body": null,
             "documentation": "@dev Give a ruling for a dispute. Must be called by the arbitrator.\n The purpose of this function is to ensure that the address calling it has the right to rule on the contract.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _ruling Ruling given by the arbitrator. Note that 0 is reserved for \"Not able/wanting to make a decision\".",
-            "id": 5430,
+            "id": 5424,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "rule",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5428,
+              "id": 5422,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5425,
+                  "id": 5419,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5430,
+                  "scope": 5424,
                   "src": "2728:15:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -577,7 +577,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5424,
+                    "id": 5418,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2728:4:30",
@@ -591,10 +591,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5427,
+                  "id": 5421,
                   "name": "_ruling",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5430,
+                  "scope": 5424,
                   "src": "2745:12:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -603,7 +603,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5426,
+                    "id": 5420,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2745:4:30",
@@ -619,19 +619,19 @@
               "src": "2727:31:30"
             },
             "returnParameters": {
-              "id": 5429,
+              "id": 5423,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "2765:0:30"
             },
-            "scope": 5431,
+            "scope": 5425,
             "src": "2714:52:30",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 5432,
+        "scope": 5426,
         "src": "623:2145:30"
       }
     ],
@@ -641,19 +641,19 @@
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/kleros/IArbitrable.sol",
     "exportedSymbols": {
       "IArbitrable": [
-        5431
+        5425
       ]
     },
-    "id": 5432,
+    "id": 5426,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 5390,
+        "id": 5384,
         "literals": [
           "solidity",
           "^",
           "0.5",
-          ".3"
+          ".5"
         ],
         "nodeType": "PragmaDirective",
         "src": "155:23:30"
@@ -661,10 +661,10 @@
       {
         "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/kleros/Arbitrator.sol",
         "file": "./Arbitrator.sol",
-        "id": 5391,
+        "id": 5385,
         "nodeType": "ImportDirective",
-        "scope": 5432,
-        "sourceUnit": 5149,
+        "scope": 5426,
+        "sourceUnit": 5143,
         "src": "180:26:30",
         "symbolAliases": [],
         "unitAlias": ""
@@ -675,9 +675,9 @@
         "contractKind": "contract",
         "documentation": "@title IArbitrable\n Arbitrable interface.\n When developing arbitrable contracts, we need to:\n -Define the action taken when a ruling is received by the contract. We should do so in executeRuling.\n -Allow dispute creation. For this a function must:\n     -Call arbitrator.createDispute.value(_fee)(_choices,_extraData);\n     -Create the event Dispute(_arbitrator,_disputeID,_rulingOptions);",
         "fullyImplemented": false,
-        "id": 5431,
+        "id": 5425,
         "linearizedBaseContracts": [
-          5431
+          5425
         ],
         "name": "IArbitrable",
         "nodeType": "ContractDefinition",
@@ -685,20 +685,20 @@
           {
             "anonymous": false,
             "documentation": "@dev To be emmited when meta-evidence is submitted.\n @param _metaEvidenceID Unique identifier of meta-evidence.\n @param _evidence A link to the meta-evidence JSON.",
-            "id": 5397,
+            "id": 5391,
             "name": "MetaEvidence",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5396,
+              "id": 5390,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5393,
+                  "id": 5387,
                   "indexed": true,
                   "name": "_metaEvidenceID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5397,
+                  "scope": 5391,
                   "src": "863:28:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -707,7 +707,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5392,
+                    "id": 5386,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "863:4:30",
@@ -721,11 +721,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5395,
+                  "id": 5389,
                   "indexed": false,
                   "name": "_evidence",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5397,
+                  "scope": 5391,
                   "src": "893:16:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -734,7 +734,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 5394,
+                    "id": 5388,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "893:6:30",
@@ -754,36 +754,36 @@
           {
             "anonymous": false,
             "documentation": "@dev To be emmited when a dispute is created to link the correct meta-evidence to the disputeID\n @param _arbitrator The arbitrator of the contract.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _metaEvidenceID Unique identifier of meta-evidence.",
-            "id": 5405,
+            "id": 5399,
             "name": "Dispute",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5404,
+              "id": 5398,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5399,
+                  "id": 5393,
                   "indexed": true,
                   "name": "_arbitrator",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5405,
+                  "scope": 5399,
                   "src": "1241:30:30",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                    "typeIdentifier": "t_contract$_Arbitrator_$5142",
                     "typeString": "contract Arbitrator"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5398,
+                    "id": 5392,
                     "name": "Arbitrator",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5148,
+                    "referencedDeclaration": 5142,
                     "src": "1241:10:30",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                      "typeIdentifier": "t_contract$_Arbitrator_$5142",
                       "typeString": "contract Arbitrator"
                     }
                   },
@@ -792,11 +792,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5401,
+                  "id": 5395,
                   "indexed": true,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5405,
+                  "scope": 5399,
                   "src": "1273:23:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -805,7 +805,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5400,
+                    "id": 5394,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1273:4:30",
@@ -819,11 +819,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5403,
+                  "id": 5397,
                   "indexed": false,
                   "name": "_metaEvidenceID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5405,
+                  "scope": 5399,
                   "src": "1298:20:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -832,7 +832,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5402,
+                    "id": 5396,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1298:4:30",
@@ -852,36 +852,36 @@
           {
             "anonymous": false,
             "documentation": "@dev To be raised when evidence are submitted. Should point to the ressource (evidences are not to be stored on chain due to gas considerations).\n @param _arbitrator The arbitrator of the contract.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _party The address of the party submiting the evidence. Note that 0x0 refers to evidence not submitted by any party.\n @param _evidence A URI to the evidence JSON file whose name should be its keccak256 hash followed by .json.",
-            "id": 5415,
+            "id": 5409,
             "name": "Evidence",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5414,
+              "id": 5408,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5407,
+                  "id": 5401,
                   "indexed": true,
                   "name": "_arbitrator",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1882:30:30",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                    "typeIdentifier": "t_contract$_Arbitrator_$5142",
                     "typeString": "contract Arbitrator"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5406,
+                    "id": 5400,
                     "name": "Arbitrator",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5148,
+                    "referencedDeclaration": 5142,
                     "src": "1882:10:30",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                      "typeIdentifier": "t_contract$_Arbitrator_$5142",
                       "typeString": "contract Arbitrator"
                     }
                   },
@@ -890,11 +890,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5409,
+                  "id": 5403,
                   "indexed": true,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1914:23:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -903,7 +903,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5408,
+                    "id": 5402,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "1914:4:30",
@@ -917,11 +917,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5411,
+                  "id": 5405,
                   "indexed": true,
                   "name": "_party",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1939:22:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -930,7 +930,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 5410,
+                    "id": 5404,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "1939:7:30",
@@ -945,11 +945,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5413,
+                  "id": 5407,
                   "indexed": false,
                   "name": "_evidence",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5415,
+                  "scope": 5409,
                   "src": "1963:16:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -958,7 +958,7 @@
                     "typeString": "string"
                   },
                   "typeName": {
-                    "id": 5412,
+                    "id": 5406,
                     "name": "string",
                     "nodeType": "ElementaryTypeName",
                     "src": "1963:6:30",
@@ -978,36 +978,36 @@
           {
             "anonymous": false,
             "documentation": "@dev To be raised when a ruling is given.\n @param _arbitrator The arbitrator giving the ruling.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _ruling The ruling which was given.",
-            "id": 5423,
+            "id": 5417,
             "name": "Ruling",
             "nodeType": "EventDefinition",
             "parameters": {
-              "id": 5422,
+              "id": 5416,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5417,
+                  "id": 5411,
                   "indexed": true,
                   "name": "_arbitrator",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5423,
+                  "scope": 5417,
                   "src": "2242:30:30",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                    "typeIdentifier": "t_contract$_Arbitrator_$5142",
                     "typeString": "contract Arbitrator"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 5416,
+                    "id": 5410,
                     "name": "Arbitrator",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 5148,
+                    "referencedDeclaration": 5142,
                     "src": "2242:10:30",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_contract$_Arbitrator_$5148",
+                      "typeIdentifier": "t_contract$_Arbitrator_$5142",
                       "typeString": "contract Arbitrator"
                     }
                   },
@@ -1016,11 +1016,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5419,
+                  "id": 5413,
                   "indexed": true,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5423,
+                  "scope": 5417,
                   "src": "2274:23:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1029,7 +1029,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5418,
+                    "id": 5412,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2274:4:30",
@@ -1043,11 +1043,11 @@
                 },
                 {
                   "constant": false,
-                  "id": 5421,
+                  "id": 5415,
                   "indexed": false,
                   "name": "_ruling",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5423,
+                  "scope": 5417,
                   "src": "2299:12:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1056,7 +1056,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5420,
+                    "id": 5414,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2299:4:30",
@@ -1076,22 +1076,22 @@
           {
             "body": null,
             "documentation": "@dev Give a ruling for a dispute. Must be called by the arbitrator.\n The purpose of this function is to ensure that the address calling it has the right to rule on the contract.\n @param _disputeID ID of the dispute in the Arbitrator contract.\n @param _ruling Ruling given by the arbitrator. Note that 0 is reserved for \"Not able/wanting to make a decision\".",
-            "id": 5430,
+            "id": 5424,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "rule",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 5428,
+              "id": 5422,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 5425,
+                  "id": 5419,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5430,
+                  "scope": 5424,
                   "src": "2728:15:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1100,7 +1100,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5424,
+                    "id": 5418,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2728:4:30",
@@ -1114,10 +1114,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 5427,
+                  "id": 5421,
                   "name": "_ruling",
                   "nodeType": "VariableDeclaration",
-                  "scope": 5430,
+                  "scope": 5424,
                   "src": "2745:12:30",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1126,7 +1126,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 5426,
+                    "id": 5420,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "2745:4:30",
@@ -1142,19 +1142,19 @@
               "src": "2727:31:30"
             },
             "returnParameters": {
-              "id": 5429,
+              "id": 5423,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "2765:0:30"
             },
-            "scope": 5431,
+            "scope": 5425,
             "src": "2714:52:30",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 5432,
+        "scope": 5426,
         "src": "623:2145:30"
       }
     ],
@@ -1166,7 +1166,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.3",
-  "updatedAt": "2019-03-28T10:26:15.713Z",
+  "updatedAt": "2019-04-01T10:14:45.041Z",
   "devdoc": {
     "methods": {
       "rule(uint256,uint256)": {

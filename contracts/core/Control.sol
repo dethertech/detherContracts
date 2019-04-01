@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 contract Control {
   // ------------------------------------------------
@@ -57,10 +57,6 @@ contract Control {
     _;
   }
 
-  modifier whenNotPaused() {
-    require(paused == false, "can only be called when not paused");
-    _;
-  }
 
   // ------------------------------------------------
   //
@@ -92,8 +88,8 @@ contract Control {
   function removeShopModerator(address _who) external onlyCEO isValidAddress(_who) { shopModerators[_who] = false; }
   function setTellerModerator(address _who) external onlyCEO isValidAddress(_who) { tellerModerators[_who] = true; }
   function removeTellerModerator(address _who) external onlyCEO isValidAddress(_who) { tellerModerators[_who] = false; }
-  function pause() external onlyCEO whenNotPaused { paused = true; }
-  function unpause() external onlyCEO whenPaused { paused = false; }
+  // function pause() external onlyCEO whenNotPaused { paused = true; }
+  // function unpause() external onlyCEO whenPaused { paused = false; }
 
   // ------------------------------------------------
   //

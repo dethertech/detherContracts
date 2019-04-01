@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 import "../interfaces/IControl.sol";
 
@@ -210,7 +210,6 @@ contract GeoRegistry {
   function updateLevel2batch(bytes2 _countryCode, bytes3[] memory _letters, bytes4[] memory _subLetters)
     public
   {
-
     // can exec while paused
     // require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(!countryIsFilled[_countryCode], "country must not be filled");
@@ -222,7 +221,6 @@ contract GeoRegistry {
   {
     countryIsFilled[_countryCode] = true;
   }
-
   function enableCountry(bytes2 _country)
     external
   {

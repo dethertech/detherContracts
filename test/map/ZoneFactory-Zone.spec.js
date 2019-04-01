@@ -259,14 +259,14 @@ contract('ZoneFactory + Zone', (accounts) => {
 
   describe('>>> deploying a Zone', () => {
     describe('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
-      it('should revert if global pause enabled', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await controlInstance.pause({ from: owner });
-        await expectRevert2(
-          createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH),
-          'contract is paused',
-        );
-      });
+      // it('should revert if global pause enabled', async () => {
+      //   await enableAndLoadCountry(COUNTRY_CG);
+      //   await controlInstance.pause({ from: owner });
+      //   await expectRevert2(
+      //     createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH),
+      //     'contract is paused',
+      //   );
+      // });
       it('should revert if country is disabled', async () => {
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH),
@@ -338,7 +338,7 @@ contract('ZoneFactory + Zone', (accounts) => {
         expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
       });
     });
-    describe.only('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
+    describe('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
       it('should succeed with tier 1', async () => {
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
@@ -427,14 +427,14 @@ contract('ZoneFactory + Zone', (accounts) => {
     });
     describe('AUCTION', () => {
       describe('[ERC223] Zone.claimFreeZone(address _from, uint _dthAmount)', () => {
-        it('should revert if global pause enabled', async () => {
-          await zoneInstance.release({ from: user1 });
-          await controlInstance.pause({ from: owner });
-          await expectRevert2(
-            claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause enabled', async () => {
+        //   await zoneInstance.release({ from: user1 });
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert2(
+        //     claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if country is disabled', async () => {
           await zoneInstance.release({ from: user1 });
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
@@ -598,13 +598,13 @@ contract('ZoneFactory + Zone', (accounts) => {
       });
 
       describe('[ERC223] Zone.topUp(address _from, uint _dthAmount)', () => {
-        it('should revert if global pause enabled', async () => {
-          await controlInstance.pause({ from: owner });
-          await expectRevert2(
-            topUp(user1, 10, zoneInstance.address),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause enabled', async () => {
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert2(
+        //     topUp(user1, 10, zoneInstance.address),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
           await expectRevert2(
@@ -662,13 +662,13 @@ contract('ZoneFactory + Zone', (accounts) => {
       });
 
       describe('Zone.release()', () => {
-        it('should revert if global pause enabled', async () => {
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            zoneInstance.release({ from: user1 }),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause enabled', async () => {
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     zoneInstance.release({ from: user1 }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if caller is not the zone owner', async () => {
           await expectRevert(
             zoneInstance.release({ from: user2 }),
@@ -733,17 +733,17 @@ contract('ZoneFactory + Zone', (accounts) => {
       });
 
       describe('Zone.withdrawFromAuction(uint _auctionId)', () => {
-        it('should revert if global pause enabled', async () => {
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            zoneInstance.withdrawFromAuction('1', { from: user2 }),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause enabled', async () => {
+        //   await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+        //   await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
+        //   await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
+        //   await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     zoneInstance.withdrawFromAuction('1', { from: user2 }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if auction does not exist', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
@@ -870,26 +870,26 @@ contract('ZoneFactory + Zone', (accounts) => {
         });
       });
       describe('Zone.withdrawFromAuctions(uint[] _auctionIds)', () => {
-        it('should revert if global pause enabled', async () => {
-          // auction 1
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // loser
-          await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-          // auction 2
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user1, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // loser
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+        // it('should revert if global pause enabled', async () => {
+        //   // auction 1
+        //   await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+        //   await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
+        //   await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // loser
+        //   await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // winner
+        //   await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
+        //   // auction 2
+        //   await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
+        //   await placeBid(user1, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // loser
+        //   await placeBid(user2, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
+        //   await placeBid(user3, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // winner
+        //   await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
 
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            zoneInstance.withdrawFromAuctions(['1'], { from: user3 }),
-            'contract is paused',
-          );
-        });
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     zoneInstance.withdrawFromAuctions(['1'], { from: user3 }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if empty auctionIds list arg', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
@@ -1254,13 +1254,13 @@ contract('ZoneFactory + Zone', (accounts) => {
 
     describe('TELLER', () => {
       describe('Teller.addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings)', () => {
-        it('should revert if global pause is enabled', async () => {
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause is enabled', async () => {
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
           await expectRevert(
@@ -1412,14 +1412,14 @@ contract('ZoneFactory + Zone', (accounts) => {
         });
       });
       describe('Teller.addFunds(uint _amount)', () => {
-        it('should revert if global pause is enabled', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            tellerInstance.addFunds({ from: user1, value: ethToWei(100) }),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause is enabled', async () => {
+        //   await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     tellerInstance.addFunds({ from: user1, value: ethToWei(100) }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if country is disabled', async () => {
           await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
@@ -1465,15 +1465,15 @@ contract('ZoneFactory + Zone', (accounts) => {
         });
       });
       describe('Teller.sellEth(address _to, uint _amount)', () => {
-        it('should revert if global pause is enabled', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(1), { from: user1 }),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause is enabled', async () => {
+        //   await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
+        //   await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     tellerInstance.sellEth(user3, ethToWei(1), { from: user1 }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if country is disabled', async () => {
           await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
@@ -1531,9 +1531,9 @@ contract('ZoneFactory + Zone', (accounts) => {
         });
         it('should revert if amount to sell is greater than daily limit', async () => {
           await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(2) });
+          await tellerInstance.addFunds({ from: user1, value: ethToWei(20) });
           await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(2), { from: user1 }),
+            tellerInstance.sellEth(user3, ethToWei(20), { from: user1 }),
             'exceeded daily sell limit',
           );
         });
@@ -1581,13 +1581,13 @@ contract('ZoneFactory + Zone', (accounts) => {
         beforeEach(async () => {
           await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
         });
-        it('should revert if global pause is enabled', async () => {
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            tellerInstance.addComment(getRandomBytes32(), { from: user2 }),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause is enabled', async () => {
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     tellerInstance.addComment(getRandomBytes32(), { from: user2 }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
           await expectRevert(
@@ -1633,14 +1633,14 @@ contract('ZoneFactory + Zone', (accounts) => {
           await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, { from: user1 });
           await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
         });
-        it('should revert if global pause is enabled', async () => {
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-          await controlInstance.pause({ from: owner });
-          await expectRevert(
-            tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
-            'contract is paused',
-          );
-        });
+        // it('should revert if global pause is enabled', async () => {
+        //   await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
+        //   await controlInstance.pause({ from: owner });
+        //   await expectRevert(
+        //     tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
+        //     'contract is paused',
+        //   );
+        // });
         it('should revert if country is disabled', async () => {
           await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });

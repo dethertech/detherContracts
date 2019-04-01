@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 contract ICertifier {
     function certs(address) view public returns(bool active);

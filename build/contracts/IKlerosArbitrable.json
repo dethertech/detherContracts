@@ -150,25 +150,25 @@
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.5.3;\n\ncontract IKlerosArbitrable {\n  enum DisputeStatus {Waiting, Appealable, Solved} // copied from IArbitrable.sol\n  function createDispute(uint _choices, bytes memory _extraData) public payable returns(uint disputeID);\n  function arbitrationCost(bytes memory _extraData) public view returns(uint fee);\n  function appeal(uint _disputeID, bytes memory _extraData) public payable;\n  function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint fee);\n  function appealPeriod(uint _disputeID) public view returns(uint start, uint end) {}\n  function disputeStatus(uint _disputeID) public view returns(DisputeStatus status);\n  function currentRuling(uint _disputeID) public view returns(uint ruling);\n}\n",
+  "source": "pragma solidity ^0.5.5;\n\ncontract IKlerosArbitrable {\n  enum DisputeStatus {Waiting, Appealable, Solved} // copied from IArbitrable.sol\n  function createDispute(uint _choices, bytes memory _extraData) public payable returns(uint disputeID);\n  function arbitrationCost(bytes memory _extraData) public view returns(uint fee);\n  function appeal(uint _disputeID, bytes memory _extraData) public payable;\n  function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint fee);\n  function appealPeriod(uint _disputeID) public view returns(uint start, uint end) {}\n  function disputeStatus(uint _disputeID) public view returns(DisputeStatus status);\n  function currentRuling(uint _disputeID) public view returns(uint ruling);\n}\n",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IKlerosArbitrable.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IKlerosArbitrable.sol",
     "exportedSymbols": {
       "IKlerosArbitrable": [
-        3546
+        3535
       ]
     },
-    "id": 3547,
+    "id": 3536,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 3485,
+        "id": 3474,
         "literals": [
           "solidity",
           "^",
           "0.5",
-          ".3"
+          ".5"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:18"
@@ -179,31 +179,31 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 3546,
+        "id": 3535,
         "linearizedBaseContracts": [
-          3546
+          3535
         ],
         "name": "IKlerosArbitrable",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "canonicalName": "IKlerosArbitrable.DisputeStatus",
-            "id": 3489,
+            "id": 3478,
             "members": [
               {
-                "id": 3486,
+                "id": 3475,
                 "name": "Waiting",
                 "nodeType": "EnumValue",
                 "src": "76:7:18"
               },
               {
-                "id": 3487,
+                "id": 3476,
                 "name": "Appealable",
                 "nodeType": "EnumValue",
                 "src": "85:10:18"
               },
               {
-                "id": 3488,
+                "id": 3477,
                 "name": "Solved",
                 "nodeType": "EnumValue",
                 "src": "97:6:18"
@@ -216,22 +216,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3498,
+            "id": 3487,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "createDispute",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3494,
+              "id": 3483,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3491,
+                  "id": 3480,
                   "name": "_choices",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3498,
+                  "scope": 3487,
                   "src": "161:13:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -240,7 +240,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3490,
+                    "id": 3479,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "161:4:18",
@@ -254,10 +254,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3493,
+                  "id": 3482,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3498,
+                  "scope": 3487,
                   "src": "176:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -266,7 +266,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3492,
+                    "id": 3481,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "176:5:18",
@@ -282,15 +282,15 @@
               "src": "160:40:18"
             },
             "returnParameters": {
-              "id": 3497,
+              "id": 3486,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3496,
+                  "id": 3485,
                   "name": "disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3498,
+                  "scope": 3487,
                   "src": "224:14:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -299,7 +299,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3495,
+                    "id": 3484,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "224:4:18",
@@ -314,7 +314,7 @@
               ],
               "src": "223:16:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "138:102:18",
             "stateMutability": "payable",
             "superFunction": null,
@@ -323,22 +323,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3505,
+            "id": 3494,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "arbitrationCost",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3501,
+              "id": 3490,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3500,
+                  "id": 3489,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3505,
+                  "scope": 3494,
                   "src": "268:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -347,7 +347,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3499,
+                    "id": 3488,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "268:5:18",
@@ -363,15 +363,15 @@
               "src": "267:25:18"
             },
             "returnParameters": {
-              "id": 3504,
+              "id": 3493,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3503,
+                  "id": 3492,
                   "name": "fee",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3505,
+                  "scope": 3494,
                   "src": "313:8:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -380,7 +380,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3502,
+                    "id": 3491,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "313:4:18",
@@ -395,7 +395,7 @@
               ],
               "src": "312:10:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "243:80:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -404,22 +404,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3512,
+            "id": 3501,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "appeal",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3510,
+              "id": 3499,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3507,
+                  "id": 3496,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3512,
+                  "scope": 3501,
                   "src": "342:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -428,7 +428,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3506,
+                    "id": 3495,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "342:4:18",
@@ -442,10 +442,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3509,
+                  "id": 3498,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3512,
+                  "scope": 3501,
                   "src": "359:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -454,7 +454,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3508,
+                    "id": 3497,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "359:5:18",
@@ -470,12 +470,12 @@
               "src": "341:42:18"
             },
             "returnParameters": {
-              "id": 3511,
+              "id": 3500,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "398:0:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "326:73:18",
             "stateMutability": "payable",
             "superFunction": null,
@@ -484,22 +484,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3521,
+            "id": 3510,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "appealCost",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3517,
+              "id": 3506,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3514,
+                  "id": 3503,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3521,
+                  "scope": 3510,
                   "src": "422:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -508,7 +508,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3513,
+                    "id": 3502,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "422:4:18",
@@ -522,10 +522,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3516,
+                  "id": 3505,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3521,
+                  "scope": 3510,
                   "src": "439:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -534,7 +534,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3515,
+                    "id": 3504,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "439:5:18",
@@ -550,15 +550,15 @@
               "src": "421:42:18"
             },
             "returnParameters": {
-              "id": 3520,
+              "id": 3509,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3519,
+                  "id": 3508,
                   "name": "fee",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3521,
+                  "scope": 3510,
                   "src": "484:8:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -567,7 +567,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3518,
+                    "id": 3507,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "484:4:18",
@@ -582,7 +582,7 @@
               ],
               "src": "483:10:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "402:92:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -590,28 +590,28 @@
           },
           {
             "body": {
-              "id": 3530,
+              "id": 3519,
               "nodeType": "Block",
               "src": "578:2:18",
               "statements": []
             },
             "documentation": null,
-            "id": 3531,
+            "id": 3520,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
             "name": "appealPeriod",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3524,
+              "id": 3513,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3523,
+                  "id": 3512,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3531,
+                  "scope": 3520,
                   "src": "519:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -620,7 +620,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3522,
+                    "id": 3511,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "519:4:18",
@@ -636,15 +636,15 @@
               "src": "518:17:18"
             },
             "returnParameters": {
-              "id": 3529,
+              "id": 3518,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3526,
+                  "id": 3515,
                   "name": "start",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3531,
+                  "scope": 3520,
                   "src": "556:10:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -653,7 +653,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3525,
+                    "id": 3514,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "556:4:18",
@@ -667,10 +667,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3528,
+                  "id": 3517,
                   "name": "end",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3531,
+                  "scope": 3520,
                   "src": "568:8:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -679,7 +679,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3527,
+                    "id": 3516,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "568:4:18",
@@ -694,7 +694,7 @@
               ],
               "src": "555:22:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "497:83:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -703,22 +703,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3538,
+            "id": 3527,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "disputeStatus",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3534,
+              "id": 3523,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3533,
+                  "id": 3522,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3538,
+                  "scope": 3527,
                   "src": "606:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -727,7 +727,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3532,
+                    "id": 3521,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "606:4:18",
@@ -743,31 +743,31 @@
               "src": "605:17:18"
             },
             "returnParameters": {
-              "id": 3537,
+              "id": 3526,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3536,
+                  "id": 3525,
                   "name": "status",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3538,
+                  "scope": 3527,
                   "src": "643:20:18",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_DisputeStatus_$3489",
+                    "typeIdentifier": "t_enum$_DisputeStatus_$3478",
                     "typeString": "enum IKlerosArbitrable.DisputeStatus"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 3535,
+                    "id": 3524,
                     "name": "DisputeStatus",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 3489,
+                    "referencedDeclaration": 3478,
                     "src": "643:13:18",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_DisputeStatus_$3489",
+                      "typeIdentifier": "t_enum$_DisputeStatus_$3478",
                       "typeString": "enum IKlerosArbitrable.DisputeStatus"
                     }
                   },
@@ -777,7 +777,7 @@
               ],
               "src": "642:22:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "583:82:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -786,22 +786,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3545,
+            "id": 3534,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "currentRuling",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3541,
+              "id": 3530,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3540,
+                  "id": 3529,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3545,
+                  "scope": 3534,
                   "src": "691:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -810,7 +810,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3539,
+                    "id": 3528,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "691:4:18",
@@ -826,15 +826,15 @@
               "src": "690:17:18"
             },
             "returnParameters": {
-              "id": 3544,
+              "id": 3533,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3543,
+                  "id": 3532,
                   "name": "ruling",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3545,
+                  "scope": 3534,
                   "src": "728:11:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -843,7 +843,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3542,
+                    "id": 3531,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "728:4:18",
@@ -858,14 +858,14 @@
               ],
               "src": "727:13:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "668:73:18",
             "stateMutability": "view",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 3547,
+        "scope": 3536,
         "src": "25:718:18"
       }
     ],
@@ -875,19 +875,19 @@
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IKlerosArbitrable.sol",
     "exportedSymbols": {
       "IKlerosArbitrable": [
-        3546
+        3535
       ]
     },
-    "id": 3547,
+    "id": 3536,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 3485,
+        "id": 3474,
         "literals": [
           "solidity",
           "^",
           "0.5",
-          ".3"
+          ".5"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:18"
@@ -898,31 +898,31 @@
         "contractKind": "contract",
         "documentation": null,
         "fullyImplemented": false,
-        "id": 3546,
+        "id": 3535,
         "linearizedBaseContracts": [
-          3546
+          3535
         ],
         "name": "IKlerosArbitrable",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "canonicalName": "IKlerosArbitrable.DisputeStatus",
-            "id": 3489,
+            "id": 3478,
             "members": [
               {
-                "id": 3486,
+                "id": 3475,
                 "name": "Waiting",
                 "nodeType": "EnumValue",
                 "src": "76:7:18"
               },
               {
-                "id": 3487,
+                "id": 3476,
                 "name": "Appealable",
                 "nodeType": "EnumValue",
                 "src": "85:10:18"
               },
               {
-                "id": 3488,
+                "id": 3477,
                 "name": "Solved",
                 "nodeType": "EnumValue",
                 "src": "97:6:18"
@@ -935,22 +935,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3498,
+            "id": 3487,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "createDispute",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3494,
+              "id": 3483,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3491,
+                  "id": 3480,
                   "name": "_choices",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3498,
+                  "scope": 3487,
                   "src": "161:13:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -959,7 +959,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3490,
+                    "id": 3479,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "161:4:18",
@@ -973,10 +973,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3493,
+                  "id": 3482,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3498,
+                  "scope": 3487,
                   "src": "176:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -985,7 +985,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3492,
+                    "id": 3481,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "176:5:18",
@@ -1001,15 +1001,15 @@
               "src": "160:40:18"
             },
             "returnParameters": {
-              "id": 3497,
+              "id": 3486,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3496,
+                  "id": 3485,
                   "name": "disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3498,
+                  "scope": 3487,
                   "src": "224:14:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1018,7 +1018,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3495,
+                    "id": 3484,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "224:4:18",
@@ -1033,7 +1033,7 @@
               ],
               "src": "223:16:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "138:102:18",
             "stateMutability": "payable",
             "superFunction": null,
@@ -1042,22 +1042,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3505,
+            "id": 3494,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "arbitrationCost",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3501,
+              "id": 3490,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3500,
+                  "id": 3489,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3505,
+                  "scope": 3494,
                   "src": "268:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -1066,7 +1066,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3499,
+                    "id": 3488,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "268:5:18",
@@ -1082,15 +1082,15 @@
               "src": "267:25:18"
             },
             "returnParameters": {
-              "id": 3504,
+              "id": 3493,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3503,
+                  "id": 3492,
                   "name": "fee",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3505,
+                  "scope": 3494,
                   "src": "313:8:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1099,7 +1099,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3502,
+                    "id": 3491,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "313:4:18",
@@ -1114,7 +1114,7 @@
               ],
               "src": "312:10:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "243:80:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -1123,22 +1123,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3512,
+            "id": 3501,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "appeal",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3510,
+              "id": 3499,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3507,
+                  "id": 3496,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3512,
+                  "scope": 3501,
                   "src": "342:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1147,7 +1147,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3506,
+                    "id": 3495,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "342:4:18",
@@ -1161,10 +1161,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3509,
+                  "id": 3498,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3512,
+                  "scope": 3501,
                   "src": "359:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -1173,7 +1173,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3508,
+                    "id": 3497,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "359:5:18",
@@ -1189,12 +1189,12 @@
               "src": "341:42:18"
             },
             "returnParameters": {
-              "id": 3511,
+              "id": 3500,
               "nodeType": "ParameterList",
               "parameters": [],
               "src": "398:0:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "326:73:18",
             "stateMutability": "payable",
             "superFunction": null,
@@ -1203,22 +1203,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3521,
+            "id": 3510,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "appealCost",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3517,
+              "id": 3506,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3514,
+                  "id": 3503,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3521,
+                  "scope": 3510,
                   "src": "422:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1227,7 +1227,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3513,
+                    "id": 3502,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "422:4:18",
@@ -1241,10 +1241,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3516,
+                  "id": 3505,
                   "name": "_extraData",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3521,
+                  "scope": 3510,
                   "src": "439:23:18",
                   "stateVariable": false,
                   "storageLocation": "memory",
@@ -1253,7 +1253,7 @@
                     "typeString": "bytes"
                   },
                   "typeName": {
-                    "id": 3515,
+                    "id": 3504,
                     "name": "bytes",
                     "nodeType": "ElementaryTypeName",
                     "src": "439:5:18",
@@ -1269,15 +1269,15 @@
               "src": "421:42:18"
             },
             "returnParameters": {
-              "id": 3520,
+              "id": 3509,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3519,
+                  "id": 3508,
                   "name": "fee",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3521,
+                  "scope": 3510,
                   "src": "484:8:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1286,7 +1286,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3518,
+                    "id": 3507,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "484:4:18",
@@ -1301,7 +1301,7 @@
               ],
               "src": "483:10:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "402:92:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -1309,28 +1309,28 @@
           },
           {
             "body": {
-              "id": 3530,
+              "id": 3519,
               "nodeType": "Block",
               "src": "578:2:18",
               "statements": []
             },
             "documentation": null,
-            "id": 3531,
+            "id": 3520,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
             "name": "appealPeriod",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3524,
+              "id": 3513,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3523,
+                  "id": 3512,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3531,
+                  "scope": 3520,
                   "src": "519:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1339,7 +1339,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3522,
+                    "id": 3511,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "519:4:18",
@@ -1355,15 +1355,15 @@
               "src": "518:17:18"
             },
             "returnParameters": {
-              "id": 3529,
+              "id": 3518,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3526,
+                  "id": 3515,
                   "name": "start",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3531,
+                  "scope": 3520,
                   "src": "556:10:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1372,7 +1372,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3525,
+                    "id": 3514,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "556:4:18",
@@ -1386,10 +1386,10 @@
                 },
                 {
                   "constant": false,
-                  "id": 3528,
+                  "id": 3517,
                   "name": "end",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3531,
+                  "scope": 3520,
                   "src": "568:8:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1398,7 +1398,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3527,
+                    "id": 3516,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "568:4:18",
@@ -1413,7 +1413,7 @@
               ],
               "src": "555:22:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "497:83:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -1422,22 +1422,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3538,
+            "id": 3527,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "disputeStatus",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3534,
+              "id": 3523,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3533,
+                  "id": 3522,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3538,
+                  "scope": 3527,
                   "src": "606:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1446,7 +1446,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3532,
+                    "id": 3521,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "606:4:18",
@@ -1462,31 +1462,31 @@
               "src": "605:17:18"
             },
             "returnParameters": {
-              "id": 3537,
+              "id": 3526,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3536,
+                  "id": 3525,
                   "name": "status",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3538,
+                  "scope": 3527,
                   "src": "643:20:18",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
-                    "typeIdentifier": "t_enum$_DisputeStatus_$3489",
+                    "typeIdentifier": "t_enum$_DisputeStatus_$3478",
                     "typeString": "enum IKlerosArbitrable.DisputeStatus"
                   },
                   "typeName": {
                     "contractScope": null,
-                    "id": 3535,
+                    "id": 3524,
                     "name": "DisputeStatus",
                     "nodeType": "UserDefinedTypeName",
-                    "referencedDeclaration": 3489,
+                    "referencedDeclaration": 3478,
                     "src": "643:13:18",
                     "typeDescriptions": {
-                      "typeIdentifier": "t_enum$_DisputeStatus_$3489",
+                      "typeIdentifier": "t_enum$_DisputeStatus_$3478",
                       "typeString": "enum IKlerosArbitrable.DisputeStatus"
                     }
                   },
@@ -1496,7 +1496,7 @@
               ],
               "src": "642:22:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "583:82:18",
             "stateMutability": "view",
             "superFunction": null,
@@ -1505,22 +1505,22 @@
           {
             "body": null,
             "documentation": null,
-            "id": 3545,
+            "id": 3534,
             "implemented": false,
             "kind": "function",
             "modifiers": [],
             "name": "currentRuling",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 3541,
+              "id": 3530,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3540,
+                  "id": 3529,
                   "name": "_disputeID",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3545,
+                  "scope": 3534,
                   "src": "691:15:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1529,7 +1529,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3539,
+                    "id": 3528,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "691:4:18",
@@ -1545,15 +1545,15 @@
               "src": "690:17:18"
             },
             "returnParameters": {
-              "id": 3544,
+              "id": 3533,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 3543,
+                  "id": 3532,
                   "name": "ruling",
                   "nodeType": "VariableDeclaration",
-                  "scope": 3545,
+                  "scope": 3534,
                   "src": "728:11:18",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -1562,7 +1562,7 @@
                     "typeString": "uint256"
                   },
                   "typeName": {
-                    "id": 3542,
+                    "id": 3531,
                     "name": "uint",
                     "nodeType": "ElementaryTypeName",
                     "src": "728:4:18",
@@ -1577,14 +1577,14 @@
               ],
               "src": "727:13:18"
             },
-            "scope": 3546,
+            "scope": 3535,
             "src": "668:73:18",
             "stateMutability": "view",
             "superFunction": null,
             "visibility": "public"
           }
         ],
-        "scope": 3547,
+        "scope": 3536,
         "src": "25:718:18"
       }
     ],
@@ -1596,7 +1596,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.3",
-  "updatedAt": "2019-03-28T10:26:15.706Z",
+  "updatedAt": "2019-04-01T10:14:45.041Z",
   "devdoc": {
     "methods": {}
   },

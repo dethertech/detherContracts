@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -128,11 +128,6 @@ contract Zone is IERC223ReceivingContract {
   }
   modifier onlyWhenTellerNotConnected() {
     require(tellerConnected == false, "teller contract already connected");
-    _;
-  }
-
-  modifier onlyWhenNotPaused {
-    require(control.paused() == false, "contract is paused");
     _;
   }
 
@@ -613,7 +608,6 @@ contract Zone is IERC223ReceivingContract {
     public
     onlyWhenInited
     onlyWhenTellerConnected
-    onlyWhenNotPaused
     onlyWhenCountryEnabled
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
@@ -643,7 +637,6 @@ contract Zone is IERC223ReceivingContract {
     external
     onlyWhenInited
     onlyWhenTellerConnected
-    onlyWhenNotPaused
     updateState
     onlyWhenCallerIsZoneOwner
   {
@@ -669,7 +662,6 @@ contract Zone is IERC223ReceivingContract {
     external
     onlyWhenInited
     onlyWhenTellerConnected
-    onlyWhenNotPaused
     updateState
   {
     // even when country is disabled, otherwise users cannot withdraw their bids
@@ -690,7 +682,6 @@ contract Zone is IERC223ReceivingContract {
     external
     onlyWhenInited
     onlyWhenTellerConnected
-    onlyWhenNotPaused
     updateState
   {
     // even when country is disabled, can withdraw

@@ -1,4 +1,4 @@
-pragma solidity ^0.5.3;
+pragma solidity ^0.5.5;
 
 contract DSMathWdiv {
   function add(uint x, uint y) internal pure returns (uint z) {
