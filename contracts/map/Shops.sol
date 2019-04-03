@@ -1,4 +1,6 @@
 pragma solidity ^0.5.5;
+pragma experimental ABIEncoderV2;
+
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -42,15 +44,19 @@ contract Shops {
     bytes16 opening;
     bytes6 geohashZoneBase;
     uint staked;
+    uint licencePrice;
+    uint lastTaxTime;
     bool hasDispute;
     uint disputeID;
   }
-
+  
   // ------------------------------------------------
   //
   // Variables Public
   //
   // ------------------------------------------------
+
+  uint stakedDth;
 
   // links to other contracts
   IDetherToken public dth;
@@ -59,6 +65,9 @@ contract Shops {
   IControl public control;
   IZoneFactory public zoneFactory;
   address public shopsDispute;
+
+  // constant
+  uint private constant DAILY_TAX= 42; // 1/42 daily
   uint public floorLicencePrice = 42000000000000000000;
 
   //      countryCode priceDTH
@@ -89,7 +98,9 @@ contract Shops {
   // Events
   //
   // ------------------------------------------------
-
+  event logShopData(bytes16 _name, uint _staked, uint _licencePrice, uint _lastTaxTime);
+  event logUint(uint _uint, string _log);
+  event logString(string _string);
   // ------------------------------------------------
   //
   // Modifiers
@@ -354,6 +365,62 @@ contract Shops {
     require(_priceDTH > floorLicencePrice, "price should be superior to the floor price");
     zoneLicencePrice[_zoneGeohash] = _priceDTH;
   }
+//   event logShopData(bytes16 _name, uint _staked, uint _licencePrice, uint _startTime, _lastTaxTime);
+
+  function calcShopTax(uint _startTime, uint _endTime, uint _licencePrice)
+    public
+    view
+    returns (uint taxAmount)
+  {
+
+    taxAmount = _licencePrice.mul(_endTime.sub(_startTime)).div(DAILY_TAX).div(1 days);
+  }
+
+  function collectTax(bytes6 _zoneGeohash, uint _start, uint _end)
+    public
+  {
+    address zoneAddress = zoneFactory.geohashToZone(_zoneGeohash);
+    require(zoneAddress != address(0), "zone is not already owned");
+    IZone zoneInstance = IZone(zoneAddress);
+    address zoneOwner = zoneInstance.ownerAddr();
+    require(msg.sender == zoneOwner, "only zone owner can collect taxes");
+
+    address[] memory shopsinZone = zoneToShopAddresses[_zoneGeohash];
+    require(_end - _start <= shopsinZone.length, "start and end value are bigger than address[]");
+    // loop on all shops present on his zone and:
+    // collect taxes if possible
+    // delete point if no more enough stake
+    uint taxToSendToZoneOwner = 0;
+    for (uint i = _start; i < shopsinZone.length; i+= 1) {
+      emit logUint(i, 'SHOP NUM');
+      emit logShopData(
+          shopAddressToShop[shopsinZone[i]].name,
+          shopAddressToShop[shopsinZone[i]].staked,
+          shopAddressToShop[shopsinZone[i]].licencePrice,
+          shopAddressToShop[shopsinZone[i]].lastTaxTime
+        );
+
+      uint taxAmount = calcShopTax(shopAddressToShop[shopsinZone[i]].lastTaxTime, now, shopAddressToShop[shopsinZone[i]].licencePrice);
+      emit logUint(taxAmount, 'tax amount for the shop');
+            emit logUint(shopAddressToShop[shopsinZone[i]].staked, 'old staked amount for the shop');
+      if (taxAmount > shopAddressToShop[shopsinZone[i]].staked) {
+        // shop pay what he can and is deleted
+        taxToSendToZoneOwner = taxToSendToZoneOwner.add(shopAddressToShop[shopsinZone[i]].staked);
+        deleteShop(shopsinZone[i]);
+      } else {
+        shopAddressToShop[shopsinZone[i]].staked = shopAddressToShop[shopsinZone[i]].staked.sub(taxAmount);
+        emit logUint(shopAddressToShop[shopsinZone[i]].staked, 'new staked amount for the shop');
+
+        taxToSendToZoneOwner = taxToSendToZoneOwner.add(taxAmount);
+
+        shopAddressToShop[shopsinZone[i]].lastTaxTime = now;
+      }
+    }
+    emit logUint(taxToSendToZoneOwner, 'tax to send zone owner');
+    dth.transfer(zoneOwner, taxToSendToZoneOwner);
+    stakedDth = stakedDth.sub(taxToSendToZoneOwner);
+  }
+
 
   function tokenFallback(address _from, uint _value, bytes memory _data)
     public
@@ -366,44 +433,60 @@ contract Shops {
     uint dthAmount = _value;
 
     bytes1 fn = toBytes1(_data, 0);
-    require(fn == bytes1(0x30), "incorrect first byte in data, expected 0x30");
+    require(fn == bytes1(0x30) || fn == bytes1(0x31), "first byte didnt match func shop");
 
-    bytes2 country = toBytes2(_data, 1);
-    bytes12 position = toBytes12(_data, 3);
-    bytes16 category = toBytes16(_data, 15);
-    bytes16 name = toBytes16(_data, 31);
-    bytes32 description = toBytes32(_data, 47);
-    bytes16 opening = toBytes16(_data, 79);
+    if (fn == bytes1(0x31)) {         // shop account top up
+      _topUp(sender, _value);
+    } else if (fn == bytes1(0x30)) {  // shop creation
+      bytes2 country = toBytes2(_data, 1);
+      bytes12 position = toBytes12(_data, 3);
+      bytes16 category = toBytes16(_data, 15);
+      bytes16 name = toBytes16(_data, 31);
+      bytes32 description = toBytes32(_data, 47);
+      bytes16 opening = toBytes16(_data, 79);
 
-    require(geo.countryIsEnabled(country), "country is disabled");
-    // require(users.getUserTier(sender) > 0, "user not certified");
-    require(shopAddressToShop[sender].position == bytes12(0), "caller already has shop");
-    require(positionToShopAddress[position] == address(0), "shop already exists at position");
-    require(geo.validGeohashChars12(position), "invalid geohash characters in position");
-    require(geo.zoneInsideCountry(country, bytes4(position)), "zone is not inside country");
+      require(geo.countryIsEnabled(country), "country is disabled");
+      // require(users.getUserTier(sender) > 0, "user not certified");
+      require(shopAddressToShop[sender].position == bytes12(0), "caller already has shop");
+      require(positionToShopAddress[position] == address(0), "shop already exists at position");
+      require(geo.validGeohashChars12(position), "invalid geohash characters in position");
+      require(geo.zoneInsideCountry(country, bytes4(position)), "zone is not inside country");
 
-    // check the price for adding shop in this zone (geohash6)
-    uint zoneValue = zoneLicencePrice[bytes6(position)] > floorLicencePrice ? zoneLicencePrice[bytes6(position)] : floorLicencePrice;
-    require(dthAmount >= zoneValue, "send dth is less than shop license price");
-    // require(dthAmount >= countryLicensePrice[country], "send dth is less than shop license price");
+      // check the price for adding shop in this zone (geohash6)
+      uint zoneValue = zoneLicencePrice[bytes6(position)] > floorLicencePrice ? zoneLicencePrice[bytes6(position)] : floorLicencePrice;
+      require(dthAmount >= zoneValue, "send dth is less than shop license price");
+      // require(dthAmount >= countryLicensePrice[country], "send dth is less than shop license price");
 
-    // create new entry in storage
-    Shop storage shop = shopAddressToShop[sender];
-    shop.position = position; // a 12 character geohash
-    shop.category = category;
-    shop.name = name;
-    shop.description = description;
-    shop.opening = opening;
-    shop.staked = dthAmount;
-    shop.hasDispute = false;
-    shop.disputeID = 0; // dispute could have id 0..
-    shop.geohashZoneBase = bytes6(position);
+      // create new entry in storage
+      Shop storage shop = shopAddressToShop[sender];
+      shop.position = position; // a 12 character geohash
+      shop.category = category;
+      shop.name = name;
+      shop.description = description;
+      shop.opening = opening;
+      shop.staked = dthAmount;
+      shop.hasDispute = false;
+      shop.disputeID = 0; // dispute could have id 0..
+      shop.geohashZoneBase = bytes6(position);
+      shop.licencePrice = zoneValue;
+      shop.lastTaxTime = now;
+      stakedDth = stakedDth.add(dthAmount);
 
-    // so we can get a shop based on its position
-    positionToShopAddress[position] = sender;
+      // so we can get a shop based on its position
+      positionToShopAddress[position] = sender;
 
-    // a zone is a 7 character geohash, we keep track of all shops in a given zone
-    zoneToShopAddresses[bytes6(position)].push(sender);
+      // a zone is a 7 character geohash, we keep track of all shops in a given zone
+      zoneToShopAddresses[bytes6(position)].push(sender);
+    }
+
+  }
+
+  function _topUp(address _sender, uint _dthAmount) // GAS COST +/- 104.201
+    private
+  {
+    require(shopAddressToShop[_sender].lastTaxTime > 0, 'Shop does not exist'); // TODO change the value of the check
+    shopAddressToShop[_sender].staked = shopAddressToShop[_sender].staked.add(_dthAmount);
+    stakedDth = stakedDth.add(_dthAmount);
   }
 
   function deleteShop(address shopAddress)
@@ -442,6 +525,7 @@ contract Shops {
     deleteShop(msg.sender);
 
     dth.transfer(msg.sender, shopStake);
+    stakedDth = stakedDth.sub(shopStake);
   }
 
   function withdrawDth()
@@ -453,6 +537,7 @@ contract Shops {
 
     withdrawableDth[msg.sender] = 0;
     dth.transfer(msg.sender, dthWithdraw);
+    stakedDth = stakedDth.sub(dthWithdraw);
   }
 
   //

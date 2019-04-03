@@ -27,10 +27,10 @@ const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
 const { ethToWei, asciiToHex, remove0x } = require('../utils/convert');
 const {
   BYTES16_ZERO, BYTES32_ZERO, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, VALID_CG_SHOP_GEOHASH,
-  VALID_CG_SHOP_GEOHASH_2, INVALID_CG_SHOP_GEOHASH, NONEXISTING_CG_SHOP_GEOHASH,
+  VALID_CG_SHOP_GEOHASH_2, VALID_CG_SHOP_GEOHASH_3, INVALID_CG_SHOP_GEOHASH, NONEXISTING_CG_SHOP_GEOHASH,
   CG_SHOP_LICENSE_PRICE, KLEROS_ARBITRATION_PRICE, ADDRESS_ZERO, KLEROS_DISPUTE_TIMEOUT,
   KLEROS_ARBITRATOR_EXTRADATA, KLEROS_SHOP_WINS, KLEROS_CHALLENGER_WINS, KLEROS_NO_RULING,
-  MIN_ZONE_DTH_STAKE,
+  MIN_ZONE_DTH_STAKE, ONE_WEEK_IN_SEC,
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
@@ -279,7 +279,7 @@ contract('Shops', (accounts) => {
             },
             '0x99', // <-- incorrect fn byte, should be 0x30
           ),
-          'incorrect first byte in data, expected 0x30',
+          'first byte didnt match func shop',
         );
       });
       it('[error] -- country disabled', async () => {
@@ -468,13 +468,13 @@ contract('Shops', (accounts) => {
           },
         );
       });
-      it('[error] -- dth stake less than license price, with a bigger price', async () => {
+      it('[error] -- dth stake less than license price, with a zone owned and a bigger price', async () => {
         // register zone
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
         let zoneInstance, tellerInstance;
         ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
-        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 } );
+        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 });
 
         // try the shop registration
         await smsInstance.certify(user1, { from: owner });
@@ -495,29 +495,29 @@ contract('Shops', (accounts) => {
           'send dth is less than shop license price',
         );
       });
-      it('[succes] -- dth stake the good amount of license price, with a bigger price', async () => {
+      it('[succes] -- dth stake the good amount of license price, with a zone owned and a bigger price', async () => {
         // register zone
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
         let zoneInstance, tellerInstance;
         ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
-        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 } );
+        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 });
 
         // try the shop registration
         await smsInstance.certify(user1, { from: owner });
         await dthInstance.mint(user1, ethToWei(111), { from: owner });
         await sendDthShopCreate(
-            user1, dthInstance.address, shopsInstance.address,
-            111,
-            {
-              country: asciiToHex(COUNTRY_CG),
-              position: asciiToHex(VALID_CG_SHOP_GEOHASH),
-              category: BYTES16_ZERO,
-              name: BYTES16_ZERO,
-              description: BYTES32_ZERO,
-              opening: BYTES16_ZERO,
-            },
-          )
+          user1, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: BYTES16_ZERO,
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        )
       });
       it('[error] -- zone modification price - error cases', async () => {
         // register zone
@@ -526,17 +526,79 @@ contract('Shops', (accounts) => {
         let zoneInstance, tellerInstance;
         ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
         await expectRevert2(
-          shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user3 } ),
+          shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user3 }),
           'only zone owner can modify the licence price'
         )
         await expectRevert2(
-          shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(10), { from: user2 } ),
+          shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(10), { from: user2 }),
           'price should be superior to the floor price'
         )
         await expectRevert2(
-          shopsInstance.setZoneLicensePrice(asciiToHex('abcdef'), ethToWei(120), { from: user2 } ),
+          shopsInstance.setZoneLicensePrice(asciiToHex('abcdef'), ethToWei(120), { from: user2 }),
           'zone is not already owned'
         )
+      });
+    });
+    describe('tax collecting from zone owner', () => {
+      it.only('[succes] -- Zone owner should succeed to collect taxes from shop', async () => {
+        // register zone
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 });
+
+        // try the shop registration
+        // await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop111111111111'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        let listOfShop = await shopsInstance.getShopAddressesInZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+        expect(listOfShop.length).equals(1);
+        await dthInstance.mint(user3, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user3, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_2),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop222222222222'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        listOfShop = await shopsInstance.getShopAddressesInZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+        await dthInstance.mint(user4, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user4, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_3),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop333333333333'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        listOfShop = await shopsInstance.getShopAddressesInZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+        expect(listOfShop.length).equals(3);
+        // make a trip to the futur
+        // await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
+        await timeTravel.inSecs(ONE_WEEK_IN_SEC);
+        await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
+
       });
     });
     describe('removeShop(bytes12 _position)', () => {
