@@ -19,6 +19,8 @@ const Zone = artifacts.require('Zone');
 const Teller = artifacts.require('Teller');
 
 const Web3 = require('web3');
+const truffleAssert = require('truffle-assertions');
+const BN = require('bignumber.js');
 
 const expect = require('../utils/chai');
 const TimeTravel = require('../utils/timeTravel');
@@ -30,7 +32,7 @@ const {
   VALID_CG_SHOP_GEOHASH_2, VALID_CG_SHOP_GEOHASH_3, INVALID_CG_SHOP_GEOHASH, NONEXISTING_CG_SHOP_GEOHASH,
   CG_SHOP_LICENSE_PRICE, KLEROS_ARBITRATION_PRICE, ADDRESS_ZERO, KLEROS_DISPUTE_TIMEOUT,
   KLEROS_ARBITRATOR_EXTRADATA, KLEROS_SHOP_WINS, KLEROS_CHALLENGER_WINS, KLEROS_NO_RULING,
-  MIN_ZONE_DTH_STAKE, ONE_WEEK_IN_SEC,
+  MIN_ZONE_DTH_STAKE, ONE_WEEK_IN_SEC, VALID_CG_SHOP_GEOHASH_4, ONE_DAY_IN_SEC
 } = require('../utils/values');
 
 const web3 = new Web3('http://localhost:8545');
@@ -70,8 +72,22 @@ const sendDthShopCreate = async (from, to, recipient, dthAmount, shopData, fnByt
   return tx;
 };
 
+const calcShopTax = async (start, end, licencePrice, taxRates, staked) => {
+  console.log('staked', staked, Number(staked))
+  const tax = new BN(Number(licencePrice)).times(Number(end) - Number(start)).dividedBy(taxRates).dividedBy(86400);
+  const stakedBn = new BN(Number(staked));
+  console.log('tax', tax.toNumber(), 'staked', stakedBn.toNumber(), staked);
+  if (tax.gt(Number(staked))) {
+    console.log('tax gt than staked');
+    return stakedBn;
+  } else {
+    console.log('staked gt than tax');
+    return tax;
+  }
+}
+
 contract('Shops', (accounts) => {
-  let owner, user1, user2, user3, user4; // eslint-disable-line
+  let owner, user1, user2, user3, user4, user5; // eslint-disable-line
 
   let __rootState__; // eslint-disable-line no-underscore-dangle
 
@@ -93,7 +109,7 @@ contract('Shops', (accounts) => {
 
   before(async () => {
     __rootState__ = await timeTravel.saveState();
-    ([owner, user1, user2, user3, user4] = accounts);
+    ([owner, user1, user2, user3, user4, user5] = accounts);
   });
 
   beforeEach(async () => {
@@ -540,7 +556,7 @@ contract('Shops', (accounts) => {
       });
     });
     describe('tax collecting from zone owner', () => {
-      it.only('[succes] -- Zone owner should succeed to collect taxes from shop', async () => {
+      it('[succes] -- Zone owner should succeed to collect taxes from shop', async () => {
         // register zone
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
@@ -599,6 +615,235 @@ contract('Shops', (accounts) => {
         await timeTravel.inSecs(ONE_WEEK_IN_SEC);
         await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
 
+      });
+      it('[success] -- Zone owner should succeed to collect taxes and delete shop, and tax the good amounts', async () => {
+        // register zone
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 });
+        let timeElapsed = 0;
+        const licencePrice = ethToWei(111);
+        // try the shop registration
+        // await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop111111111111'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        await dthInstance.mint(user3, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user3, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_2),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop222222222222'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        await timeTravel.inSecs(ONE_WEEK_IN_SEC * 4);
+        timeElapsed += ONE_WEEK_IN_SEC * 4;
+
+        // change price of the licence
+        await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(222), { from: user2 });
+
+        await dthInstance.mint(user4, ethToWei(22), { from: owner });
+        await sendDthShopCreate(
+          user4, dthInstance.address, shopsInstance.address,
+          222,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_3),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop333333333333'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        await timeTravel.inSecs(ONE_WEEK_IN_SEC / 2);
+        timeElapsed += ONE_WEEK_IN_SEC / 2;
+
+        await dthInstance.mint(user5, ethToWei(222), { from: owner });
+        await sendDthShopCreate(
+          user5, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_4),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop444444444444'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        let listOfShop = await shopsInstance.getShopAddressesInZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+
+        // make a trip to the futur
+        // await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
+        await timeTravel.inSecs(ONE_WEEK_IN_SEC * 4);
+        timeElapsed += ONE_WEEK_IN_SEC * 4;
+
+        const taxRates = Number(await shopsInstance.DAILY_TAX());
+
+        const timeNow = (await web3.eth.getBlock("latest")).timestamp
+        let taxShop1 = await calcShopTax(shop1[8], timeNow, shop1[9], taxRates, shop1[5]);
+        let taxShop3 = await calcShopTax(shop3[8], timeNow, shop3[9], taxRates, shop3[5]);
+        let taxShop4 = await calcShopTax(shop4[8], timeNow, shop4[9], taxRates, shop4[5]);
+        let taxShop5 = await calcShopTax(shop5[8], timeNow, shop5[9], taxRates, shop5[5]);
+
+        const totalTaxShop = new BN(taxShop1).plus(taxShop3).plus(taxShop4).plus(taxShop5);
+// const calcShopTax = async (start, end, licencePrice, taxRates, staked) => {
+
+        // collect taxes
+        const taxSendToOwner = await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
+
+        truffleAssert.eventEmitted(taxSendToOwner, 'TaxTotalPaidTo', (ev) => {
+          const amount = new BN(ev.amount);
+          const dest = ev.address;
+          expect(Number(amount)).equals(Number(totalTaxShop));
+          return true;
+        })
+        // throw 'error to see event';
+      });
+
+     it('[success] -- Zone owner should succeed to collect taxes at different rates', async () => {
+        // register zone
+        await enableAndLoadCountry(COUNTRY_CG);
+        await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
+        let zoneInstance, tellerInstance;
+        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user2, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
+        const tsx = await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(111), { from: user2 });
+        let timeElapsed = 0;
+        const licencePrice = ethToWei(111);
+        // try the shop registration
+        // await smsInstance.certify(user1, { from: owner });
+        await dthInstance.mint(user1, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user1, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop111111111111'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+
+        await dthInstance.mint(user3, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user3, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_2),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop222222222222'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        await timeTravel.inSecs(ONE_WEEK_IN_SEC * 4);
+        timeElapsed += ONE_WEEK_IN_SEC * 4;
+        await dthInstance.mint(user4, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user4, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_3),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop333333333333'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        await timeTravel.inSecs(ONE_WEEK_IN_SEC / 2);
+        timeElapsed += ONE_WEEK_IN_SEC / 2;
+
+        await dthInstance.mint(user5, ethToWei(111), { from: owner });
+        await sendDthShopCreate(
+          user5, dthInstance.address, shopsInstance.address,
+          111,
+          {
+            country: asciiToHex(COUNTRY_CG),
+            position: asciiToHex(VALID_CG_SHOP_GEOHASH_4),
+            category: BYTES16_ZERO,
+            name: asciiToHex('shop444444444444'),
+            description: BYTES32_ZERO,
+            opening: BYTES16_ZERO,
+          },
+        );
+        let listOfShop = await shopsInstance.getShopAddressesInZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+
+        // make a trip to the futur
+        // await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
+        await timeTravel.inSecs(ONE_WEEK_IN_SEC * 4);
+        timeElapsed += ONE_WEEK_IN_SEC * 4;
+
+        const taxRates = Number(await shopsInstance.DAILY_TAX());
+
+        const timeNow = (await web3.eth.getBlock("latest")).timestamp
+        const shop1 = await shopsInstance.getShopByAddr(user1);
+        let taxShop1 = await calcShopTax(shop1[8], timeNow, shop1[9], taxRates, shop1[5]);
+        const shop3 = await shopsInstance.getShopByAddr(user3);
+        let taxShop3 = await calcShopTax(shop3[8], timeNow, shop3[9], taxRates, shop3[5]);
+
+        const shop4 = await shopsInstance.getShopByAddr(user4);
+        let taxShop4 = await calcShopTax(shop4[8], timeNow, shop4[9], taxRates, shop4[5]);
+
+        const shop5 = await shopsInstance.getShopByAddr(user5);
+        let taxShop5 = await calcShopTax(shop5[8], timeNow, shop5[9], taxRates, shop5[5]);
+
+        const totalTaxShop = new BN(taxShop1).plus(taxShop3).plus(taxShop4).plus(taxShop5);
+// const calcShopTax = async (start, end, licencePrice, taxRates, staked) => {
+
+        // collect taxes
+        const taxSendToOwner = await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
+
+        truffleAssert.eventEmitted(taxSendToOwner, 'TaxTotalPaidTo', (ev) => {
+          const amount = new BN(ev.amount);
+          const dest = ev.address;
+          expect(Number(amount)).equals(Number(totalTaxShop));
+          return true;
+        })
+
+        // how much should zone owner should have be paid
+
+        // throw 'error to see event';
+      });
+
+      it('[success] -- shop when delete should pay taxes before withdraw the remaining', async () => {
+        
+      });
+      it('[error] -- only zone owner should be able to collect taxes', async () => {
+        
+      });
+      it('[error] -- only zone owner should be able to collect taxes', async () => {
+        
+      });
+      it('[error] -- impossibe to set the taxes at zero it should be at least 1 WEI of DTH', async () => {
+        
+      });
+      it('[success] -- total DTH balance should be up to date', async () => {
+        
+      });
+      it('[success] -- should success to top up', async () => {
+        
       });
     });
     describe('removeShop(bytes12 _position)', () => {

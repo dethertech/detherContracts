@@ -16,6 +16,7 @@ const NONEXISTING_CG_ZONE_GEOHASH = 'krcats'; // krca, a is not a valid geohash 
 const VALID_CG_SHOP_GEOHASH = 'krcztseeeeee'; // krcz is in CG
 const VALID_CG_SHOP_GEOHASH_2 = 'krcztseeceee'; // krcy is alo in CG
 const VALID_CG_SHOP_GEOHASH_3 = 'krcztseedeee'; // krcy is alo in CG
+const VALID_CG_SHOP_GEOHASH_4 = 'krcztseefeee';
 const INVALID_CG_SHOP_GEOHASH = 'krcatseeeeee'; // krca, a is not a valid geohash char
 const NONEXISTING_CG_SHOP_GEOHASH = 'krcttseeeeee'; // krct is not in CG
 
@@ -64,6 +65,7 @@ module.exports = {
   VALID_CG_SHOP_GEOHASH,
   VALID_CG_SHOP_GEOHASH_2,
   VALID_CG_SHOP_GEOHASH_3,
+  VALID_CG_SHOP_GEOHASH_4,
   INVALID_CG_SHOP_GEOHASH,
   NONEXISTING_CG_SHOP_GEOHASH,
 

@@ -67,7 +67,7 @@ contract Shops {
   address public shopsDispute;
 
   // constant
-  uint private constant DAILY_TAX= 42; // 1/42 daily
+  uint public constant DAILY_TAX= 42; // 1/42 daily
   uint public floorLicencePrice = 42000000000000000000;
 
   //      countryCode priceDTH
@@ -101,6 +101,8 @@ contract Shops {
   event logShopData(bytes16 _name, uint _staked, uint _licencePrice, uint _lastTaxTime);
   event logUint(uint _uint, string _log);
   event logString(string _string);
+  event TaxPayedToBy(uint amount, address to, address by);
+  event TaxTotalPaidTo(uint amount, address to);
   // ------------------------------------------------
   //
   // Modifiers
@@ -186,7 +188,7 @@ contract Shops {
   function getShopByAddr(address _addr)
     public
     view
-    returns (bytes12, bytes16, bytes16, bytes32, bytes16, uint, bool, uint)
+    returns (bytes12, bytes16, bytes16, bytes32, bytes16, uint, bool, uint, uint, uint)
   {
     Shop memory shop = shopAddressToShop[_addr];
 
@@ -198,14 +200,16 @@ contract Shops {
       shop.opening,
       shop.staked,
       shop.hasDispute,
-      shop.disputeID
+      shop.disputeID,
+      shop.lastTaxTime,
+      shop.licencePrice
     );
   }
 
   function getShopByPos(bytes12 _position)
     external
     view
-    returns (bytes12, bytes16, bytes16, bytes32, bytes16, uint, bool, uint)
+    returns (bytes12, bytes16, bytes16, bytes32, bytes16, uint, bool, uint, uint, uint)
   {
     address shopAddr = positionToShopAddress[_position];
     return getShopByAddr(shopAddr);
@@ -402,7 +406,7 @@ contract Shops {
 
       uint taxAmount = calcShopTax(shopAddressToShop[shopsinZone[i]].lastTaxTime, now, shopAddressToShop[shopsinZone[i]].licencePrice);
       emit logUint(taxAmount, 'tax amount for the shop');
-            emit logUint(shopAddressToShop[shopsinZone[i]].staked, 'old staked amount for the shop');
+      emit logUint(shopAddressToShop[shopsinZone[i]].staked, 'old staked amount for the shop');
       if (taxAmount > shopAddressToShop[shopsinZone[i]].staked) {
         // shop pay what he can and is deleted
         taxToSendToZoneOwner = taxToSendToZoneOwner.add(shopAddressToShop[shopsinZone[i]].staked);
@@ -419,6 +423,7 @@ contract Shops {
     emit logUint(taxToSendToZoneOwner, 'tax to send zone owner');
     dth.transfer(zoneOwner, taxToSendToZoneOwner);
     stakedDth = stakedDth.sub(taxToSendToZoneOwner);
+    emit TaxTotalPaidTo(taxToSendToZoneOwner, zoneOwner);
   }
 
 
