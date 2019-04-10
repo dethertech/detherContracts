@@ -47,32 +47,6 @@ const factory = (noncestart, noncetsx, country) => {
       console.log('err', e);
     }
 
-  //   dether.openZoneShop(`0x${toNBytes(country,2)}` ,{
-  //     from: cmo,
-  //     nonce: noncetsx,
-  //     gasPrice: 40000000000
-  //   }
-  // , (err, res) => {
-  //   if(!err)
-  //     console.log('tsx ', noncetsx - noncestart, res.hash);
-  //   else
-  //     console.log('err tsx', cso,noncetsx - noncestart, shop.address, err, shopToContractBulk(shop))
-  // }).catch((e) => {console.log('err', e)});
-    // web3.eth.sendTransaction({
-    //   from: cso,
-    //   // to: dth.address,
-    //   to: '0xC5F8a06ed1CfB17d0366eF03FEDF37568B0ce246',
-    //   value: 100000,
-    //   gas: 2000000,
-    //   gasPrice:40000000000,
-    //   nonce: noncetsx
-    // }, (err, res) => {
-    //   if(!err)
-    //     console.log('tsx ', noncetsx - noncestart, res.hash);
-    //   else
-    //     console.log('err tsx', cso,noncetsx - noncestart, shop.address, err, shopToContractBulk(shop))
-    // });
-
   }, (noncetsx - noncestart)  * 1500);
 };
 

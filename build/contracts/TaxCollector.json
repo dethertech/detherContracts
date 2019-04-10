@@ -1,0 +1,1592 @@
+{
+  "contractName": "TaxCollector",
+  "abi": [
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "taxBalances",
+      "outputs": [
+        {
+          "name": "balance",
+          "type": "uint256"
+        },
+        {
+          "name": "lastCollectedAt",
+          "type": "uint256"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "taxRecipient",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "taxNumerator",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [],
+      "name": "taxDenominator",
+      "outputs": [
+        {
+          "name": "",
+          "type": "uint32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "name": "_taxRecipient",
+          "type": "address"
+        },
+        {
+          "name": "_taxNumerator",
+          "type": "uint32"
+        },
+        {
+          "name": "_taxDenominator",
+          "type": "uint32"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "assetId",
+          "type": "bytes32"
+        }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "assetId",
+          "type": "bytes32"
+        },
+        {
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "withdraw",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "pragma solidity ^0.5.5;\n\n\n// https://dzone.com/articles/harberger-taxes-on-ethereum\ncontract TaxCollector {\n    struct TaxBalance { // Prepaid asset tax information\n      uint balance; // Amount in ether\n      uint lastCollectedAt; // Timestamp of last collection date\n    }\n    mapping(bytes32 => TaxBalance) public taxBalances;\n    // Address where collected taxes are sent to\n    address public taxRecipient;\n    // Daily tax rate (there are no floats in solidity)\n    uint32 public taxNumerator;\n    uint32 public taxDenominator;\n    constructor(\n        address _taxRecipient,\n        uint32 _taxNumerator,\n        uint32 _taxDenominator\n    ) public {\n        taxRecipient = _taxRecipient;\n        taxNumerator = _taxNumerator;\n        taxDenominator = _taxDenominator;\n    }\n\n// Asset owners calls this with Ether to deposit tax payments for a particular asset\nfunction deposit(bytes32 assetId) public payable {\n    taxBalances[assetId].balance += msg.value;\n}\n// Withdraw tax payments, omitted for simplicity\nfunction withdraw(bytes32 assetId, uint256 amount) public;\n}",
+  "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/map/TaxCollector.sol",
+  "ast": {
+    "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/map/TaxCollector.sol",
+    "exportedSymbols": {
+      "TaxCollector": [
+        8587
+      ]
+    },
+    "id": 8588,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 8528,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".5"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:34"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 8587,
+        "linearizedBaseContracts": [
+          8587
+        ],
+        "name": "TaxCollector",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "TaxCollector.TaxBalance",
+            "id": 8533,
+            "members": [
+              {
+                "constant": false,
+                "id": 8530,
+                "name": "balance",
+                "nodeType": "VariableDeclaration",
+                "scope": 8533,
+                "src": "171:12:34",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 8529,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "171:4:34",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 8532,
+                "name": "lastCollectedAt",
+                "nodeType": "VariableDeclaration",
+                "scope": 8533,
+                "src": "210:20:34",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 8531,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "210:4:34",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "TaxBalance",
+            "nodeType": "StructDefinition",
+            "scope": 8587,
+            "src": "112:162:34",
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8537,
+            "name": "taxBalances",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "279:49:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_mapping$_t_bytes32_$_t_struct$_TaxBalance_$8533_storage_$",
+              "typeString": "mapping(bytes32 => struct TaxCollector.TaxBalance)"
+            },
+            "typeName": {
+              "id": 8536,
+              "keyType": {
+                "id": 8534,
+                "name": "bytes32",
+                "nodeType": "ElementaryTypeName",
+                "src": "287:7:34",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                }
+              },
+              "nodeType": "Mapping",
+              "src": "279:30:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_mapping$_t_bytes32_$_t_struct$_TaxBalance_$8533_storage_$",
+                "typeString": "mapping(bytes32 => struct TaxCollector.TaxBalance)"
+              },
+              "valueType": {
+                "contractScope": null,
+                "id": 8535,
+                "name": "TaxBalance",
+                "nodeType": "UserDefinedTypeName",
+                "referencedDeclaration": 8533,
+                "src": "298:10:34",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_struct$_TaxBalance_$8533_storage_ptr",
+                  "typeString": "struct TaxCollector.TaxBalance"
+                }
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8539,
+            "name": "taxRecipient",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "383:27:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 8538,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "383:7:34",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8541,
+            "name": "taxNumerator",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "472:26:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint32",
+              "typeString": "uint32"
+            },
+            "typeName": {
+              "id": 8540,
+              "name": "uint32",
+              "nodeType": "ElementaryTypeName",
+              "src": "472:6:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint32",
+                "typeString": "uint32"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8543,
+            "name": "taxDenominator",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "504:28:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint32",
+              "typeString": "uint32"
+            },
+            "typeName": {
+              "id": 8542,
+              "name": "uint32",
+              "nodeType": "ElementaryTypeName",
+              "src": "504:6:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint32",
+                "typeString": "uint32"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 8564,
+              "nodeType": "Block",
+              "src": "656:125:34",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8554,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 8552,
+                      "name": "taxRecipient",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8539,
+                      "src": "666:12:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 8553,
+                      "name": "_taxRecipient",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8545,
+                      "src": "681:13:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "src": "666:28:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 8555,
+                  "nodeType": "ExpressionStatement",
+                  "src": "666:28:34"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8558,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 8556,
+                      "name": "taxNumerator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8541,
+                      "src": "704:12:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 8557,
+                      "name": "_taxNumerator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8547,
+                      "src": "719:13:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "src": "704:28:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "id": 8559,
+                  "nodeType": "ExpressionStatement",
+                  "src": "704:28:34"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8562,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 8560,
+                      "name": "taxDenominator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8543,
+                      "src": "742:14:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 8561,
+                      "name": "_taxDenominator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8549,
+                      "src": "759:15:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "src": "742:32:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "id": 8563,
+                  "nodeType": "ExpressionStatement",
+                  "src": "742:32:34"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 8565,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8550,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8545,
+                  "name": "_taxRecipient",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8565,
+                  "src": "559:21:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8544,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "559:7:34",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8547,
+                  "name": "_taxNumerator",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8565,
+                  "src": "590:20:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint32",
+                    "typeString": "uint32"
+                  },
+                  "typeName": {
+                    "id": 8546,
+                    "name": "uint32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "590:6:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8549,
+                  "name": "_taxDenominator",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8565,
+                  "src": "620:22:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint32",
+                    "typeString": "uint32"
+                  },
+                  "typeName": {
+                    "id": 8548,
+                    "name": "uint32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "620:6:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "549:99:34"
+            },
+            "returnParameters": {
+              "id": 8551,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "656:0:34"
+            },
+            "scope": 8587,
+            "src": "538:243:34",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 8578,
+              "nodeType": "Block",
+              "src": "917:50:34",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8576,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "expression": {
+                        "argumentTypes": null,
+                        "baseExpression": {
+                          "argumentTypes": null,
+                          "id": 8570,
+                          "name": "taxBalances",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 8537,
+                          "src": "923:11:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_mapping$_t_bytes32_$_t_struct$_TaxBalance_$8533_storage_$",
+                            "typeString": "mapping(bytes32 => struct TaxCollector.TaxBalance storage ref)"
+                          }
+                        },
+                        "id": 8572,
+                        "indexExpression": {
+                          "argumentTypes": null,
+                          "id": 8571,
+                          "name": "assetId",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 8567,
+                          "src": "935:7:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_bytes32",
+                            "typeString": "bytes32"
+                          }
+                        },
+                        "isConstant": false,
+                        "isLValue": true,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "nodeType": "IndexAccess",
+                        "src": "923:20:34",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_TaxBalance_$8533_storage",
+                          "typeString": "struct TaxCollector.TaxBalance storage ref"
+                        }
+                      },
+                      "id": 8573,
+                      "isConstant": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "memberName": "balance",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 8530,
+                      "src": "923:28:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "+=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "expression": {
+                        "argumentTypes": null,
+                        "id": 8574,
+                        "name": "msg",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 12225,
+                        "src": "955:3:34",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_magic_message",
+                          "typeString": "msg"
+                        }
+                      },
+                      "id": 8575,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "value",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": null,
+                      "src": "955:9:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "src": "923:41:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 8577,
+                  "nodeType": "ExpressionStatement",
+                  "src": "923:41:34"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 8579,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "deposit",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8568,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8567,
+                  "name": "assetId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8579,
+                  "src": "885:15:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 8566,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "885:7:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "884:17:34"
+            },
+            "returnParameters": {
+              "id": 8569,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "917:0:34"
+            },
+            "scope": 8587,
+            "src": "868:99:34",
+            "stateMutability": "payable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 8586,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "withdraw",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8584,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8581,
+                  "name": "assetId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8586,
+                  "src": "1035:15:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 8580,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1035:7:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8583,
+                  "name": "amount",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8586,
+                  "src": "1052:14:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8582,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1052:7:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1034:33:34"
+            },
+            "returnParameters": {
+              "id": 8585,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1074:0:34"
+            },
+            "scope": 8587,
+            "src": "1017:58:34",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 8588,
+        "src": "84:993:34"
+      }
+    ],
+    "src": "0:1077:34"
+  },
+  "legacyAST": {
+    "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/map/TaxCollector.sol",
+    "exportedSymbols": {
+      "TaxCollector": [
+        8587
+      ]
+    },
+    "id": 8588,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 8528,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".5"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:23:34"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 8587,
+        "linearizedBaseContracts": [
+          8587
+        ],
+        "name": "TaxCollector",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "TaxCollector.TaxBalance",
+            "id": 8533,
+            "members": [
+              {
+                "constant": false,
+                "id": 8530,
+                "name": "balance",
+                "nodeType": "VariableDeclaration",
+                "scope": 8533,
+                "src": "171:12:34",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 8529,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "171:4:34",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 8532,
+                "name": "lastCollectedAt",
+                "nodeType": "VariableDeclaration",
+                "scope": 8533,
+                "src": "210:20:34",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 8531,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "210:4:34",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "TaxBalance",
+            "nodeType": "StructDefinition",
+            "scope": 8587,
+            "src": "112:162:34",
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8537,
+            "name": "taxBalances",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "279:49:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_mapping$_t_bytes32_$_t_struct$_TaxBalance_$8533_storage_$",
+              "typeString": "mapping(bytes32 => struct TaxCollector.TaxBalance)"
+            },
+            "typeName": {
+              "id": 8536,
+              "keyType": {
+                "id": 8534,
+                "name": "bytes32",
+                "nodeType": "ElementaryTypeName",
+                "src": "287:7:34",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bytes32",
+                  "typeString": "bytes32"
+                }
+              },
+              "nodeType": "Mapping",
+              "src": "279:30:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_mapping$_t_bytes32_$_t_struct$_TaxBalance_$8533_storage_$",
+                "typeString": "mapping(bytes32 => struct TaxCollector.TaxBalance)"
+              },
+              "valueType": {
+                "contractScope": null,
+                "id": 8535,
+                "name": "TaxBalance",
+                "nodeType": "UserDefinedTypeName",
+                "referencedDeclaration": 8533,
+                "src": "298:10:34",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_struct$_TaxBalance_$8533_storage_ptr",
+                  "typeString": "struct TaxCollector.TaxBalance"
+                }
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8539,
+            "name": "taxRecipient",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "383:27:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 8538,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "383:7:34",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8541,
+            "name": "taxNumerator",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "472:26:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint32",
+              "typeString": "uint32"
+            },
+            "typeName": {
+              "id": 8540,
+              "name": "uint32",
+              "nodeType": "ElementaryTypeName",
+              "src": "472:6:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint32",
+                "typeString": "uint32"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "constant": false,
+            "id": 8543,
+            "name": "taxDenominator",
+            "nodeType": "VariableDeclaration",
+            "scope": 8587,
+            "src": "504:28:34",
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint32",
+              "typeString": "uint32"
+            },
+            "typeName": {
+              "id": 8542,
+              "name": "uint32",
+              "nodeType": "ElementaryTypeName",
+              "src": "504:6:34",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint32",
+                "typeString": "uint32"
+              }
+            },
+            "value": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 8564,
+              "nodeType": "Block",
+              "src": "656:125:34",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8554,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 8552,
+                      "name": "taxRecipient",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8539,
+                      "src": "666:12:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 8553,
+                      "name": "_taxRecipient",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8545,
+                      "src": "681:13:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "src": "666:28:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 8555,
+                  "nodeType": "ExpressionStatement",
+                  "src": "666:28:34"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8558,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 8556,
+                      "name": "taxNumerator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8541,
+                      "src": "704:12:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 8557,
+                      "name": "_taxNumerator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8547,
+                      "src": "719:13:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "src": "704:28:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "id": 8559,
+                  "nodeType": "ExpressionStatement",
+                  "src": "704:28:34"
+                },
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8562,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "id": 8560,
+                      "name": "taxDenominator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8543,
+                      "src": "742:14:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "id": 8561,
+                      "name": "_taxDenominator",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 8549,
+                      "src": "759:15:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint32",
+                        "typeString": "uint32"
+                      }
+                    },
+                    "src": "742:32:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "id": 8563,
+                  "nodeType": "ExpressionStatement",
+                  "src": "742:32:34"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 8565,
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8550,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8545,
+                  "name": "_taxRecipient",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8565,
+                  "src": "559:21:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 8544,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "559:7:34",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8547,
+                  "name": "_taxNumerator",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8565,
+                  "src": "590:20:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint32",
+                    "typeString": "uint32"
+                  },
+                  "typeName": {
+                    "id": 8546,
+                    "name": "uint32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "590:6:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8549,
+                  "name": "_taxDenominator",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8565,
+                  "src": "620:22:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint32",
+                    "typeString": "uint32"
+                  },
+                  "typeName": {
+                    "id": 8548,
+                    "name": "uint32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "620:6:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint32",
+                      "typeString": "uint32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "549:99:34"
+            },
+            "returnParameters": {
+              "id": 8551,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "656:0:34"
+            },
+            "scope": 8587,
+            "src": "538:243:34",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": {
+              "id": 8578,
+              "nodeType": "Block",
+              "src": "917:50:34",
+              "statements": [
+                {
+                  "expression": {
+                    "argumentTypes": null,
+                    "id": 8576,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "argumentTypes": null,
+                      "expression": {
+                        "argumentTypes": null,
+                        "baseExpression": {
+                          "argumentTypes": null,
+                          "id": 8570,
+                          "name": "taxBalances",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 8537,
+                          "src": "923:11:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_mapping$_t_bytes32_$_t_struct$_TaxBalance_$8533_storage_$",
+                            "typeString": "mapping(bytes32 => struct TaxCollector.TaxBalance storage ref)"
+                          }
+                        },
+                        "id": 8572,
+                        "indexExpression": {
+                          "argumentTypes": null,
+                          "id": 8571,
+                          "name": "assetId",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 8567,
+                          "src": "935:7:34",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_bytes32",
+                            "typeString": "bytes32"
+                          }
+                        },
+                        "isConstant": false,
+                        "isLValue": true,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "nodeType": "IndexAccess",
+                        "src": "923:20:34",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_TaxBalance_$8533_storage",
+                          "typeString": "struct TaxCollector.TaxBalance storage ref"
+                        }
+                      },
+                      "id": 8573,
+                      "isConstant": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "memberName": "balance",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 8530,
+                      "src": "923:28:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "+=",
+                    "rightHandSide": {
+                      "argumentTypes": null,
+                      "expression": {
+                        "argumentTypes": null,
+                        "id": 8574,
+                        "name": "msg",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 12225,
+                        "src": "955:3:34",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_magic_message",
+                          "typeString": "msg"
+                        }
+                      },
+                      "id": 8575,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "value",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": null,
+                      "src": "955:9:34",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "src": "923:41:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 8577,
+                  "nodeType": "ExpressionStatement",
+                  "src": "923:41:34"
+                }
+              ]
+            },
+            "documentation": null,
+            "id": 8579,
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "deposit",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8568,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8567,
+                  "name": "assetId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8579,
+                  "src": "885:15:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 8566,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "885:7:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "884:17:34"
+            },
+            "returnParameters": {
+              "id": 8569,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "917:0:34"
+            },
+            "scope": 8587,
+            "src": "868:99:34",
+            "stateMutability": "payable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 8586,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "withdraw",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 8584,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 8581,
+                  "name": "assetId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8586,
+                  "src": "1035:15:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes32",
+                    "typeString": "bytes32"
+                  },
+                  "typeName": {
+                    "id": 8580,
+                    "name": "bytes32",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1035:7:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 8583,
+                  "name": "amount",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 8586,
+                  "src": "1052:14:34",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 8582,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1052:7:34",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1034:33:34"
+            },
+            "returnParameters": {
+              "id": 8585,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1074:0:34"
+            },
+            "scope": 8587,
+            "src": "1017:58:34",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 8588,
+        "src": "84:993:34"
+      }
+    ],
+    "src": "0:1077:34"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.5+commit.47a71e8f.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.0.3",
+  "updatedAt": "2019-04-08T16:06:18.715Z",
+  "devdoc": {
+    "methods": {}
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}
