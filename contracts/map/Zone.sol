@@ -204,6 +204,7 @@ contract Zone is IERC223ReceivingContract {
     zoneOwner.auctionId = 0; // was not gained by winning an auction
 
     inited = true;
+    currentAuctionId = 0;
   }
 
   function connectToTellerContract(address _teller)
@@ -493,7 +494,7 @@ contract Zone is IERC223ReceivingContract {
     uint currentHighestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
 
     if (_sender == zoneOwner.addr) {
-      uint dthAddedBidsAmount = auctionBids[currentAuctionId][_sender].add(_dthAmount); // NOTE: _dthAmount
+      uint dthAddedBidsAmount = auctionBids[currentAuctionId][_sender].add(_dthAmount); 
       // the current zone owner's stake also counts in his bid
       require(zoneOwner.staked.add(dthAddedBidsAmount) > currentHighestBid, "bid + already staked is less than current highest");
       auctionBids[currentAuctionId][_sender] = dthAddedBidsAmount;

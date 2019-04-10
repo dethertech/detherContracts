@@ -56,9 +56,7 @@ const addCountry = async (from, web3, geoRegistryContract, countryCode, batchSiz
     });
     return memo;
   }, {});
-
   const keys = Object.keys(countryMap);
-
   let countryGasCost = 0;
   let txCount = 0;
   let mostExpensiveTrxGasCost = 0;
@@ -74,7 +72,7 @@ const addCountry = async (from, web3, geoRegistryContract, countryCode, batchSiz
     countryGasCost += gasCost;
     txCount += 1;
   }
-
+  await geoRegistryContract.endInit(web3.utils.asciiToHex(countryCode));
   return { countryGasCost, mostExpensiveTrxGasCost, txCount, countryMap };
 };
 

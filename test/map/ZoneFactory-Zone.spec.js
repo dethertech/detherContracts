@@ -42,6 +42,8 @@ const createDthZoneCreateData = (zoneFactoryAddr, bid, countryCode, geohash) => 
     ['address', 'uint256', 'bytes'],
     [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}01`],
   );
+  console.log('create zone data', `0x40${countryCode.slice(2)}${geohash.slice(2)}01`)
+
   return [fnSig, params.slice(2)].join('');
 };
 const createDthZoneCreateDataWithTier = (zoneFactoryAddr, bid, countryCode, geohash, tier) => {
@@ -50,6 +52,7 @@ const createDthZoneCreateDataWithTier = (zoneFactoryAddr, bid, countryCode, geoh
     ['address', 'uint256', 'bytes'],
     [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}${tier}`],
   );
+  console.log('create zone data with tier', `0x40${countryCode.slice(2)}${geohash.slice(2)}${tier}`)
   return [fnSig, params.slice(2)].join('');
 };
 const createDthZoneClaimFreeData = (zoneFactoryAddr, dthAmount) => {
@@ -254,7 +257,8 @@ contract('ZoneFactory + Zone', (accounts) => {
 
   const enableAndLoadCountry = async (countryCode) => {
     await addCountry(owner, web3, geoInstance, countryCode, 300);
-    await geoInstance.enableCountry(asciiToHex(countryCode), { from: owner });
+    const tx = await geoInstance.enableCountry(asciiToHex(countryCode), { from: owner });
+    console.log('enable country open', tx, countryCode);
   };
 
   describe('>>> deploying a Zone', () => {
