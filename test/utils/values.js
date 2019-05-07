@@ -16,7 +16,7 @@ const NONEXISTING_CG_ZONE_GEOHASH = 'krcats'; // krca, a is not a valid geohash 
 const VALID_CG_SHOP_GEOHASH = 'krcztseeeeee'; // krcz is in CG
 const VALID_CG_SHOP_GEOHASH_2 = 'krcztseeceee'; // krcy is alo in CG
 const VALID_CG_SHOP_GEOHASH_3 = 'krcztseedeee'; // krcy is alo in CG
-const VALID_CG_SHOP_GEOHASH_4 = 'krcztseefeee';
+const VALID_CG_SHOP_GEOHASH_4 = 'krcztseedeet';
 const INVALID_CG_SHOP_GEOHASH = 'krcatseeeeee'; // krca, a is not a valid geohash char
 const NONEXISTING_CG_SHOP_GEOHASH = 'krcttseeeeee'; // krct is not in CG
 
@@ -44,6 +44,7 @@ const TELLER_CG_MESSENGER = 'my_telegram_nick';
 const TELLER_CG_SELLRATE = '177'; // 1.77%
 const TELLER_CG_BUYRATE = '1364'; // 13.64%
 const TELLER_CG_SETTINGS = '0x03'; // 0000 0011 <-- both buyer and seller bit set
+const TELLER_CG_REFFEE = 21;
 
 const ONE_WEEK_IN_SEC = 604800;
 
@@ -93,6 +94,7 @@ module.exports = {
   TELLER_CG_SELLRATE,
   TELLER_CG_BUYRATE,
   TELLER_CG_SETTINGS,
+  TELLER_CG_REFFEE,
 
   ONE_WEEK_IN_SEC,
 

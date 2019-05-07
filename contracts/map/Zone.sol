@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -65,8 +65,8 @@ contract Zone is IERC223ReceivingContract {
   uint private constant BID_PERIOD = 24 * 1 hours;
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
   uint private constant ENTRY_FEE_PERCENTAGE = 1; // 1%
-  uint private constant TAX_PERCENTAGE = 1; // 1% daily
-  uint private constant REFERRER_FEE_PERCENTAGE = 1; // 0.1%
+  uint private constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
+  // uint private constant REFERRER_FEE_PERCENTAGE = 1; // 0.1%
   address private constant ADDRESS_BURN = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
   ZoneOwner private zoneOwner;
@@ -87,6 +87,7 @@ contract Zone is IERC223ReceivingContract {
   IControl public control;
   IZoneFactory public zoneFactory;
   ITeller public teller;
+  address public taxCollector;
 
   bytes2 public country;
   bytes6 public geohash;
@@ -181,7 +182,8 @@ contract Zone is IERC223ReceivingContract {
     address _dth,
     address _geo,
     address _control,
-    address _zoneFactory
+    address _zoneFactory,
+    address _taxCollector
   )
     onlyWhenNotInited
     external
@@ -195,6 +197,7 @@ contract Zone is IERC223ReceivingContract {
     geo = IGeoRegistry(_geo);
     control = IControl(_control);
     zoneFactory = IZoneFactory(_zoneFactory);
+    taxCollector = _taxCollector;
 
     zoneOwner.addr = _zoneOwner;
     zoneOwner.startTime = now;
@@ -245,7 +248,7 @@ contract Zone is IERC223ReceivingContract {
   {
     // TODO use smaller uint variables, hereby preventing under/overflows, so no need for SafeMath
     // source: https://programtheblockchain.com/posts/2018/09/19/implementing-harberger-tax-deeds/
-    taxAmount = _dthAmount.mul(_endTime.sub(_startTime)).mul(TAX_PERCENTAGE).div(100).div(1 days);
+    taxAmount = _dthAmount.mul(_endTime.sub(_startTime)).mul(TAX_PERCENTAGE).div(10000).div(1 days);
     keepAmount = _dthAmount.sub(taxAmount);
   }
 
@@ -416,12 +419,12 @@ contract Zone is IERC223ReceivingContract {
       // zone owner does not have enough balance, remove him as zone owner
       uint oldZoneOwnerBalance = zoneOwner.balance;
       _removeZoneOwner();
-      dth.transfer(ADDRESS_BURN, oldZoneOwnerBalance);
+      dth.transfer(taxCollector, oldZoneOwnerBalance);
     } else {
       // zone owner can pay due taxes
       zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
       zoneOwner.lastTaxTime = now;
-      dth.transfer(ADDRESS_BURN, taxAmount);
+      dth.transfer(taxCollector, taxAmount);
     }
   }
 
@@ -505,7 +508,7 @@ contract Zone is IERC223ReceivingContract {
         (uint burnAmount, uint bidAmount) = calcEntryFee(_dthAmount);
         require(bidAmount > currentHighestBid, "bid is less than current highest");
         auctionBids[currentAuctionId][_sender] = bidAmount;
-        dth.transfer(ADDRESS_BURN, burnAmount);
+        dth.transfer(taxCollector, burnAmount);
       } else {
         // not the first bid, no entry fee
         uint newUserTotalBid = auctionBids[currentAuctionId][_sender].add(_dthAmount);
@@ -538,7 +541,7 @@ contract Zone is IERC223ReceivingContract {
 
     auctionBids[newAuctionId][_sender] = bidAmount;
 
-    dth.transfer(ADDRESS_BURN, burnAmount);
+    dth.transfer(taxCollector, burnAmount);
   }
 
   /// @notice private function to update the current auction state

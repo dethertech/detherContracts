@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -32,6 +32,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
   address public zoneImplementation;
   address public tellerImplementation;
+  address public taxCollector;
   
 
   // ------------------------------------------------
@@ -48,7 +49,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   //
   // ------------------------------------------------
 
-  constructor(address _dth, address _geo, address _users, address _control, address _zoneImplementation, address _tellerImplementation)
+  constructor(address _dth, address _geo, address _users, address _control, address _zoneImplementation, address _tellerImplementation, address _taxCollector)
     public
   {
     require(_dth != address(0), "dth address cannot be 0x0");
@@ -65,6 +66,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
     zoneImplementation = _zoneImplementation;
     tellerImplementation = _tellerImplementation;
+    taxCollector = _taxCollector;
   }
 
   // ------------------------------------------------
@@ -223,7 +225,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
     IZone(newZoneAddress).init(
       country, geohash, sender, dthAmount,
-      address(dth), address(geo), address(control), address(this)
+      address(dth), address(geo), address(control), address(this), taxCollector
     );
     ITeller(newTellerAddress).init(address(geo), address(control), newZoneAddress);
     IZone(newZoneAddress).connectToTellerContract(newTellerAddress);

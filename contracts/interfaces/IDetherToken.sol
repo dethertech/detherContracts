@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 
 contract IDetherToken {
     function mintingFinished() view public returns(bool);

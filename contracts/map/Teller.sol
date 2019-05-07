@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
@@ -33,6 +33,7 @@ contract Teller {
     int16 buyRate;     // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     int16 sellRate;    // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     address referrer;
+    uint refFee; // 1 = 0.1%
   }
 
   // ------------------------------------------------
@@ -179,10 +180,11 @@ contract Teller {
   }
 
   function calcReferrerFee(uint _value)
-    public pure
+    public view
     returns (uint referrerAmount)
   {
-    referrerAmount = _value.div(1000).mul(REFERRER_FEE_PERCENTAGE); // 0.1%
+    // referrerAmount = _value.div(1000).mul(REFERRER_FEE_PERCENTAGE); // 0.1%
+    referrerAmount = _value.div(1000).mul(teller.refFee);
   }
 
   function getTeller()
@@ -317,7 +319,8 @@ contract Teller {
     int16 _sellRate,
     int16 _buyRate,
     bytes1 _settings,
-    address _referrer
+    address _referrer,
+    uint _refFee
   )
     external
     onlyWhenInited
@@ -353,6 +356,7 @@ contract Teller {
     teller.position = toBytes12(_position, 0);
     teller.settings = _settings;
     teller.referrer = _referrer;
+    teller.refFee = _refFee >= 0 ? _refFee : 0;
   }
 
   // called by Teller, adding ETH to Teller funds

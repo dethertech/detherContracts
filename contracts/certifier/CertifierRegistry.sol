@@ -1,5 +1,5 @@
 
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 pragma experimental ABIEncoderV2;
 
 // TO DO
@@ -70,18 +70,18 @@ contract CertifierRegistry {
 	//
 	// ------------------------------------------------
 
-    function createCertifier(string memory _url) public returns (address certifiedId) {
-			// create new certifier and register it
-			certifiedId = msg.sender;
-			certifier[certifiedId].owner = msg.sender;
-      certifier[certifiedId].url = _url;
-    }
-    function modifyUrl(address _certifierId, string memory _newUrl) public only_certification_owner(_certifierId, msg.sender) {
-        certifier[msg.sender].url = _newUrl;
-    }
-    function addCertificationType(address _certifierId, int8 ref, string memory description) public only_certification_owner(_certifierId, msg.sender) {
-        certifier[msg.sender].certificationType[ref] = description;
-    }
+	function createCertifier(string memory _url) public returns (address certifiedId) {
+		// create new certifier and register it
+		certifiedId = msg.sender;
+		certifier[certifiedId].owner = msg.sender;
+		certifier[certifiedId].url = _url;
+	}
+	function modifyUrl(address _certifierId, string memory _newUrl) public only_certification_owner(_certifierId, msg.sender) {
+			certifier[msg.sender].url = _newUrl;
+	}
+	function addCertificationType(address _certifierId, int8 ref, string memory description) public only_certification_owner(_certifierId, msg.sender) {
+			certifier[msg.sender].certificationType[ref] = description;
+	}
 
 	function addDelegate(address _certifierId, address _delegate) public only_certification_owner(_certifierId, msg.sender)
 	{

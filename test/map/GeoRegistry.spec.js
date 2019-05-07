@@ -274,7 +274,7 @@ contract('GeoRegistry', () => {
 
   beforeEach(async () => {
     controlInstance = await Control.new({ from: owner });
-    geoRegistryContract = await GeoRegistry.new(controlInstance.address, { from: owner });
+    geoRegistryContract = await GeoRegistry.new({ from: owner });
   });
 
   const results = [];
@@ -345,7 +345,6 @@ contract('GeoRegistry', () => {
     const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
     await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
     const countryCodeBytes = web3.utils.asciiToHex(countryCode);
-    await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE); // possible to add more geohash in an not filled country
 
     await geoRegistryContract.endInit(countryCodeBytes);
 
@@ -359,6 +358,5 @@ contract('GeoRegistry', () => {
     }
     throw 'should have thrown';
   });
-
 
 });

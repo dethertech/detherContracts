@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 
 /// @title Contract that supports the receival of ERC223 tokens.
 contract IERC223ReceivingContract {

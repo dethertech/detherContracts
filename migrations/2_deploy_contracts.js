@@ -14,7 +14,9 @@ const Zone = artifacts.require('Zone.sol');
 const Teller = artifacts.require('Teller.sol');
 const Shops = artifacts.require('Shops.sol');
 const ShopsDispute = artifacts.require('ShopsDispute.sol');
+const TaxCollector = artifacts.require('TaxCollector.sol');
 
+const ADDRESS_ZERO = '0x0000000000000000000000000000000000000000';
 // const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const CONTRACT_ADDRESSES = {
@@ -127,6 +129,9 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(Control, { gas: 6500000 });
   const control = await Control.deployed();
 
+  await deployer.deploy(TaxCollector, dth.address, ADDRESS_ZERO, { gas: 6500000 });
+  const taxCollector = await TaxCollector.deployed();
+
   await deployer.deploy(SmsCertifier, control.address, { gas: 6500000 });
   const sms = await SmsCertifier.deployed();
 
@@ -136,7 +141,7 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(CertifierRegistry, { gas: 6500000 });
   const certifierRegistry = await CertifierRegistry.deployed();
 
-  await deployer.deploy(GeoRegistry, control.address, { gas: 6500000 });
+  await deployer.deploy(GeoRegistry, { gas: 6500000 });
   const geo = await GeoRegistry.deployed();
 
   await deployer.deploy(Zone, { gas: 6500000 });
@@ -148,7 +153,7 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, control.address, certifierRegistry.address, { gas: 6500000 });
   const users = await Users.deployed();
 
-  await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, { gas: 6500000 });
+  await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, taxCollector.address, { gas: 6500000 });
   const zoneFactory = await ZoneFactory.deployed();
 
   await deployer.deploy(Shops, dth.address, geo.address, users.address, control.address, zoneFactory.address, { gas: 6500000 });

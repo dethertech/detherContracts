@@ -1,4 +1,4 @@
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 pragma experimental ABIEncoderV2;
 
 
@@ -387,7 +387,7 @@ contract Shops {
     require(zoneAddress != address(0), "zone is not already owned");
     IZone zoneInstance = IZone(zoneAddress);
     address zoneOwner = zoneInstance.ownerAddr();
-    require(msg.sender == zoneOwner, "only zone owner can collect taxes");
+    // require(msg.sender == zoneOwner, "only zone owner can collect taxes");
 
     address[] memory shopsinZone = zoneToShopAddresses[_zoneGeohash];
     require(_end - _start <= shopsinZone.length, "start and end value are bigger than address[]");
@@ -396,24 +396,14 @@ contract Shops {
     // delete point if no more enough stake
     uint taxToSendToZoneOwner = 0;
     for (uint i = _start; i < shopsinZone.length; i+= 1) {
-      emit logUint(i, 'SHOP NUM');
-      emit logShopData(
-          shopAddressToShop[shopsinZone[i]].name,
-          shopAddressToShop[shopsinZone[i]].staked,
-          shopAddressToShop[shopsinZone[i]].licencePrice,
-          shopAddressToShop[shopsinZone[i]].lastTaxTime
-        );
 
       uint taxAmount = calcShopTax(shopAddressToShop[shopsinZone[i]].lastTaxTime, now, shopAddressToShop[shopsinZone[i]].licencePrice);
-      emit logUint(taxAmount, 'tax amount for the shop');
-      emit logUint(shopAddressToShop[shopsinZone[i]].staked, 'old staked amount for the shop');
       if (taxAmount > shopAddressToShop[shopsinZone[i]].staked) {
         // shop pay what he can and is deleted
         taxToSendToZoneOwner = taxToSendToZoneOwner.add(shopAddressToShop[shopsinZone[i]].staked);
         deleteShop(shopsinZone[i]);
       } else {
         shopAddressToShop[shopsinZone[i]].staked = shopAddressToShop[shopsinZone[i]].staked.sub(taxAmount);
-        emit logUint(shopAddressToShop[shopsinZone[i]].staked, 'new staked amount for the shop');
 
         taxToSendToZoneOwner = taxToSendToZoneOwner.add(taxAmount);
 

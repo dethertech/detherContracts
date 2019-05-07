@@ -17,6 +17,7 @@ const CentralizedArbitrator = artifacts.require('CentralizedArbitrator');
 const ZoneFactory = artifacts.require('ZoneFactory');
 const Zone = artifacts.require('Zone');
 const Teller = artifacts.require('Teller');
+const TaxCollector = artifacts.require('TaxCollector');
 
 const Web3 = require('web3');
 const truffleAssert = require('truffle-assertions');
@@ -105,6 +106,7 @@ contract('Shops', (accounts) => {
   let certifierRegistryInstance;
   let zoneImplementationInstance;
   let tellerImplementationInstance;
+  let taxCollectorInstance;
 
 
   before(async () => {
@@ -115,6 +117,8 @@ contract('Shops', (accounts) => {
   beforeEach(async () => {
     await timeTravel.revertState(__rootState__); // to go back to real time
     dthInstance = await DetherToken.new({ from: owner });
+    taxCollectorInstance = await TaxCollector.new(dthInstance.address, ADDRESS_ZERO, { from: owner })
+
     priceInstance = await FakeExchangeRateOracle.new({ from: owner }); // TODO: let CEO update oracle?
     controlInstance = await Control.new({ from: owner });
     smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
@@ -124,7 +128,7 @@ contract('Shops', (accounts) => {
     zoneImplementationInstance = await Zone.new({ from: owner });
     tellerImplementationInstance = await Teller.new({ from: owner });
 
-    geoInstance = await GeoRegistry.new(controlInstance.address, { from: owner });
+    geoInstance = await GeoRegistry.new({ from: owner });
 
     usersInstance = await Users.new(
       priceInstance.address,
@@ -159,6 +163,7 @@ contract('Shops', (accounts) => {
       controlInstance.address,
       zoneImplementationInstance.address,
       tellerImplementationInstance.address,
+      taxCollectorInstance.address,
       { from: owner },
     );
 
@@ -640,7 +645,6 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
-
         await dthInstance.mint(user3, ethToWei(111), { from: owner });
         await sendDthShopCreate(
           user3, dthInstance.address, shopsInstance.address,
@@ -656,11 +660,9 @@ contract('Shops', (accounts) => {
         );
         await timeTravel.inSecs(ONE_WEEK_IN_SEC * 4);
         timeElapsed += ONE_WEEK_IN_SEC * 4;
-
         // change price of the licence
         await shopsInstance.setZoneLicensePrice(asciiToHex(VALID_CG_ZONE_GEOHASH), ethToWei(222), { from: user2 });
-
-        await dthInstance.mint(user4, ethToWei(22), { from: owner });
+        await dthInstance.mint(user4, ethToWei(222), { from: owner });
         await sendDthShopCreate(
           user4, dthInstance.address, shopsInstance.address,
           222,
@@ -673,13 +675,15 @@ contract('Shops', (accounts) => {
             opening: BYTES16_ZERO,
           },
         );
+
+
         await timeTravel.inSecs(ONE_WEEK_IN_SEC / 2);
         timeElapsed += ONE_WEEK_IN_SEC / 2;
-
         await dthInstance.mint(user5, ethToWei(222), { from: owner });
+
         await sendDthShopCreate(
           user5, dthInstance.address, shopsInstance.address,
-          111,
+          222,
           {
             country: asciiToHex(COUNTRY_CG),
             position: asciiToHex(VALID_CG_SHOP_GEOHASH_4),
@@ -698,6 +702,10 @@ contract('Shops', (accounts) => {
 
         const taxRates = Number(await shopsInstance.DAILY_TAX());
 
+        const shop1 = await shopsInstance.getShopByAddr(user1);
+        const shop3 = await shopsInstance.getShopByAddr(user3);
+        const shop4 = await shopsInstance.getShopByAddr(user4);
+        const shop5 = await shopsInstance.getShopByAddr(user5);
         const timeNow = (await web3.eth.getBlock("latest")).timestamp
         let taxShop1 = await calcShopTax(shop1[8], timeNow, shop1[9], taxRates, shop1[5]);
         let taxShop3 = await calcShopTax(shop3[8], timeNow, shop3[9], taxRates, shop3[5]);
@@ -705,7 +713,7 @@ contract('Shops', (accounts) => {
         let taxShop5 = await calcShopTax(shop5[8], timeNow, shop5[9], taxRates, shop5[5]);
 
         const totalTaxShop = new BN(taxShop1).plus(taxShop3).plus(taxShop4).plus(taxShop5);
-// const calcShopTax = async (start, end, licencePrice, taxRates, staked) => {
+        // const calcShopTax = async (start, end, licencePrice, taxRates, staked) => {
 
         // collect taxes
         const taxSendToOwner = await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
@@ -719,7 +727,7 @@ contract('Shops', (accounts) => {
         // throw 'error to see event';
       });
 
-     it('[success] -- Zone owner should succeed to collect taxes at different rates', async () => {
+      it('[success] -- Zone owner should succeed to collect taxes at different rates', async () => {
         // register zone
         await enableAndLoadCountry(COUNTRY_CG);
         await dthInstance.mint(user2, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
@@ -810,7 +818,7 @@ contract('Shops', (accounts) => {
         let taxShop5 = await calcShopTax(shop5[8], timeNow, shop5[9], taxRates, shop5[5]);
 
         const totalTaxShop = new BN(taxShop1).plus(taxShop3).plus(taxShop4).plus(taxShop5);
-// const calcShopTax = async (start, end, licencePrice, taxRates, staked) => {
+        // const calcShopTax = async (start, end, licencePrice, taxRates, staked) => {
 
         // collect taxes
         const taxSendToOwner = await shopsInstance.collectTax(asciiToHex(VALID_CG_ZONE_GEOHASH), 0, listOfShop.length, { from: user2 });
@@ -828,22 +836,22 @@ contract('Shops', (accounts) => {
       });
 
       it('[success] -- shop when delete should pay taxes before withdraw the remaining', async () => {
-        
+
       });
       it('[error] -- only zone owner should be able to collect taxes', async () => {
-        
+
       });
       it('[error] -- only zone owner should be able to collect taxes', async () => {
-        
+
       });
       it('[error] -- impossibe to set the taxes at zero it should be at least 1 WEI of DTH', async () => {
-        
+
       });
       it('[success] -- total DTH balance should be up to date', async () => {
-        
+
       });
       it('[success] -- should success to top up', async () => {
-        
+
       });
     });
     describe('removeShop(bytes12 _position)', () => {

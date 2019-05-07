@@ -17,7 +17,7 @@
 // NOTE: added parent ICertifier to SmsCertifier contract
 //
 
-pragma solidity ^0.5.5;
+pragma solidity ^0.5.8;
 
 import "../interfaces/IControl.sol";
 

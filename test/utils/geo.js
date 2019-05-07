@@ -72,7 +72,7 @@ const addCountry = async (from, web3, geoRegistryContract, countryCode, batchSiz
     countryGasCost += gasCost;
     txCount += 1;
   }
-  await geoRegistryContract.endInit(web3.utils.asciiToHex(countryCode));
+  await geoRegistryContract.endInit(web3.utils.asciiToHex(countryCode), { from });
   return { countryGasCost, mostExpensiveTrxGasCost, txCount, countryMap };
 };
 

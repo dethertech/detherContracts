@@ -1,6 +1,4 @@
-pragma solidity ^0.5.5;
-
-import "../interfaces/IControl.sol";
+pragma solidity ^0.5.8;
 
 contract GeoRegistry {
 
@@ -22,7 +20,6 @@ contract GeoRegistry {
   //
   // ------------------------------------------------
 
-  IControl public control;
 
   // mapping for limiting the sell amount for tellers, per tier
   //      countryCode        tier    usdDailyLimit
@@ -55,10 +52,9 @@ contract GeoRegistry {
   //
   // ------------------------------------------------
 
-  constructor(address _control)
+  constructor()
     public
   {
-    control = IControl(_control);
 
     // TODO: improve below code? https://medium.com/@imolfar/bitwise-operations-and-bit-manipulation-in-solidity-ethereum-1751f3d2e216
     charToBitmask[bytes1("v")] = hex"80000000"; // 2147483648
@@ -217,7 +213,8 @@ contract GeoRegistry {
       level_2[_countryCode][_letters[i]] = _subLetters[i];
     }
   }
-  function endInit(bytes2 _countryCode) public
+  function endInit(bytes2 _countryCode)
+    external
   {
     countryIsFilled[_countryCode] = true;
   }
@@ -225,7 +222,7 @@ contract GeoRegistry {
     external
   {
     // can exec while paused
-    require(control.isCEO(msg.sender), "caller needs to be CEO");
+    // require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(!countryIsEnabled[_country], "country already enabled");
 
     countryIsEnabled[_country] = true;
@@ -238,7 +235,7 @@ contract GeoRegistry {
     external
   {
     // can exec while paused
-    require(control.isCEO(msg.sender), "caller needs to be CEO");
+    // require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(countryIsEnabled[_country], "country already disabled");
 
     countryIsEnabled[_country] = false;
