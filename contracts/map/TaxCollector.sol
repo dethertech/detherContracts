@@ -38,7 +38,6 @@ contract TaxCollector is IERC223ReceivingContract, Ownable {
     function collect()
       public
     {
-        // send to taxRecipient;
         uint balance = dth.balanceOf(address(this));
         dth.transfer(taxRecipient, balance);
     }
@@ -46,7 +45,6 @@ contract TaxCollector is IERC223ReceivingContract, Ownable {
     function tokenFallback(address _from, uint _value, bytes memory _data) 
       public
     {
-        // require(msg.sender == address(dth), "can only be called by dth contract");
-        // taxBalance += _value;
+
     }
 }

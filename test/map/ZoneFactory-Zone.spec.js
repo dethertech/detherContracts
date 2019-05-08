@@ -26,7 +26,7 @@ const { expectRevert, expectRevert2, expectRevert3 } = require('../utils/evmErro
 const { getRandomBytes32 } = require('../utils/ipfs');
 const {
   BYTES7_ZERO, VALID_CG_ZONE_GEOHASH, INVALID_CG_ZONE_GEOHASH, MIN_ZONE_DTH_STAKE,
-  ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD, ADDRESS_ZERO, BYTES32_ZERO,
+  ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD, ADDRESS_ZERO, ADDRESS_BURN, BYTES32_ZERO,
   BYTES1_ZERO, BYTES12_ZERO, BYTES16_ZERO, ZONE_AUCTION_STATE_STARTED,
   ZONE_AUCTION_STATE_ENDED, TELLER_CG_POSITION, TELLER_CG_CURRENCY_ID,
   TELLER_CG_MESSENGER, TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, TELLER_CG_REFFEE,
@@ -157,7 +157,7 @@ contract('ZoneFactory + Zone', (accounts) => {
   beforeEach(async () => {
     await timeTravel.revertState(__rootState__); // to go back to real time
     dthInstance = await DetherToken.new({ from: owner });
-    taxCollectorInstance = await TaxCollector.new(dthInstance.address, ADDRESS_ZERO, { from: owner })
+    taxCollectorInstance = await TaxCollector.new(dthInstance.address, ADDRESS_BURN, { from: owner })
     priceInstance = await FakeExchangeRateOracle.new({ from: owner }); // TODO: let CEO update oracle?
     controlInstance = await Control.new({ from: owner });
     smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
@@ -1692,6 +1692,39 @@ contract('ZoneFactory + Zone', (accounts) => {
     });
   });
 
+  describe.only('TaxCollector', () => {
+    let zoneInstance;
+    let tellerInstance;
+
+    it('should have a positive balance and able to withdraw', async () => {
+      const preBalance = await dthInstance.balanceOf(taxCollectorInstance.address);
+      // console.log('balance pre', preBalance.toString());
+      await enableAndLoadCountry(COUNTRY_CG);
+      ({ zoneInstance, tellerInstance } = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH));
+
+      await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_BURN, TELLER_CG_REFFEE, { from: user1 });
+      await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
+
+      // lancer le fast forward avance dans le temp
+      await timeTravel.inSecs(ONE_DAY * 365);
+      await zoneInstance.processState();
+
+      // lacher la zone
+      await zoneInstance.release({ from: user1 });
+
+      const postBalance = await dthInstance.balanceOf(taxCollectorInstance.address);
+      // console.log('balance post', postBalance.toString());
+      expect(postBalance).to.be.bignumber.gt(preBalance);
+
+      const balanceZero = await dthInstance.balanceOf(ADDRESS_BURN);
+      await taxCollectorInstance.collect({ from: user3 });
+      const postBalance2 = await dthInstance.balanceOf(taxCollectorInstance.address);
+      const balanceZero2 = await dthInstance.balanceOf(ADDRESS_BURN);
+      expect(balanceZero2).to.be.bignumber.gt(balanceZero);
+    })
+  })
+
+
   describe('Getters', () => {
     describe('[ pure ]', () => {
       let zoneInstance;
@@ -1719,7 +1752,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(res.keepAmount).to.be.bignumber.equal('99998333333333333334');
         });
         it('[tax 1 day] stake 100 dth ', async () => {
-          // with tax being 1% per day, this test should return 1DTH tax2pay after exactly 24 hours
           const res = await zoneInstance.calcHarbergerTax(0, ONE_DAY, ethToWei(100));
           expect(res.taxAmount).to.be.bignumber.equal('40000000000000000');
           expect(res.keepAmount).to.be.bignumber.equal('99960000000000000000');
