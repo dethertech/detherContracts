@@ -146,11 +146,12 @@
       "type": "function"
     }
   ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":true,\"inputs\":[{\"name\":\"_disputeID\",\"type\":\"uint256\"}],\"name\":\"disputeStatus\",\"outputs\":[{\"name\":\"status\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_disputeID\",\"type\":\"uint256\"}],\"name\":\"currentRuling\",\"outputs\":[{\"name\":\"ruling\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_disputeID\",\"type\":\"uint256\"},{\"name\":\"_extraData\",\"type\":\"bytes\"}],\"name\":\"appeal\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_disputeID\",\"type\":\"uint256\"}],\"name\":\"appealPeriod\",\"outputs\":[{\"name\":\"start\",\"type\":\"uint256\"},{\"name\":\"end\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_choices\",\"type\":\"uint256\"},{\"name\":\"_extraData\",\"type\":\"bytes\"}],\"name\":\"createDispute\",\"outputs\":[{\"name\":\"disputeID\",\"type\":\"uint256\"}],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_disputeID\",\"type\":\"uint256\"},{\"name\":\"_extraData\",\"type\":\"bytes\"}],\"name\":\"appealCost\",\"outputs\":[{\"name\":\"fee\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_extraData\",\"type\":\"bytes\"}],\"name\":\"arbitrationCost\",\"outputs\":[{\"name\":\"fee\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/IKlerosArbitrable.sol\":\"IKlerosArbitrable\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/IKlerosArbitrable.sol\":{\"keccak256\":\"0xe270dded90d5c76ce5eb92a80896aaeeec5f2dd16147291ca96b364c6043cb84\",\"urls\":[\"bzzr://252d117d5aa0ff6a6d0f94cc15fdaa9d3677255d53cafd6c46afb7b14d034a94\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.5.5;\n\ncontract IKlerosArbitrable {\n  enum DisputeStatus {Waiting, Appealable, Solved} // copied from IArbitrable.sol\n  function createDispute(uint _choices, bytes memory _extraData) public payable returns(uint disputeID);\n  function arbitrationCost(bytes memory _extraData) public view returns(uint fee);\n  function appeal(uint _disputeID, bytes memory _extraData) public payable;\n  function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint fee);\n  function appealPeriod(uint _disputeID) public view returns(uint start, uint end) {}\n  function disputeStatus(uint _disputeID) public view returns(DisputeStatus status);\n  function currentRuling(uint _disputeID) public view returns(uint ruling);\n}\n",
+  "source": "pragma solidity ^0.5.8;\n\ncontract IKlerosArbitrable {\n  enum DisputeStatus {Waiting, Appealable, Solved} // copied from IArbitrable.sol\n  function createDispute(uint _choices, bytes memory _extraData) public payable returns(uint disputeID);\n  function arbitrationCost(bytes memory _extraData) public view returns(uint fee);\n  function appeal(uint _disputeID, bytes memory _extraData) public payable;\n  function appealCost(uint _disputeID, bytes memory _extraData) public view returns(uint fee);\n  function appealPeriod(uint _disputeID) public view returns(uint start, uint end) {}\n  function disputeStatus(uint _disputeID) public view returns(DisputeStatus status);\n  function currentRuling(uint _disputeID) public view returns(uint ruling);\n}\n",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IKlerosArbitrable.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IKlerosArbitrable.sol",
@@ -168,7 +169,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:18"
@@ -887,7 +888,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:18"
@@ -1592,11 +1593,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.5+commit.47a71e8f.Emscripten.clang"
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.3",
-  "updatedAt": "2019-04-01T10:14:45.041Z",
+  "schemaVersion": "3.0.9",
+  "updatedAt": "2019-05-08T13:25:26.106Z",
   "devdoc": {
     "methods": {}
   },

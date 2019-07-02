@@ -404,6 +404,8 @@ contract Zone is IERC223ReceivingContract {
     zoneOwner.auctionId = 0;
   }
 
+  event Log(string str, address _addr, uint refFees);
+  event LogRef(uint tax, uint refTax);
   function _handleTaxPayment()
     private
   {
@@ -418,13 +420,25 @@ contract Zone is IERC223ReceivingContract {
     if (taxAmount >= zoneOwner.balance) {
       // zone owner does not have enough balance, remove him as zone owner
       uint oldZoneOwnerBalance = zoneOwner.balance;
+            (address referrer, uint refFee) = teller.getReferrer();
+      emit Log('handle tax remove' ,referrer , refFee);
       _removeZoneOwner();
       dth.transfer(taxCollector, oldZoneOwnerBalance);
     } else {
       // zone owner can pay due taxes
       zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
       zoneOwner.lastTaxTime = now;
-      dth.transfer(taxCollector, taxAmount);
+      (address referrer, uint refFee) = teller.getReferrer();
+      emit Log('handle tax ' ,referrer , refFee);
+      emit LogRef(taxAmount ,0);
+      if (referrer != address(0x00) && refFee > 0) {
+        uint referralFee =  taxAmount.mul(refFee).div(1000) ;
+        emit LogRef(taxAmount ,referralFee);
+        dth.transfer(referrer, referralFee);
+        dth.transfer(taxCollector, taxAmount - referralFee);
+      } else {
+        dth.transfer(taxCollector, taxAmount);
+      }
     }
   }
 

@@ -34,6 +34,7 @@ contract Teller {
     int16 sellRate;    // margin of tellers , -999 - +9999 , corresponding to -99,9% x 10  , 999,9% x 10
     address referrer;
     uint refFee; // 1 = 0.1%
+    bytes32 description;
   }
 
   // ------------------------------------------------
@@ -60,18 +61,10 @@ contract Teller {
   IZone public zone;
   IGeoRegistry public geo;
   IControl public control;
- 
 
-  //      who        ethAmount
-  mapping(address => uint) public withdrawableEth;
-
-  uint public funds;
-
-  //      teller             poster     commentsLeft
-  mapping(address => mapping(address => uint)) public canPlaceCertifiedComment;
 
   bytes32[] private commentsFree;
-  bytes32[] private commentsCertified;
+  // bytes32[] private commentsCertified;
 
   // ------------------------------------------------
   //
@@ -144,7 +137,6 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  // executed by ZoneFactory.sol when this Zone does not yet exist (= not yet deployed)
   function init(
     address _geo,
     address _control,
@@ -165,13 +157,6 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  function getCertifiedComments()
-    external view
-    returns (bytes32[] memory)
-  {
-    return commentsCertified;
-  }
-
   function getComments()
     external view
     returns (bytes32[] memory)
@@ -183,13 +168,12 @@ contract Teller {
     public view
     returns (uint referrerAmount)
   {
-    // referrerAmount = _value.div(1000).mul(REFERRER_FEE_PERCENTAGE); // 0.1%
     referrerAmount = _value.div(1000).mul(teller.refFee);
   }
 
   function getTeller()
     external view
-    returns (address, uint8, bytes16, bytes12, bytes1, int16, int16, uint, address)
+    returns (address addr, uint8 currencyId, bytes16 messenger, bytes12 position, bytes1 settings, int16 buyRate, int16 sellRate, address referrer, bytes32 description)
   {
     return (
       teller.addr,
@@ -199,9 +183,16 @@ contract Teller {
       teller.settings,
       teller.buyRate,
       teller.sellRate,
-      funds,
-      teller.referrer
+      // funds,
+      teller.referrer,
+      teller.description
     );
+  }
+
+  function getReferrer()
+  external view
+  returns (address ref, uint refFee) {
+    return (teller.referrer, teller.refFee);
   }
 
   function hasTeller()
@@ -270,14 +261,11 @@ contract Teller {
     onlyByZoneContract
   {
     delete commentsFree;
-    delete commentsCertified;
   }
 
   function _remove()
     private
   {
-    withdrawableEth[teller.addr] = withdrawableEth[teller.addr].add(funds);
-    funds = 0;
 
     // we dont remove comments here, so that zoneowner can not get rid
     // of negative comments by readding his teller ;)
@@ -320,7 +308,8 @@ contract Teller {
     int16 _buyRate,
     bytes1 _settings,
     address _referrer,
-    uint _refFee
+    uint _refFee,    // referral fees x 10 (exemple, for 21.3 % -> 213) Max is 33.3%. The fees its taken from the harbeger taxes
+    bytes32 _description
   )
     external
     onlyWhenInited
@@ -332,7 +321,7 @@ contract Teller {
     require(_position.length == 12, "expected position to be 12 bytes");
     require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
-
+    require(_refFee <= 333, 'referral fees should inferior to 33.3 %');
     require(_currencyId >= 1 && _currencyId <= 100, "currency id must be in range 1-100");
     // _messenger can be 0x0 if he has no telegram
 
@@ -357,67 +346,7 @@ contract Teller {
     teller.settings = _settings;
     teller.referrer = _referrer;
     teller.refFee = _refFee >= 0 ? _refFee : 0;
-  }
-
-  // called by Teller, adding ETH to Teller funds
-  function addFunds() // GAS COST +/- 59.809
-    external payable
-    onlyWhenInited
-    onlyWhenCountryEnabled
-    updateState
-    onlyWhenCallerIsZoneOwner
-    onlyWhenHasTeller
-  {
-    require(msg.value > 0, "no eth send with call");
-
-    // register ETH sent to this contract
-    funds = funds.add(msg.value);
-  }
-
-  // called by Teller, sending ETH from Zone to _to
-  function sellEth(address _to, uint _amount) // GAS COST +/- 147.310
-    external
-    onlyWhenInited
-    onlyWhenCountryEnabled
-    updateState
-    onlyWhenCallerIsZoneOwner
-    onlyWhenHasTeller
-  {
-    require(teller.addr != _to, "sender cannot also be to");
-    require(_amount > 0, "amount to sell cannot be zero");
-
-    if (teller.referrer != address(0)) { // need to pay referrer fee
-      uint referrerAmount = calcReferrerFee(_amount);
-      require(funds >= _amount + referrerAmount, "not enough funds to sell eth amount plus pay referrer fee");
-      funds = funds.sub(_amount + referrerAmount);
-      withdrawableEth[teller.referrer] = withdrawableEth[teller.referrer].add(referrerAmount);
-    } else {
-      require(funds >= _amount, "cannot sell more than in funds");
-      funds = funds.sub(_amount);
-    }
-
-    zone.proxyUpdateUserDailySold(_to, _amount); // MIGHT THROW if exceeds daily limit
-
-    canPlaceCertifiedComment[teller.addr][_to]++;
-
-    address(uint160(_to)).transfer(_amount);
-  }
-
-  function addCertifiedComment(bytes32 _commentHash)
-    external
-    onlyWhenInited
-    onlyWhenCountryEnabled
-    updateState
-    onlyWhenZoneHasOwner
-    onlyWhenCallerIsNotZoneOwner
-    onlyWhenHasTeller
-  {
-    require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
-
-    require(canPlaceCertifiedComment[teller.addr][msg.sender] > 0, "user not allowed to place a certified comment");
-    canPlaceCertifiedComment[teller.addr][msg.sender]--;
-
-    commentsCertified.push(_commentHash);
+    teller.description = _description;
   }
 
   function addComment(bytes32 _commentHash)

@@ -1,11 +1,12 @@
 {
   "contractName": "EIP1167CloneFactory",
   "abi": [],
-  "bytecode": "0x6080604052348015600f57600080fd5b50603580601d6000396000f3fe6080604052600080fdfea165627a7a72305820eae384d798cbef880223195a1f644100eb76092d39d14edbb196b9a6a74f9c160029",
-  "deployedBytecode": "0x6080604052600080fdfea165627a7a72305820eae384d798cbef880223195a1f644100eb76092d39d14edbb196b9a6a74f9c160029",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"details\":\"To simply and cheaply clone contract functionality in an immutable way, this standard specifies a minimal bytecode implementation that delegates all calls to a known, fixed address. * https://eips.ethereum.org/EIPS/eip-1167\",\"methods\":{},\"title\":\"EIP 1167: Minimal Proxy Contract\"},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol\":\"EIP1167CloneFactory\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol\":{\"keccak256\":\"0xc96ebae5672365586d38b3457d8cb9f033fb6734021c0bcdfb1e1580906421f7\",\"urls\":[\"bzzr://b4cc8c9afb38951cabae6a920aa96694f55d7055f2ed88b8433dc938b65660c6\"]}},\"version\":1}",
+  "bytecode": "0x6080604052348015600f57600080fd5b50603580601d6000396000f3fe6080604052600080fdfea165627a7a72305820f0012cbc036c6d1683af3251ac935cd2b017930fc248a3a8096ef52e8f02b0370029",
+  "deployedBytecode": "0x6080604052600080fdfea165627a7a72305820f0012cbc036c6d1683af3251ac935cd2b017930fc248a3a8096ef52e8f02b0370029",
   "sourceMap": "321:476:10:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;321:476:10;;;;;;;",
   "deployedSourceMap": "321:476:10:-;;;;;",
-  "source": "pragma solidity ^0.5.5;\n\n/**\n * @title EIP 1167: Minimal Proxy Contract\n *\n * @dev To simply and cheaply clone contract functionality in an immutable way,\n * this standard specifies a minimal bytecode implementation that delegates\n * all calls to a known, fixed address.\n *\n * https://eips.ethereum.org/EIPS/eip-1167\n */\ncontract EIP1167CloneFactory {\n  function createClone(address target) internal returns (address result) {\n    bytes20 targetBytes = bytes20(target);\n    assembly {\n      let clone := mload(0x40)\n      mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\n      mstore(add(clone, 0x14), targetBytes)\n      mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\n      result := create(0, clone, 0x37)\n    }\n  }\n}\n",
+  "source": "pragma solidity ^0.5.8;\n\n/**\n * @title EIP 1167: Minimal Proxy Contract\n *\n * @dev To simply and cheaply clone contract functionality in an immutable way,\n * this standard specifies a minimal bytecode implementation that delegates\n * all calls to a known, fixed address.\n *\n * https://eips.ethereum.org/EIPS/eip-1167\n */\ncontract EIP1167CloneFactory {\n  function createClone(address target) internal returns (address result) {\n    bytes20 targetBytes = bytes20(target);\n    assembly {\n      let clone := mload(0x40)\n      mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\n      mstore(add(clone, 0x14), targetBytes)\n      mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\n      result := create(0, clone, 0x37)\n    }\n  }\n}\n",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol",
@@ -23,7 +24,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:10"
@@ -158,7 +159,7 @@
                   "id": 2934,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    let clone := mload(0x40)\n    mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\n    mstore(add(clone, 0x14), targetBytes)\n    mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\n    result := create(0, clone, 0x37)\n}",
-                  "src": "474:321:10"
+                  "src": "474:317:10"
                 }
               ]
             },
@@ -266,7 +267,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:10"
@@ -401,7 +402,7 @@
                   "id": 2934,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    let clone := mload(0x40)\n    mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\n    mstore(add(clone, 0x14), targetBytes)\n    mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\n    result := create(0, clone, 0x37)\n}",
-                  "src": "474:321:10"
+                  "src": "474:317:10"
                 }
               ]
             },
@@ -495,11 +496,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.5+commit.47a71e8f.Emscripten.clang"
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.3",
-  "updatedAt": "2019-04-01T10:14:45.036Z",
+  "schemaVersion": "3.0.9",
+  "updatedAt": "2019-05-08T13:25:26.099Z",
   "devdoc": {
     "details": "To simply and cheaply clone contract functionality in an immutable way, this standard specifies a minimal bytecode implementation that delegates all calls to a known, fixed address. * https://eips.ethereum.org/EIPS/eip-1167",
     "methods": {},

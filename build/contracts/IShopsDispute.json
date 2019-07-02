@@ -263,11 +263,12 @@
       "type": "function"
     }
   ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":true,\"inputs\":[],\"name\":\"arbitratorExtraData\",\"outputs\":[{\"name\":\"\",\"type\":\"bytes\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_shopAddress\",\"type\":\"address\"},{\"name\":\"_metaEvidenceId\",\"type\":\"uint256\"},{\"name\":\"_evidenceLink\",\"type\":\"string\"}],\"name\":\"createDispute\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_shopAddress\",\"type\":\"address\"}],\"name\":\"getDisputeAppealCost\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"AMOUNT_OF_CHOICES\",\"outputs\":[{\"name\":\"\",\"type\":\"uint8\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_disputeID\",\"type\":\"uint256\"},{\"name\":\"_ruling\",\"type\":\"uint256\"}],\"name\":\"rule\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_shopAddress\",\"type\":\"address\"}],\"name\":\"getDispute\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"},{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"address\"},{\"name\":\"\",\"type\":\"uint256\"},{\"name\":\"\",\"type\":\"uint256\"},{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"RULING_OPTIONS\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"arbitrator\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"disputeTypes\",\"outputs\":[{\"name\":\"\",\"type\":\"string\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_disputeTypeLink\",\"type\":\"string\"}],\"name\":\"addDisputeType\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_shopAddress\",\"type\":\"address\"},{\"name\":\"_evidenceLink\",\"type\":\"string\"}],\"name\":\"appealDispute\",\"outputs\":[],\"payable\":true,\"stateMutability\":\"payable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"getDisputeCreateCost\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"shops\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"control\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"users\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/IShopsDispute.sol\":\"IShopsDispute\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/IShopsDispute.sol\":{\"keccak256\":\"0xcd7346e7e481d118328c967989ff89da6c2c26e5731a595b859a85eb0ce83c72\",\"urls\":[\"bzzr://681d9e6bd19582c913cf86cf6d171f029397fe3c4f823ffff38b98875ad85b01\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.5.5;\n\ncontract IShopsDispute {\n    function arbitratorExtraData() view public returns(bytes memory);\n    function AMOUNT_OF_CHOICES() view public returns(uint8);\n    function RULING_OPTIONS() view public returns(string memory);\n    function arbitrator() view public returns(address);\n    function disputeTypes(uint256) view public returns(string memory);\n    function shops() view public returns(address);\n    function control() view public returns(address);\n    function users() view public returns(address);\n    function getDisputeCreateCost() view public returns(uint256);\n    function getDisputeAppealCost(address _shopAddress) view external returns(uint256);\n    function getDispute(address _shopAddress) view public returns(uint256, address, address, uint256, uint256, uint256);\n    function addDisputeType(string calldata _disputeTypeLink) external;\n    function createDispute(address _shopAddress, uint256 _metaEvidenceId, string memory _evidenceLink) payable public;\n    function appealDispute(address _shopAddress, string calldata _evidenceLink) payable external;\n    function rule(uint256 _disputeID, uint256 _ruling) public;\n}\n",
+  "source": "pragma solidity ^0.5.8;\n\ncontract IShopsDispute {\n    function arbitratorExtraData() view public returns(bytes memory);\n    function AMOUNT_OF_CHOICES() view public returns(uint8);\n    function RULING_OPTIONS() view public returns(string memory);\n    function arbitrator() view public returns(address);\n    function disputeTypes(uint256) view public returns(string memory);\n    function shops() view public returns(address);\n    function control() view public returns(address);\n    function users() view public returns(address);\n    function getDisputeCreateCost() view public returns(uint256);\n    function getDisputeAppealCost(address _shopAddress) view external returns(uint256);\n    function getDispute(address _shopAddress) view public returns(uint256, address, address, uint256, uint256, uint256);\n    function addDisputeType(string calldata _disputeTypeLink) external;\n    function createDispute(address _shopAddress, uint256 _metaEvidenceId, string memory _evidenceLink) payable public;\n    function appealDispute(address _shopAddress, string calldata _evidenceLink) payable external;\n    function rule(uint256 _disputeID, uint256 _ruling) public;\n}\n",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IShopsDispute.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/IShopsDispute.sol",
@@ -285,7 +286,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:21"
@@ -1461,7 +1462,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:21"
@@ -2623,11 +2624,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.5+commit.47a71e8f.Emscripten.clang"
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.3",
-  "updatedAt": "2019-04-01T10:14:45.052Z",
+  "schemaVersion": "3.0.9",
+  "updatedAt": "2019-05-08T13:25:26.108Z",
   "devdoc": {
     "methods": {}
   },

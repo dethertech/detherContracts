@@ -16,11 +16,12 @@
       "type": "function"
     }
   ],
-  "bytecode": "0x6080604052348015600f57600080fd5b50609e8061001e6000396000f3fe6080604052348015600f57600080fd5b50600436106045576000357c0100000000000000000000000000000000000000000000000000000000900480636a14602414604a575b600080fd5b60506066565b6040518082815260200191505060405180910390f35b670de0b6b3a76400008156fea165627a7a72305820d106e4e6c82a7a151048891fb603fa5d0a064f354764fcd4ecef0bc38dfa00bd0029",
-  "deployedBytecode": "0x6080604052348015600f57600080fd5b50600436106045576000357c0100000000000000000000000000000000000000000000000000000000900480636a14602414604a575b600080fd5b60506066565b6040518082815260200191505060405180910390f35b670de0b6b3a76400008156fea165627a7a72305820d106e4e6c82a7a151048891fb603fa5d0a064f354764fcd4ecef0bc38dfa00bd0029",
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":true,\"inputs\":[],\"name\":\"WAD\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/mehdi/code/dether/contractV2/contracts/dappsys/DSMathWdiv.sol\":\"DSMathWdiv\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/mehdi/code/dether/contractV2/contracts/dappsys/DSMathWdiv.sol\":{\"keccak256\":\"0x76763586f09fe8f2580c71096f60e14ff0c913552ae87272d4b1113c5d8ffc93\",\"urls\":[\"bzzr://e0f49b4e553b899d62ab6e707f4576c246fafc2402eaa29886ec912f8245e4ed\"]}},\"version\":1}",
+  "bytecode": "0x6080604052348015600f57600080fd5b50609e8061001e6000396000f3fe6080604052348015600f57600080fd5b50600436106045576000357c0100000000000000000000000000000000000000000000000000000000900480636a14602414604a575b600080fd5b60506066565b6040518082815260200191505060405180910390f35b670de0b6b3a76400008156fea165627a7a723058204deef81ea55a802118d3a51f84274e36911b13cf2e080382904c36dcae909cab0029",
+  "deployedBytecode": "0x6080604052348015600f57600080fd5b50600436106045576000357c0100000000000000000000000000000000000000000000000000000000900480636a14602414604a575b600080fd5b60506066565b6040518082815260200191505060405180910390f35b670de0b6b3a76400008156fea165627a7a723058204deef81ea55a802118d3a51f84274e36911b13cf2e080382904c36dcae909cab0029",
   "sourceMap": "25:382:7:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;25:382:7;;;;;;;",
   "deployedSourceMap": "25:382:7:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;25:382:7;;;;;;;;;;;;;;;;;;;;262:35;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;289:8;262:35;:::o",
-  "source": "pragma solidity ^0.5.5;\n\ncontract DSMathWdiv {\n  function add(uint x, uint y) internal pure returns (uint z) {\n    require((z = x + y) >= x);\n  }\n  function mul(uint x, uint y) internal pure returns (uint z) {\n    require(y == 0 || (z = x * y) / y == x);\n  }\n\n  uint public constant WAD = 10 ** 18;\n\n  function wdiv(uint x, uint y) internal pure returns (uint z) {\n    z = add(mul(x, WAD), y / 2) / y;\n  }\n}",
+  "source": "pragma solidity ^0.5.8;\n\ncontract DSMathWdiv {\n  function add(uint x, uint y) internal pure returns (uint z) {\n    require((z = x + y) >= x);\n  }\n  function mul(uint x, uint y) internal pure returns (uint z) {\n    require(y == 0 || (z = x * y) / y == x);\n  }\n\n  uint public constant WAD = 10 ** 18;\n\n  function wdiv(uint x, uint y) internal pure returns (uint z) {\n    z = add(mul(x, WAD), y / 2) / y;\n  }\n}",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/dappsys/DSMathWdiv.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/dappsys/DSMathWdiv.sol",
@@ -38,7 +39,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:7"
@@ -200,10 +201,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        11607,
-                        11608
+                        12224,
+                        12225
                       ],
-                      "referencedDeclaration": 11607,
+                      "referencedDeclaration": 12224,
                       "src": "115:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -580,10 +581,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        11607,
-                        11608
+                        12224,
+                        12225
                       ],
-                      "referencedDeclaration": 11607,
+                      "referencedDeclaration": 12224,
                       "src": "214:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -1152,7 +1153,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:7"
@@ -1314,10 +1315,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        11607,
-                        11608
+                        12224,
+                        12225
                       ],
-                      "referencedDeclaration": 11607,
+                      "referencedDeclaration": 12224,
                       "src": "115:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -1694,10 +1695,10 @@
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
-                        11607,
-                        11608
+                        12224,
+                        12225
                       ],
-                      "referencedDeclaration": 11607,
+                      "referencedDeclaration": 12224,
                       "src": "214:7:7",
                       "typeDescriptions": {
                         "typeIdentifier": "t_function_require_pure$_t_bool_$returns$__$",
@@ -2252,11 +2253,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.5+commit.47a71e8f.Emscripten.clang"
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.3",
-  "updatedAt": "2019-04-01T10:14:45.049Z",
+  "schemaVersion": "3.0.9",
+  "updatedAt": "2019-05-08T13:25:26.023Z",
   "devdoc": {
     "methods": {}
   },

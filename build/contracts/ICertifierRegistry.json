@@ -193,11 +193,12 @@
       "type": "function"
     }
   ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.8+commit.23d335f2\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_delegate\",\"type\":\"address\"}],\"name\":\"removeDelegate\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_who\",\"type\":\"address\"},{\"name\":\"_type\",\"type\":\"int8\"}],\"name\":\"certify\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"isDelegate\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_newUrl\",\"type\":\"string\"}],\"name\":\"modifyUrl\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"getCerts\",\"outputs\":[{\"components\":[{\"name\":\"certifier\",\"type\":\"address\"},{\"name\":\"ref\",\"type\":\"int8\"},{\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"\",\"type\":\"tuple[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"revoke\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_delegate\",\"type\":\"address\"}],\"name\":\"addDelegate\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_url\",\"type\":\"string\"}],\"name\":\"createCertifier\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"ref\",\"type\":\"int8\"},{\"name\":\"description\",\"type\":\"string\"}],\"name\":\"addCertificationType\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol\":\"ICertifierRegistry\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol\":{\"keccak256\":\"0x2a34da11b29a1f0b6e73f398cc16448c78f50dcf3058a92d90638661b0fc1ab3\",\"urls\":[\"bzzr://b93b3f7cf0e96a1cd3b1f22cb317b124d16c65c249b2d832455e6c4d860acbfd\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "pragma solidity ^0.5.5;\npragma experimental ABIEncoderV2;\n\ncontract ICertifierRegistry {\n    struct Certification {\n\t\taddress certifier;\n\t\tint8 ref;\n        uint timestamp;\n\t}\n    function createCertifier(string memory _url) public returns (address );\n    function modifyUrl(address _certifierId, string memory _newUrl) public;\n    function addCertificationType(address _certifierId, int8 ref, string memory description) public;\n    function addDelegate(address _certifierId, address _delegate) public;\n\tfunction removeDelegate(address _certifierId, address _delegate) public;\n\tfunction certify(address _certifierId, address _who, int8 _type) public;\n    function revoke(address _certifierId, address _who) public;\n    function isDelegate(address _certifierId, address _who) public view returns(bool);\n    function getCerts( address _who) public view returns(Certification[] memory);\n}\n",
+  "source": "pragma solidity ^0.5.8;\npragma experimental ABIEncoderV2;\n\ncontract ICertifierRegistry {\n    struct Certification {\n\t\taddress certifier;\n\t\tint8 ref;\n        uint timestamp;\n\t}\n    function createCertifier(string memory _url) public returns (address );\n    function modifyUrl(address _certifierId, string memory _newUrl) public;\n    function addCertificationType(address _certifierId, int8 ref, string memory description) public;\n    function addDelegate(address _certifierId, address _delegate) public;\n\tfunction removeDelegate(address _certifierId, address _delegate) public;\n\tfunction certify(address _certifierId, address _who, int8 _type) public;\n    function revoke(address _certifierId, address _who) public;\n    function isDelegate(address _certifierId, address _who) public view returns(bool);\n    function getCerts( address _who) public view returns(Certification[] memory);\n}\n",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol",
@@ -215,7 +216,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:12"
@@ -1182,7 +1183,7 @@
           "solidity",
           "^",
           "0.5",
-          ".5"
+          ".8"
         ],
         "nodeType": "PragmaDirective",
         "src": "0:23:12"
@@ -2135,11 +2136,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.5.5+commit.47a71e8f.Emscripten.clang"
+    "version": "0.5.8+commit.23d335f2.Emscripten.clang"
   },
   "networks": {},
-  "schemaVersion": "3.0.3",
-  "updatedAt": "2019-04-01T10:14:45.044Z",
+  "schemaVersion": "3.0.9",
+  "updatedAt": "2019-05-08T13:25:26.101Z",
   "devdoc": {
     "methods": {}
   },

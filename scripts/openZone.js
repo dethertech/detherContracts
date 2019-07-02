@@ -1,8 +1,9 @@
 const fs = require('fs');
 const Papa = require('papaparse');
-const DetherCore = artifacts.require('DetherCore');
-const DetherToken = artifacts.require('DetherToken');
-
+const GeoRegistry = artifacts.require('GeoRegistry');
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+const { addCountry } = require('../test/utils/geo');
+const BATCH_SIZE = 300;
 // require message sender is certifer, CSO, ADD ENOUGH DTH
 const cmo = '0x1ecb59E6EAb86eCdE351229e64E47dD6B65b9329'
 
@@ -14,64 +15,68 @@ const toNBytes = (str, n) => {
   }
   return buffer;
 };
+let tsx;
 
 
 module.exports = async (callback) => {
 
-const dether = await DetherCore.deployed();
-const dth = await DetherToken.deployed();
-console.log('dth ', dth.address);
-console.log('dether ', dether.address);
+  const geoRegistryInstance = await GeoRegistry.deployed();
+  console.log('address geoRegistryInstance => ', geoRegistryInstance.address);
 
-// await dether.openZoneShop(web3.toHex('AU'));
-// await dether.setLicenceTellerPrice(web3.toHex('AU'), web3.toWei('1'));
-//
 
-console.log('Performing shop add');
-let transferMethodTransactionData;
-let tsx;
 
-// const licenceprice = await dether.licenceShop(web3.toHex('AU'));
+  // const factory = async (noncestart, noncetsx, country) => {
 
-const factory = (noncestart, noncetsx, country) => {
-  setTimeout( async () => {
-    console.log('factory', country);
-    try {
-      const tsx = await dether.openZoneShop(web3.toHex(country) ,{
-            from: cmo,
-            nonce: noncetsx,
-            gasPrice: 40000000000
-          });
-      console.log('tsx', tsx);
-    } catch (e) {
-      console.log('err', e);
-    }
+  //   console.log('factory', noncestart, noncetsx, noncetsx - noncestart);
+  //   await delay(5000);
+  //   console.log('hello')
+  //   // setTimeout(async () => {
+  //   //   console.log('factory', country, toNBytes(country, 2));
+  //   //   try {
+  //   //     // tsx = geoRegistryInstance.enableCountry(toNBytes(country, 2))
 
-  }, (noncetsx - noncestart)  * 1500);
-};
+  //   //     // console.log('tsx', tsx);
+  //   //   } catch (e) {
+  //   //     console.log('err', e);
+  //   //   }
+  //   // }, (noncetsx - noncestart) * 1500);
+  // };
 
-// check for the current nonce
-// web3.eth.getTransactionCount(cso,(err, res) =>{
+  const Web3 = require('web3');
+  const web3 = new Web3('https://kovan.infura.io/v3/f19f6c9d405a460f91964949efe0e78e');
 
-const csv = fs.readFileSync('./isocountrycode.csv', 'utf8');
-const { data } = Papa.parse(csv, {
-  header: true,
-});
+  const csv = fs.readFileSync('./openedCountry.csv', 'utf8');
+  const { data } = Papa.parse(csv, {
+    header: true,
+  });
 
-console.log('Performing whitelisting operations');
+  console.log('Performing whitelisting operations');
 
-console.log('data', data);
-const nonce =  1180;
-let counter = 3;
-for (let i = 0; i < data.length; i++) {
-  const { ISO2 } = data[i];
-  console.log('iso2', ISO2);
-  if (i < counter)
-    // factory(nonce,  nonce + i - counter + 1, ISO2);
-    factory(nonce,  nonce + i + 1, ISO2);
 
-}
-// });
+  const nonce = 1180;
+  let counter = 10;
+  console.log('data lenght', data.length);
 
- callback();
+  data.forEach(async (countryCode) => {
+
+    console.log('add country =>', countryCode, toNBytes(country, 2));
+    // await geoRegistryInstance.enableCountry(toNBytes(country, 2))
+    // const { countryGasCost, mostExpensiveTrxGasCost, txCount, countryMap } = await addCountry(owner, web3, geoRegistryInstance, countryCode, BATCH_SIZE);
+    // for (const key in countryMap) {
+    //   await geoRegistryContract.level_2(web3.utils.asciiToHex(countryCode), web3.utils.asciiToHex(key));
+    //   // assert.deepStrictEqual(onchainContent, countryMap[key], `content for key ${key} does not match expected`);
+    // }
+  })
+
+  // for (let i = 0; i < data.length; i++) {
+  //   const { COUNTRY } = data[i];
+  //   if (i < counter) {
+
+  //     factory(nonce, nonce + i + 1, COUNTRY);
+
+  //   }
+  // }
+
+
+  callback();
 }

@@ -100,7 +100,7 @@ module.exports = async (deployer, network) => {
       break;
     // fall through
     case 'kovan-fork':
-      console.log('kovan-fork network')
+
       await deployer.deploy(
         ExchangeRateOracle,
         // pass int he address of the Maker price feed contract on the blockchain
@@ -156,31 +156,19 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, taxCollector.address, { gas: 6500000 });
   const zoneFactory = await ZoneFactory.deployed();
 
-  await deployer.deploy(Shops, dth.address, geo.address, users.address, control.address, zoneFactory.address, { gas: 6500000 });
-  const shops = await Shops.deployed();
+  switch (network) {
+    case 'kovan':
 
-  await deployer.deploy(ShopsDispute, shops.address, users.address, control.address, '0xffffffffffffffffffffffffffffffffffffffff', '0x0', { gas: 6500000 });
-  const shopsDispute = await ShopsDispute.deployed();
-  await shops.setShopsDisputeContract(shopsDispute.address);
-  // });
-  // // gas 1,161,360
-  // // await deployer.deploy(DetherToken, { gas: 6000000, gasPrice: 26500000000 });
-  //
-  // // gas: 4,873,314
-  // await deployer.deploy(DetherCore, { gas: 6500000 });
-  // // await delay(60000);
-  //
-  // // gas 1,477,280
-  // await deployer.deploy(DetherBank, { gas: 6500000 });
-  // // await delay(60000);
-  //
-  // // gas 552,780
-  // await deployer.deploy(SmsCertifier, { gas: 6500000 });
-  // // await delay(60000);
-  //
-  // // gas 552,780
-  // await deployer.deploy(KycCertifier, { gas: 6500000 });
-  // // await delay(60000);
-  //
+    case 'mainnet':
+      await users.setZoneFactory(ZoneFactory.address, { gas: 6500000 });
+      console.log('Set zone factory');
+  }
+
+  // await deployer.deploy(Shops, dth.address, geo.address, users.address, control.address, zoneFactory.address, { gas: 6500000 });
+  // const shops = await Shops.deployed();
+
+  // await deployer.deploy(ShopsDispute, shops.address, users.address, control.address, '0xffffffffffffffffffffffffffffffffffffffff', '0x0', { gas: 6500000 });
+  // const shopsDispute = await ShopsDispute.deployed();
+  // await shops.setShopsDisputeContract(shopsDispute.address);
 
 };

@@ -21,10 +21,6 @@ contract GeoRegistry {
   // ------------------------------------------------
 
 
-  // mapping for limiting the sell amount for tellers, per tier
-  //      countryCode        tier    usdDailyLimit
-  // mapping(bytes2 => mapping (uint => uint)) public countryTierDailyLimit;
-
   //      countryCode licensePriceUSD
   mapping(bytes2 => uint) public shopLicensePrice;
 
@@ -186,28 +182,15 @@ contract GeoRegistry {
   // Functions Setters Public
   //
   // ------------------------------------------------
-
-  // function setCountryTierDailyLimit(bytes2 _countryCode, uint _tier, uint _limitUsd)
-  //   public
-  // {
-  //   // can exec while paused
-  //   require(control.isCEO(msg.sender), "caller needs to be CEO");
-  //   countryTierDailyLimit[_countryCode][_tier] = _limitUsd;
-  // }
-
   function updateLevel2(bytes2 _countryCode, bytes3 _letter, bytes4 _subLetters)
     public
   {
-    // can exec while paused
-    // require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(!countryIsFilled[_countryCode], "country must not be filled");
     level_2[_countryCode][_letter] = _subLetters;
   }
   function updateLevel2batch(bytes2 _countryCode, bytes3[] memory _letters, bytes4[] memory _subLetters)
     public
   {
-    // can exec while paused
-    // require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(!countryIsFilled[_countryCode], "country must not be filled");
     for (uint i = 0; i < _letters.length; i++) {
       level_2[_countryCode][_letters[i]] = _subLetters[i];
@@ -221,8 +204,6 @@ contract GeoRegistry {
   function enableCountry(bytes2 _country)
     external
   {
-    // can exec while paused
-    // require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(!countryIsEnabled[_country], "country already enabled");
 
     countryIsEnabled[_country] = true;
@@ -234,8 +215,6 @@ contract GeoRegistry {
   function disableCountry(bytes2 _country)
     external
   {
-    // can exec while paused
-    // require(control.isCEO(msg.sender), "caller needs to be CEO");
     require(countryIsEnabled[_country], "country already disabled");
 
     countryIsEnabled[_country] = false;

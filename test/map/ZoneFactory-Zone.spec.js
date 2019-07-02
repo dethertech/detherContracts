@@ -105,8 +105,8 @@ const tellerToObj = tellerArr => ({
   settings: tellerArr[4],
   buyRate: tellerArr[5],
   sellRate: tellerArr[6],
-  funds: tellerArr[7],
-  referrer: tellerArr[8],
+  // funds: tellerArr[7],
+  referrer: tellerArr[7],
 });
 
 const auctionToObj = auctionArr => ({
@@ -334,82 +334,6 @@ contract('ZoneFactory + Zone', (accounts) => {
         expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
       });
     });
-    describe('[ERC223] ZoneFactory.createAndClaim(bytes2 _country, bytes7 _geohash, uint _dthAmount)', () => {
-      it('should succeed with tier 1', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
-        let zoneInstance, tellerInstance;
-        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
-
-        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
-
-        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-        await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-
-        await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-        await tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
-
-        expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(1);
-        expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
-      });
-      it('should failed with tier 1', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
-        let zoneInstance, tellerInstance;
-        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '01'));
-
-        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
-
-        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-        await tellerInstance.addFunds({ from: user1, value: ethToWei(20) });
-
-        try {
-          await tellerInstance.sellEth(user2, ethToWei(20), { from: user1 })
-        } catch (err) {
-          if (!err.message.includes('exceeded daily sell limit'))
-            throw err;
-          return;
-        }
-        throw 'should have thrown';
-      });
-      it('should succeed with tier 2', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
-        let zoneInstance, tellerInstance;
-        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '02'));
-
-        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
-
-        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-        await tellerInstance.addFunds({ from: user1, value: ethToWei(20) });
-
-        await tellerInstance.sellEth(user2, ethToWei(20), { from: user1 })
-        await tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
-
-        expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(1);
-        expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
-      });
-      it('should failed with tier 2', async () => {
-        await enableAndLoadCountry(COUNTRY_CG);
-        await dthInstance.mint(user1, ethToWei(MIN_ZONE_DTH_STAKE), { from: owner });
-        let zoneInstance, tellerInstance;
-        ({ zoneInstance, tellerInstance } = await createZoneWithTier(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH, '02'));
-
-        const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
-
-        await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-        await tellerInstance.addFunds({ from: user1, value: ethToWei(120) });
-
-        try {
-          await tellerInstance.sellEth(user2, ethToWei(120), { from: user1 })
-        } catch (err) {
-          if (!err.message.includes('exceeded daily sell limit'))
-            throw err;
-          return;
-        }
-        throw 'should have thrown';
-      });
-    });
   });
 
   describe('Setters', () => {
@@ -423,14 +347,6 @@ contract('ZoneFactory + Zone', (accounts) => {
     });
     describe('AUCTION', () => {
       describe('[ERC223] Zone.claimFreeZone(address _from, uint _dthAmount)', () => {
-        // it('should revert if global pause enabled', async () => {
-        //   await zoneInstance.release({ from: user1 });
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert2(
-        //     claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
-        //     'contract is paused',
-        //   );
-        // });
         it('should revert if country is disabled', async () => {
           await zoneInstance.release({ from: user1 });
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
@@ -511,7 +427,11 @@ contract('ZoneFactory + Zone', (accounts) => {
             'bid is lower than current zone stake',
           );
         });
-        it('should succeed if bid (minus burn fee) is higher than current zone stake', async () => {
+        it('should succeed if bid (minus burn fee) is higher than current zone stake and referrer should be paid', async () => {
+          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, '0x00000000000000000000000000000000', TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
+
+          const oldRefDthBalance = await dthInstance.balanceOf(user5);
+
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
           const oldZoneDthBalance = await dthInstance.balanceOf(zoneInstance.address);
           const bidAmount = MIN_ZONE_DTH_STAKE + 10;
@@ -547,6 +467,11 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(lastAuction.highestBidder).to.equal(user2);
           const bidMinusEntryFee = (await zoneInstance.calcEntryFee(ethToWei(bidAmount))).bidAmount;
           expect(lastAuction.highestBid).to.be.bignumber.equal(bidMinusEntryFee);
+          // ref should be paid
+          // TO DO ADD MORE TEST
+          const newRefDthBalance = await dthInstance.balanceOf(user5);
+          expect(newRefDthBalance).to.be.bignumber.above(oldRefDthBalance);
+
         });
         it('should be possible for a 2nd bidder or the zoneOwner to overbid bidder 1', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
@@ -594,13 +519,6 @@ contract('ZoneFactory + Zone', (accounts) => {
       });
 
       describe('[ERC223] Zone.topUp(address _from, uint _dthAmount)', () => {
-        // it('should revert if global pause enabled', async () => {
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert2(
-        //     topUp(user1, 10, zoneInstance.address),
-        //     'contract is paused',
-        //   );
-        // });
         it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
           await expectRevert2(
@@ -658,13 +576,6 @@ contract('ZoneFactory + Zone', (accounts) => {
       });
 
       describe('Zone.release()', () => {
-        // it('should revert if global pause enabled', async () => {
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     zoneInstance.release({ from: user1 }),
-        //     'contract is paused',
-        //   );
-        // });
         it('should revert if caller is not the zone owner', async () => {
           await expectRevert(
             zoneInstance.release({ from: user2 }),
@@ -729,17 +640,6 @@ contract('ZoneFactory + Zone', (accounts) => {
       });
 
       describe('Zone.withdrawFromAuction(uint _auctionId)', () => {
-        // it('should revert if global pause enabled', async () => {
-        //   await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-        //   await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
-        //   await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
-        //   await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     zoneInstance.withdrawFromAuction('1', { from: user2 }),
-        //     'contract is paused',
-        //   );
-        // });
         it('should revert if auction does not exist', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
@@ -866,26 +766,6 @@ contract('ZoneFactory + Zone', (accounts) => {
         });
       });
       describe('Zone.withdrawFromAuctions(uint[] _auctionIds)', () => {
-        // it('should revert if global pause enabled', async () => {
-        //   // auction 1
-        //   await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-        //   await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser
-        //   await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // loser
-        //   await placeBid(user4, MIN_ZONE_DTH_STAKE + 30, zoneInstance.address); // winner
-        //   await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-        //   // auction 2
-        //   await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-        //   await placeBid(user1, MIN_ZONE_DTH_STAKE + 40, zoneInstance.address); // loser
-        //   await placeBid(user2, MIN_ZONE_DTH_STAKE + 50, zoneInstance.address); // loser
-        //   await placeBid(user3, MIN_ZONE_DTH_STAKE + 60, zoneInstance.address); // winner
-        //   await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     zoneInstance.withdrawFromAuctions(['1'], { from: user3 }),
-        //     'contract is paused',
-        //   );
-        // });
         it('should revert if empty auctionIds list arg', async () => {
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
@@ -1143,7 +1023,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
           const lastAuction = auctionToObj(await zoneInstance.getLastAuction());
           const teller = tellerToObj(await tellerInstance.getTeller());
-
           const lastBlockTimestamp = await getLastBlockTimestamp();
 
           expect(zoneOwner.addr).to.equal(user3);
@@ -1168,10 +1047,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(teller.settings).to.equal(BYTES1_ZERO);
           expect(teller.buyRate).to.be.bignumber.equal('0');
           expect(teller.sellRate).to.be.bignumber.equal('0');
-          expect(teller.funds).to.be.bignumber.equal('0');
-          expect(teller.referrer).to.equal(ADDRESS_ZERO);
-
-          expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
           expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
         });
         it('should succeed to withdraw all of a users withdrawable bids', async () => {
@@ -1250,107 +1125,100 @@ contract('ZoneFactory + Zone', (accounts) => {
 
     describe('TELLER', () => {
       describe('Teller.addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings)', () => {
-        // it('should revert if global pause is enabled', async () => {
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
-        //     'contract is paused',
-        //   );
-        // });
         it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'country is disabled',
           );
         });
         it('should revert if position is empty bytes array', async () => {
           await expectRevert(
-            tellerInstance.addTeller('0x', TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller('0x', TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'expected position to be 12 bytes',
           );
         });
         it('should revert if position is 11 bytes (instead of expected 12)', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex('krcztsebccc'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex('krcztsebccc'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'expected position to be 12 bytes',
           );
         });
         it('should revert if position is 13 bytes (instead of expected 12)', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex('krcztsebcdeee'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex('krcztsebcdeee'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'expected position to be 12 bytes',
           );
         });
         it('should revert if position does not match geohash of Zone contract', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex('xxxxxxxbcddd'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex('xxxxxxxbcddd'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'position is not inside this zone',
           );
         });
         it('should revert if position last 3 chars contain invalid geohash char', async () => {
           await expectRevert(
             // a is not a valid geohash char
-            tellerInstance.addTeller(asciiToHex('krcztsebcdda'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex('krcztsebcdda'), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'invalid position geohash characters',
           );
         });
         it('should revert if currency id is zero', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), '0', asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), '0', asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'currency id must be in range 1-100',
           );
         });
         it('should revert if currency id is 101', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), '101', asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), '101', asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'currency id must be in range 1-100',
           );
         });
         it('should revert if seller bit set -- sellrate less than -9999', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '-10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '-10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'sellRate should be between -9999 and 9999',
           );
         });
         it('should revert if seller bit set -- sellrate more than than 9999', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'sellRate should be between -9999 and 9999',
           );
         });
         it('should revert if seller bit not set -- sellrate is not zero', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '1', TELLER_CG_BUYRATE, '0x02', ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '1', TELLER_CG_BUYRATE, '0x02', ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'cannot set sellRate if not set as seller',
           );
         });
         it('should revert if buyer bit set -- buyrate less than -9999', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '-10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '-10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'buyRate should be between -9999 and 9999',
           );
         });
         it('should revert if buyer bit set -- buyrate more than than 9999', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'buyRate should be between -9999 and 9999',
           );
         });
         it('should revert if buyer bit not set -- buyrate is not zero', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '1', '0x01', ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '1', '0x01', ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
             'cannot set buyRate if not set as buyer',
           );
         });
         it('should revert if caller is not zone owner', async () => {
           await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user2 }),
+            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user2 }),
             'caller is not zoneowner',
           );
         });
         it('should succeed if all args valid', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, TELLER_CG_REFFEE, { from: user1 });
+          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
 
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
           const teller = tellerToObj(await tellerInstance.getTeller());
@@ -1372,14 +1240,14 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(teller.settings).to.equal(TELLER_CG_SETTINGS);
           expect(teller.buyRate).to.be.bignumber.equal(TELLER_CG_BUYRATE);
           expect(teller.sellRate).to.be.bignumber.equal(TELLER_CG_SELLRATE);
-          expect(teller.funds).to.be.bignumber.equal('0');
+          // expect(teller.funds).to.be.bignumber.equal('0');
           expect(teller.referrer).to.equal(user5);
 
-          expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
+          // expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
           expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
         });
         it('should succeed if optional arg "messenger" is bytes16(0)', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, '0x00000000000000000000000000000000', TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, TELLER_CG_REFFEE, { from: user1 });
+          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, '0x00000000000000000000000000000000', TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
 
           const teller = tellerToObj(await tellerInstance.getTeller());
 
@@ -1389,11 +1257,11 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(teller.settings).to.equal(TELLER_CG_SETTINGS);
           expect(teller.buyRate).to.be.bignumber.equal(TELLER_CG_BUYRATE);
           expect(teller.sellRate).to.be.bignumber.equal(TELLER_CG_SELLRATE);
-          expect(teller.funds).to.be.bignumber.equal('0');
+          // expect(teller.funds).to.be.bignumber.equal('0');
           expect(teller.referrer).to.equal(user5);
         });
         it('should succeed if optional arg "referrer" is address(0)', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
+          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
 
           const teller = tellerToObj(await tellerInstance.getTeller());
 
@@ -1403,187 +1271,14 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(teller.settings).to.equal(TELLER_CG_SETTINGS);
           expect(teller.buyRate).to.be.bignumber.equal(TELLER_CG_BUYRATE);
           expect(teller.sellRate).to.be.bignumber.equal(TELLER_CG_SELLRATE);
-          expect(teller.funds).to.be.bignumber.equal('0');
+          // expect(teller.funds).to.be.bignumber.equal('0');
           expect(teller.referrer).to.equal(ADDRESS_ZERO);
-        });
-      });
-      describe('Teller.addFunds(uint _amount)', () => {
-        // it('should revert if global pause is enabled', async () => {
-        //   await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     tellerInstance.addFunds({ from: user1, value: ethToWei(100) }),
-        //     'contract is paused',
-        //   );
-        // });
-        it('should revert if country is disabled', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert(
-            tellerInstance.addFunds({ from: user1, value: ethToWei(100) }),
-            'country is disabled',
-          );
-        });
-        it('should revert if no eth send with call', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await expectRevert(
-            tellerInstance.addFunds({ from: user1, value: ethToWei(0) }),
-            'no eth send with call',
-          );
-        });
-        it('should revert if called by not-zoneowner', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await expectRevert(
-            tellerInstance.addFunds({ from: user2, value: ethToWei(100) }),
-            'caller is not zoneowner',
-          );
-        });
-        it('should revert if no teller added', async () => {
-          await expectRevert(
-            tellerInstance.addFunds({ from: user1, value: ethToWei(100) }),
-            'no teller set',
-          );
-        });
-        it('should succeed otherwise', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          const userEthBalanceBefore = web3.utils.toBN(await web3.eth.getBalance(user1));
-          const zoneEthBalanceBefore = web3.utils.toBN(await web3.eth.getBalance(zoneInstance.address));
-          const tellerEthBalanceBefore = web3.utils.toBN(await web3.eth.getBalance(tellerInstance.address));
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(100) });
-          const userEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(user1));
-          const zoneEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(zoneInstance.address));
-          const tellerEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(tellerInstance.address));
-          expect(userEthBalanceAfter).to.be.bignumber.below(userEthBalanceBefore.sub(web3.utils.toBN(ethToWei(100))));
-          expect(zoneEthBalanceBefore).to.be.bignumber.equal('0');
-          expect(zoneEthBalanceAfter).to.be.bignumber.equal('0');
-          expect(tellerEthBalanceAfter).to.be.bignumber.equal(tellerEthBalanceBefore.add(web3.utils.toBN(ethToWei(100))));
-          expect(tellerInstance.funds()).to.eventually.be.bignumber.equal(ethToWei(100));
-        });
-      });
-      describe('Teller.sellEth(address _to, uint _amount)', () => {
-        // it('should revert if global pause is enabled', async () => {
-        //   await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-        //   await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     tellerInstance.sellEth(user3, ethToWei(1), { from: user1 }),
-        //     'contract is paused',
-        //   );
-        // });
-        it('should revert if country is disabled', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(1), { from: user1 }),
-            'country is disabled',
-          );
-        });
-        it('should revert if sender is also to', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await expectRevert(
-            tellerInstance.sellEth(user1, ethToWei(1), { from: user1 }),
-            'sender cannot also be to',
-          );
-        });
-        it('should revert if amount is zero', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(0), { from: user1 }),
-            'amount to sell cannot be zero',
-          );
-        });
-        it('should revert if caller is not zoneowner', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(1), { from: user2 }),
-            'caller is not zoneowner',
-          );
-        });
-        it('should revert if zone is no teller', async () => {
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(1), { from: user1 }),
-            'no teller set',
-          );
-        });
-        it('should revert if amount to sell is greater than funds added', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(1.1), { from: user1 }),
-            'cannot sell more than in funds',
-          );
-        });
-        it('should revert if amount to sell is not enough pay 0.1% referrer fee', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user4, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(1), { from: user1 }),
-            'not enough funds to sell eth amount plus pay referrer fee',
-          );
-        });
-        it('should revert if amount to sell is greater than daily limit', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(20) });
-          await expectRevert(
-            tellerInstance.sellEth(user3, ethToWei(20), { from: user1 }),
-            'exceeded daily sell limit',
-          );
-        });
-        it('should succeed and transfer sell amount to buyer', async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-
-          const buyerEthBalanceBefore = web3.utils.toBN(await web3.eth.getBalance(user2));
-
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-
-          const tellerEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(tellerInstance.address));
-          const buyerEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(user2));
-
-          expect(tellerInstance.funds()).to.eventually.be.bignumber.equal('0');
-          expect(tellerInstance.funds()).to.eventually.be.bignumber.equal('0');
-
-          expect(tellerEthBalanceAfter).to.be.bignumber.equal('0');
-          expect(buyerEthBalanceAfter).to.be.bignumber.equal(buyerEthBalanceBefore.add(web3.utils.toBN(ethToWei(1))));
-        });
-        it('should succeed and transfer sell amount to buyer plus send 0.1% referrer fee to referrer', async () => {
-          const referrerAddress = user3;
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, referrerAddress, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1.021) });
-
-          const buyerEthBalanceBefore = web3.utils.toBN(await web3.eth.getBalance(user2));
-          const referrerEthBalanceBefore = web3.utils.toBN(await web3.eth.getBalance(referrerAddress));
-
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-
-          const tellerEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(tellerInstance.address));
-          const buyerEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(user2));
-          const referrerEthBalanceAfter = web3.utils.toBN(await web3.eth.getBalance(referrerAddress));
-
-          expect(tellerInstance.funds()).to.eventually.be.bignumber.equal('0');
-          expect(tellerInstance.funds()).to.eventually.be.bignumber.equal('0');
-          expect(tellerInstance.withdrawableEth(referrerAddress)).to.eventually.be.bignumber.equal(ethToWei(0.021));
-
-          expect(tellerEthBalanceAfter).to.be.bignumber.equal(ethToWei(0.021)); // the funds withdrawable by referrer are still in the contract
-          expect(buyerEthBalanceAfter).to.be.bignumber.equal(buyerEthBalanceBefore.add(web3.utils.toBN(ethToWei(1))));
-          expect(referrerEthBalanceAfter).to.be.bignumber.equal(referrerEthBalanceBefore); // referrer needs to withdraw to get the ETH
         });
       });
       describe('Teller.addComment(bytes32 _commentHash)', () => {
         beforeEach(async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
+          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
         });
-        // it('should revert if global pause is enabled', async () => {
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     tellerInstance.addComment(getRandomBytes32(), { from: user2 }),
-        //     'contract is paused',
-        //   );
-        // });
         it('should revert if country is disabled', async () => {
           await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
           await expectRevert(
@@ -1620,79 +1315,14 @@ contract('ZoneFactory + Zone', (accounts) => {
         it('should succeed otherwise', async () => {
           await tellerInstance.addComment(getRandomBytes32(), { from: user2 });
 
-          expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
+          // expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
           expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(1);
-        });
-      });
-      describe('Teller.addCertifiedComment(bytes32 _commentHash)', () => {
-        beforeEach(async () => {
-          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, { from: user1 });
-          await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
-        });
-        // it('should revert if global pause is enabled', async () => {
-        //   await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-        //   await controlInstance.pause({ from: owner });
-        //   await expectRevert(
-        //     tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
-        //     'contract is paused',
-        //   );
-        // });
-        it('should revert if country is disabled', async () => {
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert(
-            tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
-            'country is disabled',
-          );
-        });
-        it('should revert if comment hash is empty', async () => {
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-          await expectRevert(
-            tellerInstance.addCertifiedComment(BYTES32_ZERO, { from: user2 }),
-            'comment hash cannot be 0x0',
-          );
-        });
-        it('should revert if zone has no owner', async () => {
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-          await zoneInstance.release({ from: user1 });
-          await expectRevert(
-            tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
-            'zone has no owner',
-          );
-        });
-        it('should revert if zone has no teller', async () => {
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-          await tellerInstance.removeTeller({ from: user1 });
-          await expectRevert(
-            tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
-            'no teller set',
-          );
-        });
-        it('should revert if zone owner cannot comment himself', async () => {
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-          await expectRevert(
-            tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user1 }),
-            'can not be called by zoneowner',
-          );
-        });
-        it('should revert if user did not trade with teller yet (1 trade = 1 comment)', async () => {
-          await expectRevert(
-            tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 }),
-            'user not allowed to place a certified comment',
-          );
-        });
-        it('should succeed otherwise', async () => {
-          await tellerInstance.sellEth(user2, ethToWei(1), { from: user1 });
-          await tellerInstance.addCertifiedComment(getRandomBytes32(), { from: user2 });
-
-          expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(1);
-          expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
         });
       });
     });
   });
 
-  describe.only('TaxCollector', () => {
+  describe('TaxCollector', () => {
     let zoneInstance;
     let tellerInstance;
 
@@ -1702,8 +1332,8 @@ contract('ZoneFactory + Zone', (accounts) => {
       await enableAndLoadCountry(COUNTRY_CG);
       ({ zoneInstance, tellerInstance } = await createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, VALID_CG_ZONE_GEOHASH));
 
-      await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_BURN, TELLER_CG_REFFEE, { from: user1 });
-      await tellerInstance.addFunds({ from: user1, value: ethToWei(1) });
+      await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_BURN, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
+      // await tellerInstance.addFunds({ from: user1, value: ethToWei(1) }); 
 
       // lancer le fast forward avance dans le temp
       await timeTravel.inSecs(ONE_DAY * 365);
