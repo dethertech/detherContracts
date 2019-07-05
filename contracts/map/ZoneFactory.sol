@@ -1,4 +1,4 @@
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 
@@ -182,17 +182,16 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   //
   // ------------------------------------------------
 
-  // ERC223 magic
+  /*
+   * Wait for a tranfer from DTH TOKEN CONTRACT to create zone and teller contract associated with the zone.
+   */
+
   function tokenFallback(address _from, uint _value, bytes memory _data) // GAS COST +/- 3.763.729
     public
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
 
     require(_data.length == 8, "createAndClaim expects 8 bytes as data");
-
-    // we only expect 1 function to be called, createAndClaim, encoded as bytes1(0x40)
-    // require(toBytes1(_data, 0) == bytes1(0x40), "incorrect first byte in data, expected 0x40");
-
     address sender = _from;
     uint dthAmount = _value;
 

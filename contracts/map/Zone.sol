@@ -1,4 +1,4 @@
-pragma solidity ^0.5.8;
+pragma solidity ^0.5.10;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
@@ -90,7 +90,6 @@ contract Zone is IERC223ReceivingContract {
   bytes6 public geohash;
 
   mapping(address => uint) public withdrawableDth;
-  mapping(address => uint) public withdrawableEth;
 
   uint public currentAuctionId; // starts at 0, first auction will get id 1, etc.
 
@@ -324,7 +323,7 @@ contract Zone is IERC223ReceivingContract {
 
   // ------------------------------------------------
   //
-  // Functions Getters Private
+  // Functions Utils
   //
   // ------------------------------------------------
 
@@ -401,7 +400,9 @@ contract Zone is IERC223ReceivingContract {
     zoneOwner.lastTaxTime = 0;
     zoneOwner.auctionId = 0;
   }
-
+  /*
+   * calculate harberger taxes and send dth to taxCollector and referrer (if exist)
+   */
   function _handleTaxPayment()
     private
   {
@@ -434,6 +435,10 @@ contract Zone is IERC223ReceivingContract {
     }
   }
 
+  /*
+   * Called when auction is ended by _processState()
+   * update the state with new owner and new bid
+   */
   function _endAuction()
     private
   {
@@ -597,11 +602,6 @@ contract Zone is IERC223ReceivingContract {
 
     // a zone owner can currently keep calling this to increase his dth balance inside the zone
     // without a change in his sell price (= zone.staked) or tax amount he needs to pay
-    //
-    // TODO:
-    // - should we also increse his dth stake when he tops up his dth balance?
-    // - or should we limit his max topup to make his balance not bigger
-    //   than his zone.staked amount (over which he pays taxes), or maybe not more than 10% above his zone.staked
   }
 
   // ------------------------------------------------
