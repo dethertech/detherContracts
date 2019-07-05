@@ -2,12 +2,11 @@ pragma solidity ^0.5.8;
 
 contract ITeller {
     function funds() view public returns(uint256);
-    function control() view public returns(address);
     function geo() view public returns(address);
     function withdrawableEth(address) view public returns(uint256);
     function canPlaceCertifiedComment(address, address) view public returns(uint256);
     function zone() view public returns(address);
-    function init(address _geo, address _control, address _zone) external;
+    function init(address _geo, address _zone) external;
     function getComments() view external returns(bytes32[] memory);
     function calcReferrerFee(uint256 _value) view public returns(uint256 referrerAmount);
     function getTeller() view external returns(address, uint8, bytes16, bytes12, bytes1, int16, int16, uint256, address);

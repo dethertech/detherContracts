@@ -20,14 +20,8 @@ contract IUsers {
     function isLeapYear(uint16 year) pure public returns(bool);
     function leapYearsBefore(uint256 year) pure public returns(uint256);
     function getDaysInMonth(uint8 month, uint16 year) pure public returns(uint8);
-    function control() view public returns(address);
     function geo() view public returns(address);
     function volumeBuy(address) view public returns(uint256);
     function getMinute(uint256 timestamp) pure public returns(uint8);
-    function setZoneFactory(address _zoneFactory) external;
-    function updateDailySold(bytes2 _countryCode, address _from, address _to, uint256 _amount) external;
-    function getUserTier(address _who) view public returns(uint256 foundTier);
     function getDateInfo(uint256 timestamp) pure external returns(uint16, uint16, uint16);
-    function setUserTier(address _who, int8 _num) external;
-    function modifyUserTier(int8 _num) public;
 }

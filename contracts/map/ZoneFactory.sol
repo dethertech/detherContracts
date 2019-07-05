@@ -7,7 +7,6 @@ import "../eip1167/EIP1167CloneFactory.sol";
 import "../interfaces/IERC223ReceivingContract.sol";
 import "../interfaces/IDetherToken.sol";
 import "../interfaces/IUsers.sol";
-import "../interfaces/IControl.sol";
 import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZone.sol";
 import "../interfaces/ITeller.sol";
@@ -21,14 +20,12 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   // ------------------------------------------------
 
   //      geohash   zoneContractAddress or 0x0 if it doesnt exist
-  // TODO: now we can use computeCSC() to get CSC, do we need it? not really
   mapping(bytes6 => address) public geohashToZone;
   mapping(address => bytes6) public zoneToGeohash;
 
   IDetherToken public dth;
   IGeoRegistry public geo;
   IUsers public users;
-  IControl public control;
 
   address public zoneImplementation;
   address public tellerImplementation;
@@ -41,7 +38,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   //
   // ------------------------------------------------
 
-  // TODO
+  event NewZoneCreated(bytes6 zoneGeohash, address zoneAddr);
 
   // ------------------------------------------------
   //
@@ -49,20 +46,18 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   //
   // ------------------------------------------------
 
-  constructor(address _dth, address _geo, address _users, address _control, address _zoneImplementation, address _tellerImplementation, address _taxCollector)
+  constructor(address _dth, address _geo, address _users, address _zoneImplementation, address _tellerImplementation, address _taxCollector)
     public
   {
     require(_dth != address(0), "dth address cannot be 0x0");
     require(_geo != address(0), "geo address cannot be 0x0");
     require(_users != address(0), "users address cannot be 0x0");
-    require(_control != address(0), "control address cannot be 0x0");
     require(_zoneImplementation != address(0), "zoneImplementation address cannot be 0x0");
     require(_tellerImplementation != address(0), "tellerImplementation address cannot be 0x0");
 
     dth = IDetherToken(_dth);
     geo = IGeoRegistry(_geo);
     users = IUsers(_users);
-    control = IControl(_control);
 
     zoneImplementation = _zoneImplementation;
     tellerImplementation = _tellerImplementation;
@@ -187,32 +182,22 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   //
   // ------------------------------------------------
 
-  function proxyUpdateUserDailySold(bytes2 _countryCode, address _from, address _to, uint _amount)
-    external
-  {
-    require(zoneToGeohash[msg.sender] != bytes6(0), "can only be called by a registered zone");
-
-    users.updateDailySold(_countryCode, _from, _to, _amount);
-  }
-
   // ERC223 magic
   function tokenFallback(address _from, uint _value, bytes memory _data) // GAS COST +/- 3.763.729
     public
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
 
-    require(control.paused() == false, "contract is paused");
-    require(_data.length == 10, "createAndClaim expects 10 bytes as data");
+    require(_data.length == 8, "createAndClaim expects 8 bytes as data");
 
     // we only expect 1 function to be called, createAndClaim, encoded as bytes1(0x40)
-    require(toBytes1(_data, 0) == bytes1(0x40), "incorrect first byte in data, expected 0x40");
+    // require(toBytes1(_data, 0) == bytes1(0x40), "incorrect first byte in data, expected 0x40");
 
     address sender = _from;
     uint dthAmount = _value;
 
-    bytes2 country = toBytes2(_data, 1);
-    bytes6 geohash = toBytes6(_data, 3);
-    int8 tier = int8(toBytes1(_data, 9)); // should be 1 2 or 3
+    bytes2 country = toBytes2(_data, 0);
+    bytes6 geohash = toBytes6(_data, 2);
     require(geo.countryIsEnabled(country), "country is disabled");
     require(geo.zoneInsideCountry(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
@@ -225,13 +210,10 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
     IZone(newZoneAddress).init(
       country, geohash, sender, dthAmount,
-      address(dth), address(geo), address(control), address(this), taxCollector
+      address(dth), address(geo), address(this), taxCollector
     );
-    ITeller(newTellerAddress).init(address(geo), address(control), newZoneAddress);
+    ITeller(newTellerAddress).init(address(geo), newZoneAddress);
     IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
-
-    // add teller tier
-    users.setUserTier(sender, tier);
 
     // store references
     geohashToZone[geohash] = newZoneAddress;
@@ -239,5 +221,6 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
     // send all dth through to the new Zone contract
     dth.transfer(newZoneAddress, dthAmount, hex"40");
+    emit NewZoneCreated(geohash, newZoneAddress);
   }
 }

@@ -69,9 +69,6 @@ module.exports = async (deployer, network) => {
       throw new Error(`did not specify how to deploy ExchangeRateOracle on this network (${network})`);
   }
 
-  // await deployer.deploy(FakeExchangeRateOracle, { gas: 6500000 });
-  // const price = await FakeExchangeRateOracle.deployed();
-
   let price;
   switch (network) {
     case 'develop':
@@ -150,10 +147,10 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(Teller, { gas: 6500000 });
   const tellerImplementation = await Teller.deployed();
 
-  await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, control.address, certifierRegistry.address, { gas: 6500000 });
+  await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, certifierRegistry.address, { gas: 6500000 });
   const users = await Users.deployed();
 
-  await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, control.address, zoneImplementation.address, tellerImplementation.address, taxCollector.address, { gas: 6500000 });
+  await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, zoneImplementation.address, tellerImplementation.address, taxCollector.address, { gas: 6500000 });
   const zoneFactory = await ZoneFactory.deployed();
 
   switch (network) {

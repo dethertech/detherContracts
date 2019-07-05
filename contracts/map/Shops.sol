@@ -124,11 +124,6 @@ contract Shops {
     _;
   }
 
-  modifier onlyWhenCallerIsCertified {
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
-    _;
-  }
-
   modifier onlyWhenCallerIsDTH {
     require(msg.sender == address(dth), "can only be called by dth contract");
     _;
@@ -441,7 +436,6 @@ contract Shops {
       bytes16 opening = toBytes16(_data, 79);
 
       require(geo.countryIsEnabled(country), "country is disabled");
-      // require(users.getUserTier(sender) > 0, "user not certified");
       require(shopAddressToShop[sender].position == bytes12(0), "caller already has shop");
       require(positionToShopAddress[position] == address(0), "shop already exists at position");
       require(geo.validGeohashChars12(position), "invalid geohash characters in position");

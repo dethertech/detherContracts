@@ -41,7 +41,7 @@ const createDthZoneCreateData = (zoneFactoryAddr, bid, countryCode, geohash) => 
   const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
   const params = web3.eth.abi.encodeParameters(
     ['address', 'uint256', 'bytes'],
-    [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}01`],
+    [zoneFactoryAddr, ethToWei(bid), `0x${countryCode.slice(2)}${geohash.slice(2)}`],
   );
   return [fnSig, params.slice(2)].join('');
 };
@@ -49,7 +49,7 @@ const createDthZoneCreateDataWithTier = (zoneFactoryAddr, bid, countryCode, geoh
   const fnSig = web3.eth.abi.encodeFunctionSignature('transfer(address,uint256,bytes)');
   const params = web3.eth.abi.encodeParameters(
     ['address', 'uint256', 'bytes'],
-    [zoneFactoryAddr, ethToWei(bid), `0x40${countryCode.slice(2)}${geohash.slice(2)}${tier}`],
+    [zoneFactoryAddr, ethToWei(bid), `0x${countryCode.slice(2)}${geohash.slice(2)}${tier}`],
   );
   return [fnSig, params.slice(2)].join('');
 };
@@ -171,7 +171,6 @@ contract('ZoneFactory + Zone', (accounts) => {
       geoInstance.address,
       smsInstance.address,
       kycInstance.address,
-      controlInstance.address,
       certifierRegistryInstance.address,
       { from: owner },
     );
@@ -179,7 +178,6 @@ contract('ZoneFactory + Zone', (accounts) => {
       dthInstance.address,
       geoInstance.address,
       usersInstance.address,
-      controlInstance.address,
       zoneImplementationInstance.address,
       tellerImplementationInstance.address,
       taxCollectorInstance.address,
@@ -205,21 +203,7 @@ contract('ZoneFactory + Zone', (accounts) => {
     const tellerInstance = await Teller.at(tellerAddress);
     return { zoneInstance, tellerInstance };
   };
-  const createZoneWithTier = async (from, dthAmount, countryCode, geohash, tier) => {
-    await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
-    const txCreate = await web3.eth.sendTransaction({
-      from,
-      to: dthInstance.address,
-      data: createDthZoneCreateDataWithTier(zoneFactoryInstance.address, dthAmount, asciiToHex(countryCode), asciiToHex(geohash), tier),
-      value: 0,
-      gas: 4700000,
-    });
-    const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(geohash));
-    const zoneInstance = await Zone.at(zoneAddress);
-    const tellerAddress = await zoneInstance.teller();
-    const tellerInstance = await Teller.at(tellerAddress);
-    return { zoneInstance, tellerInstance };
-  };
+
   const placeBid = async (from, dthAmount, zoneAddress) => {
     await dthInstance.mint(from, ethToWei(dthAmount), { from: owner });
     const tx = await web3.eth.sendTransaction({
@@ -273,7 +257,7 @@ contract('ZoneFactory + Zone', (accounts) => {
         const res = await enableAndLoadCountry(COUNTRY_CG);
         await expectRevert2(
           createZone(user1, MIN_ZONE_DTH_STAKE, COUNTRY_CG, BYTES1_ZERO),
-          'createAndClaim expects 10 bytes as data',
+          'createAndClaim expects 8 bytes as data',
         );
       });
       it('should revert if zone is not inside country', async () => {
@@ -1222,7 +1206,6 @@ contract('ZoneFactory + Zone', (accounts) => {
 
           const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
           const teller = tellerToObj(await tellerInstance.getTeller());
-
           const lastBlockTimestamp = await getLastBlockTimestamp();
 
           expect(zoneInstance.auctionExists('0')).to.eventually.be.false;

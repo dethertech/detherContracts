@@ -10,10 +10,9 @@ contract IZone {
     function zoneFactory() view public returns(address);
     function MIN_STAKE() view public returns(uint256);
     function country() view public returns(bytes2);
-    function control() view public returns(address);
     function geo() view public returns(address);
     function withdrawableEth(address) view public returns(uint256);
-    function init(bytes2 _countryCode, bytes6 _geohash, address _zoneOwner, uint256 _dthAmount, address _dth, address _geo, address _control, address _zoneFactory, address _taxCollector) external;
+    function init(bytes2 _countryCode, bytes6 _geohash, address _zoneOwner, uint256 _dthAmount, address _dth, address _geo, address _zoneFactory, address _taxCollector) external;
     function connectToTellerContract(address _teller) external;
     function ownerAddr() view external returns(address);
     function computeCSC(bytes6 _geohash, address _addr) pure public returns(bytes12);
@@ -29,6 +28,5 @@ contract IZone {
     function withdrawFromAuction(uint256 _auctionId) external;
     function withdrawFromAuctions(uint256[] calldata _auctionIds) external;
     function withdrawDth() external;
-    function withdrawEth() external;
     function proxyUpdateUserDailySold(address _to, uint256 _amount) external;
 }

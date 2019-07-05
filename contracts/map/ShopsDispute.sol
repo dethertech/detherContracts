@@ -94,11 +94,6 @@ contract ShopsDispute {
     _;
   }
 
-  modifier onlyWhenCallerIsCertified {
-    require(users.getUserTier(msg.sender) > 0, "user not certified");
-    _;
-  }
-
 
   // ------------------------------------------------
   //
@@ -226,7 +221,6 @@ contract ShopsDispute {
   function createDispute(address _shopAddress, uint _metaEvidenceId, string memory _evidenceLink)
     public
     payable
-    // onlyWhenCallerIsCertified
   {
     require(_metaEvidenceId < disputeTypes.length, "dispute type does not exist");
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
@@ -259,7 +253,6 @@ contract ShopsDispute {
   function appealDispute(address _shopAddress, string calldata _evidenceLink)
     external
     payable
-    // onlyWhenCallerIsCertified
   {
     require(bytes(_evidenceLink).length > 0, "evidence link is empty");
 

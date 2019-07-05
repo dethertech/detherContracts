@@ -14,8 +14,9 @@ contract TaxCollector is IERC223ReceivingContract, Ownable {
     bool public unchangeable;
     IDetherToken public dth;
     // Daily tax rate (there are no floats in solidity)
+    event ReceivedTaxes(address indexed tokenFrom, uint taxes, address indexed from);
 
-    constructor(address _dth, address _taxRecipient) public {
+    constructor (address _dth, address _taxRecipient) public {
         dth = IDetherToken(_dth);
         taxRecipient = _taxRecipient;
     }
@@ -45,6 +46,6 @@ contract TaxCollector is IERC223ReceivingContract, Ownable {
     function tokenFallback(address _from, uint _value, bytes memory _data) 
       public
     {
-
+      emit ReceivedTaxes(msg.sender, _value, _from);
     }
 }

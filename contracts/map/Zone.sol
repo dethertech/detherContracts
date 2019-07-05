@@ -4,7 +4,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../interfaces/IERC223ReceivingContract.sol";
 import "../interfaces/IDetherToken.sol";
-import "../interfaces/IControl.sol";
 import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZoneFactory.sol";
 import "../interfaces/IZone.sol";
@@ -66,7 +65,6 @@ contract Zone is IERC223ReceivingContract {
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
   uint private constant ENTRY_FEE_PERCENTAGE = 1; // 1%
   uint private constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
-  // uint private constant REFERRER_FEE_PERCENTAGE = 1; // 0.1%
   address private constant ADDRESS_BURN = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
   ZoneOwner private zoneOwner;
@@ -84,7 +82,6 @@ contract Zone is IERC223ReceivingContract {
 
   IDetherToken public dth;
   IGeoRegistry public geo;
-  IControl public control;
   IZoneFactory public zoneFactory;
   ITeller public teller;
   address public taxCollector;
@@ -106,7 +103,10 @@ contract Zone is IERC223ReceivingContract {
   //
   // ------------------------------------------------
 
-  // TODO
+  event AuctionCreated(address indexed sender, uint auctionId, uint bidAmount);
+  event AuctionEnded(address indexed newOwner, uint auctionId,  uint winingBid);
+  event Bid(address indexed sender, uint auctionId, uint bidAmount);
+
 
   // ------------------------------------------------
   //
@@ -181,7 +181,6 @@ contract Zone is IERC223ReceivingContract {
     uint _dthAmount,
     address _dth,
     address _geo,
-    address _control,
     address _zoneFactory,
     address _taxCollector
   )
@@ -195,7 +194,6 @@ contract Zone is IERC223ReceivingContract {
 
     dth = IDetherToken(_dth);
     geo = IGeoRegistry(_geo);
-    control = IControl(_control);
     zoneFactory = IZoneFactory(_zoneFactory);
     taxCollector = _taxCollector;
 
@@ -404,8 +402,6 @@ contract Zone is IERC223ReceivingContract {
     zoneOwner.auctionId = 0;
   }
 
-  event Log(string str, address _addr, uint refFees);
-  event LogRef(uint tax, uint refTax);
   function _handleTaxPayment()
     private
   {
@@ -421,7 +417,6 @@ contract Zone is IERC223ReceivingContract {
       // zone owner does not have enough balance, remove him as zone owner
       uint oldZoneOwnerBalance = zoneOwner.balance;
             (address referrer, uint refFee) = teller.getReferrer();
-      emit Log('handle tax remove' ,referrer , refFee);
       _removeZoneOwner();
       dth.transfer(taxCollector, oldZoneOwnerBalance);
     } else {
@@ -429,11 +424,8 @@ contract Zone is IERC223ReceivingContract {
       zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
       zoneOwner.lastTaxTime = now;
       (address referrer, uint refFee) = teller.getReferrer();
-      emit Log('handle tax ' ,referrer , refFee);
-      emit LogRef(taxAmount ,0);
       if (referrer != address(0x00) && refFee > 0) {
         uint referralFee =  taxAmount.mul(refFee).div(1000) ;
-        emit LogRef(taxAmount ,referralFee);
         dth.transfer(referrer, referralFee);
         dth.transfer(taxCollector, taxAmount - referralFee);
       } else {
@@ -474,8 +466,8 @@ contract Zone is IERC223ReceivingContract {
     (uint taxAmount, uint keepAmount) = calcHarbergerTax(auctionEndTime, now, zoneOwner.staked);
     zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
     zoneOwner.lastTaxTime = now;
+    emit AuctionEnded(lastAuction.highestBidder, currentAuctionId,  highestBid);
   }
-
   function processState()
     external
     /* onlyByTellerContract */
@@ -533,8 +525,8 @@ contract Zone is IERC223ReceivingContract {
 
     // it worked, _sender placed a bid
     lastAuction.highestBidder = _sender;
+    emit Bid(_sender, _dthAmount, currentAuctionId);
   }
-
   function _createAuction(address _sender, uint _dthAmount)
     private
   {
@@ -556,8 +548,8 @@ contract Zone is IERC223ReceivingContract {
     auctionBids[newAuctionId][_sender] = bidAmount;
 
     dth.transfer(taxCollector, burnAmount);
+    emit AuctionCreated(_sender, _dthAmount, newAuctionId);
   }
-
   /// @notice private function to update the current auction state
   function _bid(address _sender, uint _dthAmount) // GAS COST +/- 223.689
     private
@@ -744,30 +736,5 @@ contract Zone is IERC223ReceivingContract {
       withdrawableDth[msg.sender] = 0;
       dth.transfer(msg.sender, dthWithdraw);
     }
-  }
-
-  function withdrawEth()
-    external
-    onlyWhenInited
-    onlyWhenTellerConnected
-    updateState
-  {
-    uint ethWithdraw = withdrawableEth[msg.sender];
-    require(ethWithdraw > 0, "nothing to withdraw");
-
-    if (ethWithdraw > 0) {
-      withdrawableEth[msg.sender] = 0;
-      msg.sender.transfer(ethWithdraw);
-    }
-  }
-
-  // teller --> zone --> zonefactory --> users
-  function proxyUpdateUserDailySold(address _to, uint _amount)
-    external
-    onlyWhenInited
-    onlyWhenTellerConnected
-    onlyByTellerContract
-  {
-    zoneFactory.proxyUpdateUserDailySold(country, zoneOwner.addr, _to, _amount); // MIGHT THROW if exceeds daily limit
   }
 }

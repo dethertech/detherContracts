@@ -3,7 +3,6 @@ pragma solidity ^0.5.8;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-import "../interfaces/IControl.sol";
 import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZone.sol";
 import "../interfaces/ITeller.sol";
@@ -60,7 +59,6 @@ contract Teller {
 
   IZone public zone;
   IGeoRegistry public geo;
-  IControl public control;
 
 
   bytes32[] private commentsFree;
@@ -72,7 +70,8 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  // TODO
+  event AddTeller(bytes position);
+  event RemoveTeller(bytes12 position);
 
   // ------------------------------------------------
   //
@@ -139,7 +138,6 @@ contract Teller {
 
   function init(
     address _geo,
-    address _control,
     address _zone
   )
     external
@@ -147,7 +145,6 @@ contract Teller {
   {
     zone = IZone(_zone);
     geo = IGeoRegistry(_geo);
-    control = IControl(_control);
     inited = true;
   }
 
@@ -277,6 +274,7 @@ contract Teller {
     teller.buyRate = 0;
     teller.sellRate = 0;
     teller.referrer = address(0);
+    emit RemoveTeller(teller.position);
   }
 
   function removeTellerByZone()
@@ -347,6 +345,7 @@ contract Teller {
     teller.referrer = _referrer;
     teller.refFee = _refFee >= 0 ? _refFee : 0;
     teller.description = _description;
+    emit AddTeller(_position);
   }
 
   function addComment(bytes32 _commentHash)
