@@ -2,7 +2,7 @@
 
 [![Join the chat at https://gitter.im/dethertech/detherContracts](https://badges.gitter.im/dethertech/detherContracts.svg)](https://gitter.im/dethertech/detherContracts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
-### Version 1.0   
+### Version 2.0   
 This version introduce the zoning system.  
 A zone is defined by a geohash of 6 character representing a square of approximately (1.22km×0.61km).  
 Each could have only one owner.  
