@@ -3,10 +3,6 @@
 /* eslint-disable max-len, no-multi-spaces, no-unused-expressions */
 
 const DetherToken = artifacts.require('DetherToken');
-const Control = artifacts.require('Control');
-const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle');
-const SmsCertifier = artifacts.require('SmsCertifier');
-const KycCertifier = artifacts.require('KycCertifier');
 const Users = artifacts.require('Users');
 const CertifierRegistry = artifacts.require('CertifierRegistry');
 const GeoRegistry = artifacts.require('GeoRegistry');
@@ -16,21 +12,20 @@ const Teller = artifacts.require('Teller');
 const TaxCollector = artifacts.require('TaxCollector');
 
 const Web3 = require('web3');
-const truffleAssert = require('truffle-assertions');
 
-const expect = require('../utils/chai');
-const TimeTravel = require('../utils/timeTravel');
-const { addCountry } = require('../utils/geo');
-const { ethToWei, asciiToHex, str } = require('../utils/convert');
-const { expectRevert, expectRevert2, expectRevert3 } = require('../utils/evmErrors');
-const { getRandomBytes32 } = require('../utils/ipfs');
+const expect = require('./utils/chai');
+const TimeTravel = require('./utils/timeTravel');
+const { addCountry } = require('./utils/geo');
+const { ethToWei, asciiToHex, str } = require('./utils/convert');
+const { expectRevert, expectRevert2, expectRevert3 } = require('./utils/evmErrors');
+const { getRandomBytes32 } = require('./utils/ipfs');
 const {
   BYTES7_ZERO, VALID_CG_ZONE_GEOHASH, INVALID_CG_ZONE_GEOHASH, MIN_ZONE_DTH_STAKE,
   ONE_HOUR, ONE_DAY, BID_PERIOD, COOLDOWN_PERIOD, ADDRESS_ZERO, ADDRESS_BURN, BYTES32_ZERO,
   BYTES1_ZERO, BYTES12_ZERO, BYTES16_ZERO, ZONE_AUCTION_STATE_STARTED,
   ZONE_AUCTION_STATE_ENDED, TELLER_CG_POSITION, TELLER_CG_CURRENCY_ID,
   TELLER_CG_MESSENGER, TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, TELLER_CG_REFFEE,
-} = require('../utils/values');
+} = require('./utils/values');
 
 const web3 = new Web3('http://localhost:8545');
 const timeTravel = new TimeTravel(web3);
@@ -136,11 +131,7 @@ contract('ZoneFactory + Zone', (accounts) => {
 
   let __rootState__; // eslint-disable-line no-underscore-dangle
 
-  let controlInstance;
-  let smsInstance;
-  let kycInstance;
   let dthInstance;
-  let priceInstance;
   let usersInstance;
   let geoInstance;
   let zoneFactoryInstance;
@@ -158,19 +149,12 @@ contract('ZoneFactory + Zone', (accounts) => {
     await timeTravel.revertState(__rootState__); // to go back to real time
     dthInstance = await DetherToken.new({ from: owner });
     taxCollectorInstance = await TaxCollector.new(dthInstance.address, ADDRESS_BURN, { from: owner })
-    priceInstance = await FakeExchangeRateOracle.new({ from: owner }); // TODO: let CEO update oracle?
-    controlInstance = await Control.new({ from: owner });
-    smsInstance = await SmsCertifier.new(controlInstance.address, { from: owner });
-    kycInstance = await KycCertifier.new(controlInstance.address, { from: owner });
     certifierRegistryInstance = await CertifierRegistry.new({ from: owner });
     geoInstance = await GeoRegistry.new({ from: owner });
     zoneImplementationInstance = await Zone.new({ from: owner });
     tellerImplementationInstance = await Teller.new({ from: owner });
     usersInstance = await Users.new(
-      priceInstance.address,
       geoInstance.address,
-      smsInstance.address,
-      kycInstance.address,
       certifierRegistryInstance.address,
       { from: owner },
     );
@@ -185,7 +169,6 @@ contract('ZoneFactory + Zone', (accounts) => {
     );
 
     await usersInstance.setZoneFactory(zoneFactoryInstance.address, { from: owner });
-    await smsInstance.addDelegate(owner, { from: owner });
   });
 
   const createZone = async (from, dthAmount, countryCode, geohash) => {

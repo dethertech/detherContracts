@@ -1,11 +1,6 @@
 /* eslint-disable */
 /* global artifacts */
 const DetherToken = artifacts.require('DetherToken.sol');
-const Control = artifacts.require('Control.sol');
-const FakeExchangeRateOracle = artifacts.require('FakeExchangeRateOracle.sol');
-const ExchangeRateOracle = artifacts.require('ExchangeRateOracle.sol');
-const SmsCertifier = artifacts.require('SmsCertifier.sol');
-const KycCertifier = artifacts.require('KycCertifier.sol');
 const CertifierRegistry = artifacts.require('CertifierRegistry');
 const Users = artifacts.require('Users.sol');
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
@@ -69,71 +64,8 @@ module.exports = async (deployer, network) => {
       throw new Error(`did not specify how to deploy ExchangeRateOracle on this network (${network})`);
   }
 
-  let price;
-  switch (network) {
-    case 'develop':
-    // use a fake instance to test locally using truffle develop
-    // fall through
-    case 'rinkeby':
-    // use a fake instance to test locally using truffle develop
-    // fall through
-    case 'development':
-    // use a fake instance to test locally using ganache
-    // fall through
-    case 'ropsten':
-      // Maker doesn't test on ropsten so we use a fake instance
-      await deployer.deploy(FakeExchangeRateOracle, { gas: 6000000 });
-      price = await FakeExchangeRateOracle.deployed();
-      break;
-
-    case 'kovan':
-      await deployer.deploy(
-        ExchangeRateOracle,
-        // pass int he address of the Maker price feed contract on the blockchain
-        CONTRACT_ADDRESSES[network].mkrPriceFeed,
-        { gas: 6500000 },
-      );
-      price = await ExchangeRateOracle.deployed();
-      break;
-    // fall through
-    case 'kovan-fork':
-
-      await deployer.deploy(
-        ExchangeRateOracle,
-        // pass int he address of the Maker price feed contract on the blockchain
-        CONTRACT_ADDRESSES['kovan'].mkrPriceFeed,
-        { gas: 6500000 },
-      );
-      price = await ExchangeRateOracle.deployed();
-      break;
-    // fall through
-    case 'mainnet':
-      await deployer.deploy(
-        ExchangeRateOracle,
-        // pass int he address of the Maker price feed contract on the blockchain
-        CONTRACT_ADDRESSES[network].mkrPriceFeed,
-        { gas: 6500000 },
-      );
-      price = await ExchangeRateOracle.deployed();
-
-      break;
-
-    default:
-      throw new Error(`did not specify how to deploy ExchangeRateOracle on this network (${network})`);
-  }
-
-
-  await deployer.deploy(Control, { gas: 6500000 });
-  const control = await Control.deployed();
-
   await deployer.deploy(TaxCollector, dth.address, ADDRESS_ZERO, { gas: 6500000 });
   const taxCollector = await TaxCollector.deployed();
-
-  await deployer.deploy(SmsCertifier, control.address, { gas: 6500000 });
-  const sms = await SmsCertifier.deployed();
-
-  await deployer.deploy(KycCertifier, control.address, { gas: 6500000 });
-  const kyc = await KycCertifier.deployed();
 
   await deployer.deploy(CertifierRegistry, { gas: 6500000 });
   const certifierRegistry = await CertifierRegistry.deployed();
@@ -147,7 +79,7 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(Teller, { gas: 6500000 });
   const tellerImplementation = await Teller.deployed();
 
-  await deployer.deploy(Users, price.address, geo.address, sms.address, kyc.address, certifierRegistry.address, { gas: 6500000 });
+  await deployer.deploy(Users, geo.address, certifierRegistry.address, { gas: 6500000 });
   const users = await Users.deployed();
 
   await deployer.deploy(ZoneFactory, dth.address, geo.address, users.address, zoneImplementation.address, tellerImplementation.address, taxCollector.address, { gas: 6500000 });
@@ -161,11 +93,11 @@ module.exports = async (deployer, network) => {
       console.log('Set zone factory');
   }
 
-  // await deployer.deploy(Shops, dth.address, geo.address, users.address, control.address, zoneFactory.address, { gas: 6500000 });
-  // const shops = await Shops.deployed();
+  await deployer.deploy(Shops, dth.address, geo.address, users.address, zoneFactory.address, { gas: 6500000 });
+  const shops = await Shops.deployed();
 
-  // await deployer.deploy(ShopsDispute, shops.address, users.address, control.address, '0xffffffffffffffffffffffffffffffffffffffff', '0x0', { gas: 6500000 });
-  // const shopsDispute = await ShopsDispute.deployed();
-  // await shops.setShopsDisputeContract(shopsDispute.address);
+  await deployer.deploy(ShopsDispute, shops.address, users.address, '0xffffffffffffffffffffffffffffffffffffffff', '0x0', { gas: 6500000 });
+  const shopsDispute = await ShopsDispute.deployed();
+  await shops.setShopsDisputeContract(shopsDispute.address);
 
 };

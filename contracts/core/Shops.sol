@@ -6,7 +6,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../interfaces/IDetherToken.sol";
 import "../interfaces/IUsers.sol";
-import "../interfaces/IControl.sol";
 import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZoneFactory.sol";
 import "../interfaces/IZone.sol";
@@ -48,6 +47,7 @@ contract Shops {
     uint lastTaxTime;
     bool hasDispute;
     uint disputeID;
+    uint _index;
   }
   
   // ------------------------------------------------
@@ -62,16 +62,16 @@ contract Shops {
   IDetherToken public dth;
   IGeoRegistry public geo;
   IUsers public users;
-  IControl public control;
   IZoneFactory public zoneFactory;
   address public shopsDispute;
+  address public disputeStarter;
+  bool disputeEnabled = false;
+  bool disputeInited = false;
+
 
   // constant
   uint public constant DAILY_TAX= 42; // 1/42 daily
   uint public floorLicencePrice = 42000000000000000000;
-
-  //      countryCode priceDTH
-  mapping(bytes2 =>   uint) public countryLicensePrice;
 
     //    bytes6 geohash priceDTH
   mapping(bytes6 =>   uint) public zoneLicencePrice;
@@ -109,8 +109,8 @@ contract Shops {
   //
   // ------------------------------------------------
 
-  modifier onlyWhenCallerIsCEO {
-    require(control.isCEO(msg.sender), "can only be called by CEO");
+  modifier onlyWhenDisputeEnabled {
+    require(disputeEnabled, "Can only be called when dispute is enabled");
     _;
   }
 
@@ -151,29 +151,35 @@ contract Shops {
   //
   // ------------------------------------------------
 
-  constructor(address _dth, address _geo, address _users, address _control, address _zoneFactory)
+  constructor(address _dth, address _geo, address _users, address _zoneFactory)
     public
   {
     require(_dth != address(0), "dth address cannot be 0x0");
     require(_geo != address(0), "geo address cannot be 0x0");
     require(_users != address(0), "users address cannot be 0x0");
-    require(_control != address(0), "control address cannot be 0x0");
     require(_zoneFactory != address(0), "zoneFactory address cannot be 0x0");
 
     dth = IDetherToken(_dth);
     geo = IGeoRegistry(_geo);
     users = IUsers(_users);
-    control = IControl(_control);
     zoneFactory = IZoneFactory(_zoneFactory);
+    disputeStarter = msg.sender;
   }
   function setShopsDisputeContract(address _shopsDispute)
     external
-    onlyWhenCallerIsCEO
   {
     require(_shopsDispute != address(0), "shops dispute contract cannot be 0x0");
+    require(msg.sender == disputeStarter);
+    require(disputeInited == false);
     shopsDispute = _shopsDispute;
+    disputeInited = true;
   }
-
+  function enableDispute()
+    external 
+    {
+      require(msg.sender == disputeStarter);
+      disputeEnabled = true;
+    }
   // ------------------------------------------------
   //
   // Functions Getters Public
@@ -345,14 +351,7 @@ contract Shops {
   // Functions Setters Public
   //
   // ------------------------------------------------
-
-  function setCountryLicensePrice(bytes2 _countryCode, uint _priceDTH)
-    external
-    onlyWhenCallerIsCEO
-  {
-    countryLicensePrice[_countryCode] = _priceDTH;
-  }
-
+  
   function setZoneLicensePrice(bytes6 _zoneGeohash, uint _priceDTH)
     external
   {
@@ -371,7 +370,6 @@ contract Shops {
     view
     returns (uint taxAmount)
   {
-
     taxAmount = _licencePrice.mul(_endTime.sub(_startTime)).div(DAILY_TAX).div(1 days);
   }
 
@@ -390,13 +388,13 @@ contract Shops {
     // collect taxes if possible
     // delete point if no more enough stake
     uint taxToSendToZoneOwner = 0;
-    for (uint i = _start; i < shopsinZone.length; i+= 1) {
+    for (uint i = _start; i < _end; i+= 1) {
 
       uint taxAmount = calcShopTax(shopAddressToShop[shopsinZone[i]].lastTaxTime, now, shopAddressToShop[shopsinZone[i]].licencePrice);
       if (taxAmount > shopAddressToShop[shopsinZone[i]].staked) {
         // shop pay what he can and is deleted
         taxToSendToZoneOwner = taxToSendToZoneOwner.add(shopAddressToShop[shopsinZone[i]].staked);
-        deleteShop(shopsinZone[i]);
+        _deleteShop(shopsinZone[i]);
       } else {
         shopAddressToShop[shopsinZone[i]].staked = shopAddressToShop[shopsinZone[i]].staked.sub(taxAmount);
 
@@ -411,11 +409,9 @@ contract Shops {
     emit TaxTotalPaidTo(taxToSendToZoneOwner, zoneOwner);
   }
 
-
   function tokenFallback(address _from, uint _value, bytes memory _data)
     public
     onlyWhenCallerIsDTH
-
   {
     require(_data.length == 95, "addShop expects 95 bytes as data");
 
@@ -444,7 +440,6 @@ contract Shops {
       // check the price for adding shop in this zone (geohash6)
       uint zoneValue = zoneLicencePrice[bytes6(position)] > floorLicencePrice ? zoneLicencePrice[bytes6(position)] : floorLicencePrice;
       require(dthAmount >= zoneValue, "send dth is less than shop license price");
-      // require(dthAmount >= countryLicensePrice[country], "send dth is less than shop license price");
 
       // create new entry in storage
       Shop storage shop = shopAddressToShop[sender];
@@ -464,10 +459,9 @@ contract Shops {
       // so we can get a shop based on its position
       positionToShopAddress[position] = sender;
 
-      // a zone is a 7 character geohash, we keep track of all shops in a given zone
-      zoneToShopAddresses[bytes6(position)].push(sender);
+      // a zone is a 6 character geohash, we keep track of all shops in a given zone
+      shop._index = zoneToShopAddresses[bytes6(position)].push(sender);
     }
-
   }
 
   function _topUp(address _sender, uint _dthAmount) // GAS COST +/- 104.201
@@ -478,7 +472,7 @@ contract Shops {
     stakedDth = stakedDth.add(_dthAmount);
   }
 
-  function deleteShop(address shopAddress)
+  function _deleteShop(address shopAddress)
     private
   {
     bytes12 position = shopAddressToShop[shopAddress].position;
@@ -486,34 +480,58 @@ contract Shops {
     delete shopAddressToShop[shopAddress];
 
     positionToShopAddress[position] = address(0);
-
-    // it's safe to do a loop, the number of geohash12 in any geohash7 (33.554.432) is less than the max uint value
+    // it's safe to do a loop, the number of geohash12 in any geohash6 (1.073.741.824) is less than the max uint value
     // however we would like to NOT loop,
     // TODO: get rid of the loop by tracking the index of each shop address
-    address[] storage zoneShopAddresses = zoneToShopAddresses[bytes6(position)];
-    for (uint i = 0; i < zoneShopAddresses.length; i += 1) {
-      address zoneShopAddress = zoneShopAddresses[i];
-      if (zoneShopAddress == shopAddress) {
-        address lastShopAddress = zoneShopAddresses[zoneShopAddresses.length - 1];
-        zoneShopAddresses[i] = lastShopAddress;
-        zoneShopAddresses.length--;
-        break; // done
-      }
-    }
+    // address[] storage zoneShopAddresses = zoneToShopAddresses[bytes6(position)];
+    // for (uint i = 0; i < zoneShopAddresses.length; i += 1) {
+    //   address zoneShopAddress = zoneShopAddresses[i];
+    //   if (zoneShopAddress == shopAddress) {
+    //     address lastShopAddress = zoneShopAddresses[zoneShopAddresses.length - 1];
+    //     zoneShopAddresses[i] = lastShopAddress;
+    //     zoneShopAddresses.length--;
+    //     break; // done
+    //   }
+    // }
+
+    delete positionToShopAddress[shopAddressToShop[shopAddress].position];
+    uint indexToRemove = shopAddressToShop[shopAddress]._index;
+    zoneToShopAddresses[bytes6(position)][indexToRemove] = zoneToShopAddresses[bytes6(position)][zoneToShopAddresses[bytes6(position)].length - 1];
+    shopAddressToShop[zoneToShopAddresses[bytes6(position)][indexToRemove]]._index = indexToRemove;
+    zoneToShopAddresses[bytes6(position)].length--;
+    delete shopAddressToShop[shopAddress];
   }
 
   function removeShop()
     external
     onlyWhenShopsDisputeSet
     onlyWhenCallerIsShop
-    // onlyWhenCallerIsCertified
     onlyWhenNoDispute(msg.sender)
   {
     uint shopStake = shopAddressToShop[msg.sender].staked;
 
-    deleteShop(msg.sender);
+    _deleteShop(msg.sender);
 
     dth.transfer(msg.sender, shopStake);
+    stakedDth = stakedDth.sub(shopStake);
+  }
+
+  function removeShopFromZoneOwner(address _shopAddress, bytes6 _zoneGeohash)
+    external
+  {
+    require(disputeEnabled == false, 'Once activated, only dispute contract can remove shop');
+    address zoneAddress = zoneFactory.geohashToZone(_zoneGeohash);
+    IZone zoneInstance = IZone(zoneAddress);
+    address zoneOwner = zoneInstance.ownerAddr();
+    require(msg.sender == zoneOwner, 'msg.sender is not the owner of the zone');
+    bytes12 shopPos = shopAddressToShop[_shopAddress].position;
+    bytes6 zoneGeohash = zoneInstance.geohash();
+    require(bytes6(shopPos) == zoneGeohash, "position is not inside this zone");
+    uint shopStake = shopAddressToShop[_shopAddress].staked;
+
+    _deleteShop(_shopAddress);
+
+    dth.transfer(_shopAddress, shopStake);
     stakedDth = stakedDth.sub(shopStake);
   }
 
@@ -537,6 +555,7 @@ contract Shops {
     external
     onlyWhenShopsDisputeSet
     onlyWhenCallerIsShopsDispute
+    onlyWhenDisputeEnabled
   {
     require(shopAddressToShop[_shopAddress].position != bytes12(0), "shop does not exist");
     shopAddressToShop[_shopAddress].hasDispute = true;
@@ -547,6 +566,7 @@ contract Shops {
     external
     onlyWhenShopsDisputeSet
     onlyWhenCallerIsShopsDispute
+    onlyWhenDisputeEnabled
   {
     require(shopAddressToShop[_shopAddress].position != bytes12(0), "shop does not exist");
     shopAddressToShop[_shopAddress].hasDispute = false;
@@ -560,7 +580,7 @@ contract Shops {
   {
     uint shopStake = shopAddressToShop[_shopAddress].staked;
 
-    deleteShop(_shopAddress);
+    _deleteShop(_shopAddress);
 
     withdrawableDth[_challenger] = shopStake;
   }

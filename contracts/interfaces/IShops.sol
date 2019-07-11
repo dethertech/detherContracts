@@ -6,7 +6,6 @@ contract IShops {
     function positionToShopAddress(bytes12) view public returns(address);
     function shopsDispute() view public returns(address);
     function zoneToShopAddresses(bytes7, uint256) view public returns(address);
-    function control() view public returns(address);
     function geo() view public returns(address);
     function users() view public returns(address);
     function countryLicensePrice(bytes2) view public returns(uint256);

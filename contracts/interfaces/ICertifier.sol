@@ -3,7 +3,6 @@ pragma solidity ^0.5.10;
 contract ICertifier {
     function certs(address) view public returns(bool active);
     function delegate(address) view public returns(bool active);
-    function control() view public returns(address);
     function addDelegate(address _delegate) public;
     function removeDelegate(address _delegate) public;
     function certify(address _who) public;

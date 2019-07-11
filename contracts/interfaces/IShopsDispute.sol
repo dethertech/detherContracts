@@ -7,7 +7,6 @@ contract IShopsDispute {
     function arbitrator() view public returns(address);
     function disputeTypes(uint256) view public returns(string memory);
     function shops() view public returns(address);
-    function control() view public returns(address);
     function users() view public returns(address);
     function getDisputeCreateCost() view public returns(uint256);
     function getDisputeAppealCost(address _shopAddress) view external returns(uint256);

@@ -6,18 +6,19 @@ const path = require('path');
 const pretty = require('pretty-time');
 const Web3 = require('web3');
 
-const { addNumberDots } = require('../utils/output');
-const { getAccounts } = require('../utils/accounts');
-const { addCountry } = require('../utils/geo');
-const { expectRevert, expectRevert2 } = require('../utils/evmErrors');
+const { getAccounts } = require('./utils/accounts');
+const { addCountry } = require('./utils/geo');
+const { expectRevert, expectRevert2 } = require('./utils/evmErrors');
 
-
-const Control = artifacts.require('Control.sol');
 const GeoRegistry = artifacts.require('GeoRegistry.sol');
 
 const BATCH_SIZE = 300;
 
 const web3 = new Web3('http://localhost:8545');
+
+const addNumberDots = num => (
+  num.toString().replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1.')
+);
 
 const countriesToTest = [
   'AD',
@@ -262,7 +263,6 @@ const countriesToTest = [
 contract('GeoRegistry', () => {
   let owner;
 
-  let controlInstance;
   let geoRegistryContract;
 
   let timerStart;
@@ -273,7 +273,6 @@ contract('GeoRegistry', () => {
   });
 
   beforeEach(async () => {
-    controlInstance = await Control.new({ from: owner });
     geoRegistryContract = await GeoRegistry.new({ from: owner });
   });
 
@@ -311,7 +310,7 @@ contract('GeoRegistry', () => {
 
   it('zoneInsideCountry returns correct result', async () => {
     const countryCode = 'CG';
-    const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
+    const countryFile = require(path.join(__dirname, '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
     await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
     const countryCodeBytes = web3.utils.asciiToHex(countryCode);
     await geoRegistryContract.endInit(countryCodeBytes);
@@ -342,7 +341,7 @@ contract('GeoRegistry', () => {
 
   it('impossible to add new geohash to already filled up country', async () => {
     const countryCode = 'CG';
-    const countryFile = require(path.join(__dirname, '..', '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
+    const countryFile = require(path.join(__dirname, '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
     await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
     const countryCodeBytes = web3.utils.asciiToHex(countryCode);
 

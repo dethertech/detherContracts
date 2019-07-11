@@ -4,22 +4,22 @@
   "metadata": "{\"compiler\":{\"version\":\"0.5.10+commit.5a6ea5b1\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"details\":\"To simply and cheaply clone contract functionality in an immutable way, this standard specifies a minimal bytecode implementation that delegates all calls to a known, fixed address. * https://eips.ethereum.org/EIPS/eip-1167\",\"methods\":{},\"title\":\"EIP 1167: Minimal Proxy Contract\"},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol\":\"EIP1167CloneFactory\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol\":{\"keccak256\":\"0x97d973416008968b0b6d4a84503fa5cb989020e5f8392005c22afc56b070518b\",\"urls\":[\"bzzr://88397914675cfe546992a93df599fb407823daa7d956a8d33aadb6714628a9bb\",\"dweb:/ipfs/QmXv3Uuc2wPPcedb85Me9eiADwSkhbSTjFXXipMiUKpVMP\"]}},\"version\":1}",
   "bytecode": "0x6080604052348015600f57600080fd5b50603e80601d6000396000f3fe6080604052600080fdfea265627a7a72305820cbc984f65e95dd5a54f4e4eb8deb759e246f7e9a55971bdc08d5f16c262f74fc64736f6c634300050a0032",
   "deployedBytecode": "0x6080604052600080fdfea265627a7a72305820cbc984f65e95dd5a54f4e4eb8deb759e246f7e9a55971bdc08d5f16c262f74fc64736f6c634300050a0032",
-  "sourceMap": "322:476:10:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;322:476:10;;;;;;;",
-  "deployedSourceMap": "322:476:10:-;;;;;",
+  "sourceMap": "322:476:11:-;;;;8:9:-1;5:2;;;30:1;27;20:12;5:2;322:476:11;;;;;;;",
+  "deployedSourceMap": "322:476:11:-;;;;;",
   "source": "pragma solidity ^0.5.10;\n\n/**\n * @title EIP 1167: Minimal Proxy Contract\n *\n * @dev To simply and cheaply clone contract functionality in an immutable way,\n * this standard specifies a minimal bytecode implementation that delegates\n * all calls to a known, fixed address.\n *\n * https://eips.ethereum.org/EIPS/eip-1167\n */\ncontract EIP1167CloneFactory {\n  function createClone(address target) internal returns (address result) {\n    bytes20 targetBytes = bytes20(target);\n    assembly {\n      let clone := mload(0x40)\n      mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\n      mstore(add(clone, 0x14), targetBytes)\n      mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\n      result := create(0, clone, 0x37)\n    }\n  }\n}\n",
   "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol",
   "ast": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol",
     "exportedSymbols": {
       "EIP1167CloneFactory": [
-        2718
+        7481
       ]
     },
-    "id": 2719,
+    "id": 7482,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2702,
+        "id": 7465,
         "literals": [
           "solidity",
           "^",
@@ -27,7 +27,7 @@
           ".10"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:10"
+        "src": "0:24:11"
       },
       {
         "baseContracts": [],
@@ -35,31 +35,31 @@
         "contractKind": "contract",
         "documentation": "@title EIP 1167: Minimal Proxy Contract\n * @dev To simply and cheaply clone contract functionality in an immutable way,\nthis standard specifies a minimal bytecode implementation that delegates\nall calls to a known, fixed address.\n * https://eips.ethereum.org/EIPS/eip-1167",
         "fullyImplemented": true,
-        "id": 2718,
+        "id": 7481,
         "linearizedBaseContracts": [
-          2718
+          7481
         ],
         "name": "EIP1167CloneFactory",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 2716,
+              "id": 7479,
               "nodeType": "Block",
-              "src": "426:370:10",
+              "src": "426:370:11",
               "statements": [
                 {
                   "assignments": [
-                    2710
+                    7473
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 2710,
+                      "id": 7473,
                       "name": "targetBytes",
                       "nodeType": "VariableDeclaration",
-                      "scope": 2716,
-                      "src": "432:19:10",
+                      "scope": 7479,
+                      "src": "432:19:11",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -67,10 +67,10 @@
                         "typeString": "bytes20"
                       },
                       "typeName": {
-                        "id": 2709,
+                        "id": 7472,
                         "name": "bytes20",
                         "nodeType": "ElementaryTypeName",
-                        "src": "432:7:10",
+                        "src": "432:7:11",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes20",
                           "typeString": "bytes20"
@@ -80,18 +80,18 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 2714,
+                  "id": 7477,
                   "initialValue": {
                     "argumentTypes": null,
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 2712,
+                        "id": 7475,
                         "name": "target",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2704,
-                        "src": "462:6:10",
+                        "referencedDeclaration": 7467,
+                        "src": "462:6:11",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
                           "typeString": "address"
@@ -105,20 +105,20 @@
                           "typeString": "address"
                         }
                       ],
-                      "id": 2711,
+                      "id": 7474,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
                       "lValueRequested": false,
                       "nodeType": "ElementaryTypeNameExpression",
-                      "src": "454:7:10",
+                      "src": "454:7:11",
                       "typeDescriptions": {
                         "typeIdentifier": "t_type$_t_bytes20_$",
                         "typeString": "type(bytes20)"
                       },
                       "typeName": "bytes20"
                     },
-                    "id": 2713,
+                    "id": 7476,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -126,61 +126,61 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "454:15:10",
+                    "src": "454:15:11",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bytes20",
                       "typeString": "bytes20"
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "432:37:10"
+                  "src": "432:37:11"
                 },
                 {
                   "externalReferences": [
                     {
                       "result": {
-                        "declaration": 2707,
+                        "declaration": 7470,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "754:6:10",
+                        "src": "754:6:11",
                         "valueSize": 1
                       }
                     },
                     {
                       "targetBytes": {
-                        "declaration": 2710,
+                        "declaration": 7473,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "636:11:10",
+                        "src": "636:11:11",
                         "valueSize": 1
                       }
                     }
                   ],
-                  "id": 2715,
+                  "id": 7478,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    let clone := mload(0x40)\n    mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\n    mstore(add(clone, 0x14), targetBytes)\n    mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\n    result := create(0, clone, 0x37)\n}",
-                  "src": "475:317:10"
+                  "src": "475:317:11"
                 }
               ]
             },
             "documentation": null,
-            "id": 2717,
+            "id": 7480,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
             "name": "createClone",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2705,
+              "id": 7468,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2704,
+                  "id": 7467,
                   "name": "target",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2717,
-                  "src": "376:14:10",
+                  "scope": 7480,
+                  "src": "376:14:11",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -188,10 +188,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2703,
+                    "id": 7466,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "376:7:10",
+                    "src": "376:7:11",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -202,19 +202,19 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "375:16:10"
+              "src": "375:16:11"
             },
             "returnParameters": {
-              "id": 2708,
+              "id": 7471,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2707,
+                  "id": 7470,
                   "name": "result",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2717,
-                  "src": "410:14:10",
+                  "scope": 7480,
+                  "src": "410:14:11",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -222,10 +222,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2706,
+                    "id": 7469,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "410:7:10",
+                    "src": "410:7:11",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -236,33 +236,33 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "409:16:10"
+              "src": "409:16:11"
             },
-            "scope": 2718,
-            "src": "355:441:10",
+            "scope": 7481,
+            "src": "355:441:11",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "internal"
           }
         ],
-        "scope": 2719,
-        "src": "322:476:10"
+        "scope": 7482,
+        "src": "322:476:11"
       }
     ],
-    "src": "0:799:10"
+    "src": "0:799:11"
   },
   "legacyAST": {
     "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/eip1167/EIP1167CloneFactory.sol",
     "exportedSymbols": {
       "EIP1167CloneFactory": [
-        2718
+        7481
       ]
     },
-    "id": 2719,
+    "id": 7482,
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2702,
+        "id": 7465,
         "literals": [
           "solidity",
           "^",
@@ -270,7 +270,7 @@
           ".10"
         ],
         "nodeType": "PragmaDirective",
-        "src": "0:24:10"
+        "src": "0:24:11"
       },
       {
         "baseContracts": [],
@@ -278,31 +278,31 @@
         "contractKind": "contract",
         "documentation": "@title EIP 1167: Minimal Proxy Contract\n * @dev To simply and cheaply clone contract functionality in an immutable way,\nthis standard specifies a minimal bytecode implementation that delegates\nall calls to a known, fixed address.\n * https://eips.ethereum.org/EIPS/eip-1167",
         "fullyImplemented": true,
-        "id": 2718,
+        "id": 7481,
         "linearizedBaseContracts": [
-          2718
+          7481
         ],
         "name": "EIP1167CloneFactory",
         "nodeType": "ContractDefinition",
         "nodes": [
           {
             "body": {
-              "id": 2716,
+              "id": 7479,
               "nodeType": "Block",
-              "src": "426:370:10",
+              "src": "426:370:11",
               "statements": [
                 {
                   "assignments": [
-                    2710
+                    7473
                   ],
                   "declarations": [
                     {
                       "constant": false,
-                      "id": 2710,
+                      "id": 7473,
                       "name": "targetBytes",
                       "nodeType": "VariableDeclaration",
-                      "scope": 2716,
-                      "src": "432:19:10",
+                      "scope": 7479,
+                      "src": "432:19:11",
                       "stateVariable": false,
                       "storageLocation": "default",
                       "typeDescriptions": {
@@ -310,10 +310,10 @@
                         "typeString": "bytes20"
                       },
                       "typeName": {
-                        "id": 2709,
+                        "id": 7472,
                         "name": "bytes20",
                         "nodeType": "ElementaryTypeName",
-                        "src": "432:7:10",
+                        "src": "432:7:11",
                         "typeDescriptions": {
                           "typeIdentifier": "t_bytes20",
                           "typeString": "bytes20"
@@ -323,18 +323,18 @@
                       "visibility": "internal"
                     }
                   ],
-                  "id": 2714,
+                  "id": 7477,
                   "initialValue": {
                     "argumentTypes": null,
                     "arguments": [
                       {
                         "argumentTypes": null,
-                        "id": 2712,
+                        "id": 7475,
                         "name": "target",
                         "nodeType": "Identifier",
                         "overloadedDeclarations": [],
-                        "referencedDeclaration": 2704,
-                        "src": "462:6:10",
+                        "referencedDeclaration": 7467,
+                        "src": "462:6:11",
                         "typeDescriptions": {
                           "typeIdentifier": "t_address",
                           "typeString": "address"
@@ -348,20 +348,20 @@
                           "typeString": "address"
                         }
                       ],
-                      "id": 2711,
+                      "id": 7474,
                       "isConstant": false,
                       "isLValue": false,
                       "isPure": true,
                       "lValueRequested": false,
                       "nodeType": "ElementaryTypeNameExpression",
-                      "src": "454:7:10",
+                      "src": "454:7:11",
                       "typeDescriptions": {
                         "typeIdentifier": "t_type$_t_bytes20_$",
                         "typeString": "type(bytes20)"
                       },
                       "typeName": "bytes20"
                     },
-                    "id": 2713,
+                    "id": 7476,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -369,61 +369,61 @@
                     "lValueRequested": false,
                     "names": [],
                     "nodeType": "FunctionCall",
-                    "src": "454:15:10",
+                    "src": "454:15:11",
                     "typeDescriptions": {
                       "typeIdentifier": "t_bytes20",
                       "typeString": "bytes20"
                     }
                   },
                   "nodeType": "VariableDeclarationStatement",
-                  "src": "432:37:10"
+                  "src": "432:37:11"
                 },
                 {
                   "externalReferences": [
                     {
                       "result": {
-                        "declaration": 2707,
+                        "declaration": 7470,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "754:6:10",
+                        "src": "754:6:11",
                         "valueSize": 1
                       }
                     },
                     {
                       "targetBytes": {
-                        "declaration": 2710,
+                        "declaration": 7473,
                         "isOffset": false,
                         "isSlot": false,
-                        "src": "636:11:10",
+                        "src": "636:11:11",
                         "valueSize": 1
                       }
                     }
                   ],
-                  "id": 2715,
+                  "id": 7478,
                   "nodeType": "InlineAssembly",
                   "operations": "{\n    let clone := mload(0x40)\n    mstore(clone, 0x3d602d80600a3d3981f3363d3d373d3d3d363d73000000000000000000000000)\n    mstore(add(clone, 0x14), targetBytes)\n    mstore(add(clone, 0x28), 0x5af43d82803e903d91602b57fd5bf30000000000000000000000000000000000)\n    result := create(0, clone, 0x37)\n}",
-                  "src": "475:317:10"
+                  "src": "475:317:11"
                 }
               ]
             },
             "documentation": null,
-            "id": 2717,
+            "id": 7480,
             "implemented": true,
             "kind": "function",
             "modifiers": [],
             "name": "createClone",
             "nodeType": "FunctionDefinition",
             "parameters": {
-              "id": 2705,
+              "id": 7468,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2704,
+                  "id": 7467,
                   "name": "target",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2717,
-                  "src": "376:14:10",
+                  "scope": 7480,
+                  "src": "376:14:11",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -431,10 +431,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2703,
+                    "id": 7466,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "376:7:10",
+                    "src": "376:7:11",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -445,19 +445,19 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "375:16:10"
+              "src": "375:16:11"
             },
             "returnParameters": {
-              "id": 2708,
+              "id": 7471,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2707,
+                  "id": 7470,
                   "name": "result",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2717,
-                  "src": "410:14:10",
+                  "scope": 7480,
+                  "src": "410:14:11",
                   "stateVariable": false,
                   "storageLocation": "default",
                   "typeDescriptions": {
@@ -465,10 +465,10 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2706,
+                    "id": 7469,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
-                    "src": "410:7:10",
+                    "src": "410:7:11",
                     "stateMutability": "nonpayable",
                     "typeDescriptions": {
                       "typeIdentifier": "t_address",
@@ -479,20 +479,20 @@
                   "visibility": "internal"
                 }
               ],
-              "src": "409:16:10"
+              "src": "409:16:11"
             },
-            "scope": 2718,
-            "src": "355:441:10",
+            "scope": 7481,
+            "src": "355:441:11",
             "stateMutability": "nonpayable",
             "superFunction": null,
             "visibility": "internal"
           }
         ],
-        "scope": 2719,
-        "src": "322:476:10"
+        "scope": 7482,
+        "src": "322:476:11"
       }
     ],
-    "src": "0:799:10"
+    "src": "0:799:11"
   },
   "compiler": {
     "name": "solc",
@@ -500,7 +500,7 @@
   },
   "networks": {},
   "schemaVersion": "3.0.11",
-  "updatedAt": "2019-07-05T13:10:44.036Z",
+  "updatedAt": "2019-07-11T15:29:49.062Z",
   "devdoc": {
     "details": "To simply and cheaply clone contract functionality in an immutable way, this standard specifies a minimal bytecode implementation that delegates all calls to a known, fixed address. * https://eips.ethereum.org/EIPS/eip-1167",
     "methods": {},

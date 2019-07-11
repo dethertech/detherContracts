@@ -218,6 +218,7 @@ contract Teller {
 
       return tempBytes7;
   }
+  
     function toBytes6(bytes memory _bytes, uint _start)
     private
     pure

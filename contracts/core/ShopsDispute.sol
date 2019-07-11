@@ -1,13 +1,14 @@
 pragma solidity ^0.5.10;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
+import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+
 
 import "../interfaces/IUsers.sol";
-import "../interfaces/IControl.sol";
 import "../interfaces/IShops.sol";
 import "../interfaces/IKlerosArbitrable.sol";
 
-contract ShopsDispute {
+contract ShopsDispute is Ownable {
   // ------------------------------------------------
   //
   // Libraries
@@ -49,7 +50,6 @@ contract ShopsDispute {
   // links to other contracts
   IShops public shops;
   IUsers public users;
-  IControl public control;
   IKlerosArbitrable public arbitrator; // <-- kleros
 
   // kleros related
@@ -89,11 +89,6 @@ contract ShopsDispute {
     _;
   }
 
-  modifier onlyWhenCallerIsCEO {
-    require(control.isCEO(msg.sender), "can only be called by CEO");
-    _;
-  }
-
 
   // ------------------------------------------------
   //
@@ -107,17 +102,15 @@ contract ShopsDispute {
   //
   // ------------------------------------------------
 
-  constructor(address _shops, address _users, address _control, address _arbitrator, bytes memory _arbitratorExtraData)
+  constructor(address _shops, address _users, address _arbitrator, bytes memory _arbitratorExtraData)
     public
   {
     require(_shops != address(0), "shops address cannot be 0x0");
     require(_users != address(0), "users address cannot be 0x0");
-    require(_control != address(0), "control address cannot be 0x0");
     require(_arbitrator != address(0), "arbitrator cannot be 0x0");
 
     shops = IShops(_shops);
     users = IUsers(_users);
-    control = IControl(_control);
 
     // kleros
     arbitrator = IKlerosArbitrable(_arbitrator);
@@ -208,7 +201,7 @@ contract ShopsDispute {
   // so we can add new types of dispute in the future
   function addDisputeType(string calldata _disputeTypeLink)
     external
-    onlyWhenCallerIsCEO
+    onlyOwner
   {
     require(bytes(_disputeTypeLink).length > 0, "dispute type link is empty");
 

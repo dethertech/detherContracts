@@ -3,14 +3,11 @@ pragma experimental ABIEncoderV2;
 
 import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
-import "../datetime/DateTime.sol";
-
-import "../interfaces/IExchangeRateOracle.sol";
 import "../interfaces/ICertifier.sol";
 import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/ICertifierRegistry.sol";
 
-contract Users is DateTime {
+contract Users {
   // ------------------------------------------------
   //
   // Library init
@@ -25,10 +22,7 @@ contract Users is DateTime {
   //
   // ------------------------------------------------
 
-  IExchangeRateOracle public priceOracle;
   IGeoRegistry public geo;
-  ICertifier public smsCertifier;
-  ICertifier public kycCertifier;
   ICertifierRegistry public certifierRegistry;
 
   address public zoneFactoryAddress;
@@ -40,12 +34,10 @@ contract Users is DateTime {
   //
   // ------------------------------------------------
 
-    constructor(address _priceOracle, address _geo, address _smsCertifier, address _kycCertifier, address _certifierRegistry)
+    constructor(address _geo, address _certifierRegistry)
     public
   {
     geo = IGeoRegistry(_geo);
-    smsCertifier = ICertifier(_smsCertifier);
-    kycCertifier = ICertifier(_kycCertifier);
     certifierRegistry = ICertifierRegistry(_certifierRegistry);
   }
 
@@ -75,12 +67,4 @@ contract Users is DateTime {
     {
       return certifierRegistry.getCerts(_who);
     }
-  function getDateInfo(uint timestamp)
-    external
-    pure
-    returns (uint16, uint16, uint16)
-  {
-    _DateTime memory date = parseTimestamp(timestamp);
-    return (date.day, date.month, date.year);
-  }
 }

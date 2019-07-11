@@ -9,7 +9,6 @@ contract IZoneFactory {
     function isOwner() view public returns(bool);
     function zoneImplementation() view public returns(address);
     function tellerImplementation() view public returns(address);
-    function control() view public returns(address);
     function geo() view public returns(address);
     function users() view public returns(address);
     function transferOwnership(address newOwner) public;
