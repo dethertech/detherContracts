@@ -66,8 +66,6 @@ contract Shops {
   address public shopsDispute;
   address public disputeStarter;
   bool disputeEnabled = false;
-  bool disputeInited = false;
-
 
   // constant
   uint public constant DAILY_TAX= 42; // 1/42 daily
@@ -114,11 +112,6 @@ contract Shops {
     _;
   }
 
-  modifier onlyWhenShopsDisputeSet {
-    require(shopsDispute != address(0), "shopsDispute contract has not been set");
-    _;
-  }
-
   modifier onlyWhenCallerIsShopsDispute {
     require(msg.sender == shopsDispute, "can only be called by shopsDispute contract");
     _;
@@ -130,7 +123,9 @@ contract Shops {
   }
 
   modifier onlyWhenNoDispute(address _shopAddress) {
-    require(!shopAddressToShop[_shopAddress].hasDispute, "shop has dispute");
+    if (disputeEnabled) {
+      require(!shopAddressToShop[_shopAddress].hasDispute, "shop has dispute");
+    }
     _;
   }
 
@@ -170,14 +165,14 @@ contract Shops {
   {
     require(_shopsDispute != address(0), "shops dispute contract cannot be 0x0");
     require(msg.sender == disputeStarter);
-    require(disputeInited == false);
+    require(disputeEnabled == false);
     shopsDispute = _shopsDispute;
-    disputeInited = true;
   }
   function enableDispute()
     external 
     {
       require(msg.sender == disputeStarter);
+      require(shopsDispute != address(0), "shopsDispute contract has not been set");
       disputeEnabled = true;
     }
   // ------------------------------------------------
@@ -480,19 +475,6 @@ contract Shops {
     delete shopAddressToShop[shopAddress];
 
     positionToShopAddress[position] = address(0);
-    // it's safe to do a loop, the number of geohash12 in any geohash6 (1.073.741.824) is less than the max uint value
-    // however we would like to NOT loop,
-    // TODO: get rid of the loop by tracking the index of each shop address
-    // address[] storage zoneShopAddresses = zoneToShopAddresses[bytes6(position)];
-    // for (uint i = 0; i < zoneShopAddresses.length; i += 1) {
-    //   address zoneShopAddress = zoneShopAddresses[i];
-    //   if (zoneShopAddress == shopAddress) {
-    //     address lastShopAddress = zoneShopAddresses[zoneShopAddresses.length - 1];
-    //     zoneShopAddresses[i] = lastShopAddress;
-    //     zoneShopAddresses.length--;
-    //     break; // done
-    //   }
-    // }
 
     delete positionToShopAddress[shopAddressToShop[shopAddress].position];
     uint indexToRemove = shopAddressToShop[shopAddress]._index;
@@ -504,7 +486,6 @@ contract Shops {
 
   function removeShop()
     external
-    onlyWhenShopsDisputeSet
     onlyWhenCallerIsShop
     onlyWhenNoDispute(msg.sender)
   {
@@ -537,7 +518,6 @@ contract Shops {
 
   function withdrawDth()
     external
-    onlyWhenShopsDisputeSet
   {
     uint dthWithdraw = withdrawableDth[msg.sender];
     require(dthWithdraw > 0, "nothing to withdraw");
@@ -553,7 +533,6 @@ contract Shops {
 
   function setDispute(address _shopAddress, uint _disputeID)
     external
-    onlyWhenShopsDisputeSet
     onlyWhenCallerIsShopsDispute
     onlyWhenDisputeEnabled
   {
@@ -564,7 +543,6 @@ contract Shops {
 
   function unsetDispute(address _shopAddress)
     external
-    onlyWhenShopsDisputeSet
     onlyWhenCallerIsShopsDispute
     onlyWhenDisputeEnabled
   {
@@ -575,7 +553,7 @@ contract Shops {
 
   function removeDisputedShop(address _shopAddress, address _challenger)
     external
-    onlyWhenShopsDisputeSet
+    onlyWhenDisputeEnabled
     onlyWhenCallerIsShopsDispute
   {
     uint shopStake = shopAddressToShop[_shopAddress].staked;

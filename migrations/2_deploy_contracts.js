@@ -89,15 +89,12 @@ module.exports = async (deployer, network) => {
     case 'kovan':
 
     case 'mainnet':
-      await users.setZoneFactory(ZoneFactory.address, { gas: 6500000 });
-      console.log('Set zone factory');
+    // await users.setZoneFactory(ZoneFactory.address, { gas: 6500000 });
+    // console.log('Set zone factory');
   }
 
   await deployer.deploy(Shops, dth.address, geo.address, users.address, zoneFactory.address, { gas: 6500000 });
-  const shops = await Shops.deployed();
+  // const shops = await Shops.deployed();
 
-  await deployer.deploy(ShopsDispute, shops.address, users.address, '0xffffffffffffffffffffffffffffffffffffffff', '0x0', { gas: 6500000 });
-  const shopsDispute = await ShopsDispute.deployed();
-  await shops.setShopsDisputeContract(shopsDispute.address);
 
 };
