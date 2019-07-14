@@ -297,7 +297,7 @@ contract Teller {
   }
 
   // NOTE: we could just require only last 5 bytes of a bytes12 geohash, since
-  // the first 7 bytes will be the geohash of this zone. But by requiring the full geohash
+  // the first 6 bytes will be the geohash of this zone. But by requiring the full geohash
   // we can mkae more sure the user is talking to the right zone
   function addTeller(
     bytes calldata _position,

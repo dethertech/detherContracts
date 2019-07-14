@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../interfaces/IUsers.sol";
 import "../interfaces/IShops.sol";
 import "../interfaces/IKlerosArbitrable.sol";
-
+// NB -- CONTRACT TO REVIEW
 contract ShopsDispute is Ownable {
   // ------------------------------------------------
   //

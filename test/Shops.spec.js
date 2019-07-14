@@ -184,7 +184,6 @@ contract('Shops', (accounts) => {
 
     const enableAndLoadCountry = async (countryCode) => {
         await addCountry(owner, web3, geoInstance, countryCode, 300);
-        await geoInstance.enableCountry(asciiToHex(countryCode), { from: owner });
     };
 
     describe('Setters', () => {

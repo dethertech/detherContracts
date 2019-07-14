@@ -225,7 +225,6 @@ contract('ZoneFactory + Zone', (accounts) => {
 
   const enableAndLoadCountry = async (countryCode) => {
     await addCountry(owner, web3, geoInstance, countryCode, 300);
-    const tx = await geoInstance.enableCountry(asciiToHex(countryCode), { from: owner });
   };
 
   describe('>>> deploying a Zone', () => {
@@ -314,14 +313,6 @@ contract('ZoneFactory + Zone', (accounts) => {
     });
     describe('AUCTION', () => {
       describe('[ERC223] Zone.claimFreeZone(address _from, uint _dthAmount)', () => {
-        it('should revert if country is disabled', async () => {
-          await zoneInstance.release({ from: user1 });
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert2(
-            claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
-            'country is disabled',
-          );
-        });
         it('should revert if cannot claim zone which has an owner', async () => {
           await expectRevert2(
             claimFreeZone(user2, MIN_ZONE_DTH_STAKE + 1, zoneInstance.address),
@@ -377,14 +368,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           await expectRevert2(
             placeBid(user1, 10, zoneInstance.address),
             'zoneowner cannot start an auction',
-          );
-        });
-        it('should revert if country is disabled', async () => {
-          await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert2(
-            placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address),
-            'country is disabled',
           );
         });
         it('should revert if bid (minus burn fee) amount is less than current stake', async () => {
@@ -486,13 +469,7 @@ contract('ZoneFactory + Zone', (accounts) => {
       });
 
       describe('[ERC223] Zone.topUp(address _from, uint _dthAmount)', () => {
-        it('should revert if country is disabled', async () => {
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert2(
-            topUp(user1, 10, zoneInstance.address),
-            'country is disabled',
-          );
-        });
+
         it('should revert if there is no zone owner', async () => {
           await zoneInstance.release({ from: user1 });
           await expectRevert2(
@@ -580,30 +557,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           expect(zoneOwner.balance).to.be.bignumber.equal('0');
           expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
         });
-        it('should succeed if there is no running auction and country is disabled', async () => {
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await zoneInstance.release({ from: user1 });
-
-          expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal('0');
-          expect(dthInstance.balanceOf(user1)).to.eventually.be.bignumber.above('0');
-          expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.equal('0');
-
-          expect(zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.equal(zoneInstance.address);
-          expect(zoneFactoryInstance.zoneToGeohash(zoneInstance.address)).to.eventually.equal(asciiToHex(VALID_CG_ZONE_GEOHASH));
-          expect(zoneFactoryInstance.zoneExists(asciiToHex(VALID_CG_ZONE_GEOHASH))).to.eventually.be.true;
-
-          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
-          expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
-          expect(zoneInstance.auctionExists('2')).to.eventually.be.false;
-
-          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-
-          expect(zoneOwner.addr).to.equal(ADDRESS_ZERO);
-          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal('0');
-          expect(zoneOwner.staked).to.be.bignumber.equal('0');
-          expect(zoneOwner.balance).to.be.bignumber.equal('0');
-          expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
-        });
       });
 
       describe('Zone.withdrawFromAuction(uint _auctionId)', () => {
@@ -652,14 +605,6 @@ contract('ZoneFactory + Zone', (accounts) => {
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
           await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
           await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-          await zoneInstance.withdrawFromAuction('1', { from: user2 });
-        });
-        it('should succeed while country is disabled', async () => {
-          await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
-          await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser, can withdraw
-          await placeBid(user3, MIN_ZONE_DTH_STAKE + 20, zoneInstance.address); // winner
-          await timeTravel.inSecs(BID_PERIOD + ONE_HOUR);
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
           await zoneInstance.withdrawFromAuction('1', { from: user2 });
         });
         describe('when succeeds after bid period ended', () => {
@@ -1092,13 +1037,6 @@ contract('ZoneFactory + Zone', (accounts) => {
 
     describe('TELLER', () => {
       describe('Teller.addTeller(bytes _position, uint8 _currencyId, bytes16 _messenger, int16 _sellRate, int16 _buyRate, bytes1 _settings)', () => {
-        it('should revert if country is disabled', async () => {
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert(
-            tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
-            'country is disabled',
-          );
-        });
         it('should revert if position is empty bytes array', async () => {
           await expectRevert(
             tellerInstance.addTeller('0x', TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
@@ -1244,13 +1182,6 @@ contract('ZoneFactory + Zone', (accounts) => {
       describe('Teller.addComment(bytes32 _commentHash)', () => {
         beforeEach(async () => {
           await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
-        });
-        it('should revert if country is disabled', async () => {
-          await geoInstance.disableCountry(asciiToHex(COUNTRY_CG), { from: owner });
-          await expectRevert(
-            tellerInstance.addComment(getRandomBytes32(), { from: user2 }),
-            'country is disabled',
-          );
         });
         it('should revert if comment hash is empty', async () => {
           await expectRevert(

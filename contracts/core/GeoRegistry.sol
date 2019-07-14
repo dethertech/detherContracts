@@ -11,8 +11,6 @@ contract GeoRegistry {
   // set once in constructor()
   //      geohashChar bitmask
   mapping(bytes1 => bytes4) private charToBitmask;
-  //
-  // mapping(bytes2 => bool) private validGeohashChars;
 
   // ------------------------------------------------
   //
@@ -22,7 +20,6 @@ contract GeoRegistry {
 
   //      zoneCode isEnabled
   mapping(bytes2 => bool) public zoneIsEnabled;
-  mapping(bytes2 => bool) public zoneIsFilled;
 
   bytes2[] public enabledZone;
 
@@ -179,13 +176,13 @@ contract GeoRegistry {
   function updateLevel2(bytes2 _zoneCode, bytes3 _letter, bytes4 _subLetters)
     public
   {
-    require(!zoneIsFilled[_zoneCode], "zone must not be filled");
+    require(!zoneIsEnabled[_zoneCode], "zone must not be enabled");
     level_2[_zoneCode][_letter] = _subLetters;
   }
   function updateLevel2batch(bytes2 _zoneCode, bytes3[] memory _letters, bytes4[] memory _subLetters)
     public
   {
-    require(!zoneIsFilled[_zoneCode], "zone must not be filled");
+    require(!zoneIsEnabled[_zoneCode], "zone must not be enabled");
     for (uint i = 0; i < _letters.length; i++) {
       level_2[_zoneCode][_letters[i]] = _subLetters[i];
     }
@@ -193,38 +190,9 @@ contract GeoRegistry {
   function endInit(bytes2 _zoneCode)
     external
   {
-    require(!zoneIsEnabled[_zoneCode], "zone already enabled");
-    zoneIsFilled[_zoneCode] = true;
+    require(!zoneIsEnabled[_zoneCode], "zone must not be enabled");
     zoneIsEnabled[_zoneCode] = true;
     enabledZone.push(_zoneCode);
   }
-  // function enableCountry(bytes2 _country)
-  //   external
-  // {
-  //   require(!zoneIsEnabled[_country], "country already enabled");
 
-  //   zoneIsEnabled[_country] = true;
-  //   enabledCountries.push(_country);
-
-  //   emit GeoRegistryCountryEnabled(_country);
-  // }
-
-  // function disableCountry(bytes2 _country)
-  //   external
-  // {
-  //   require(zoneIsEnabled[_country], "country already disabled");
-
-  //   zoneIsEnabled[_country] = false;
-
-  //   for (uint i = 0; i < enabledCountries.length; i++) {
-  //     if (enabledCountries[i] == _country) {
-  //       // replace the to-be-deleted country with the last country in the list
-  //       enabledCountries[i] = enabledCountries[enabledCountries.length - 1];
-  //       enabledCountries.length--;
-  //       break;
-  //     }
-  //   }
-
-  //   emit GeoRegistryCountryDisabled(_country);
-  // }
 }

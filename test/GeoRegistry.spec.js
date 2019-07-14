@@ -293,9 +293,12 @@ contract('GeoRegistry', () => {
 
   describe(`add all countries in batches (max batch size = ${BATCH_SIZE})`, () => {
     ['NL'].forEach((countryCode) => {
+      // countriesToTest.forEach((countryCode) => {
       it(`successfully adds country ${countryCode}`, async () => {
         const countryTimerStart = process.hrtime();
+
         const { countryGasCost, mostExpensiveTrxGasCost, txCount, countryMap } = await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
+
         const time = process.hrtime(countryTimerStart);
         results.push({ countryCode, countryGasCost, mostExpensiveTrxGasCost, txCount, time: pretty(time, 'ms') }); // eslint-disable-line
         totalGasCost += countryGasCost;
@@ -308,32 +311,32 @@ contract('GeoRegistry', () => {
     });
   });
 
-  it('zoneInsideCountry returns correct result', async () => {
+  it('zoneInsideBiggerZone returns correct result', async () => {
     const countryCode = 'CG';
     const countryFile = require(path.join(__dirname, '..', 'data', 'trees_countries', countryCode)); // eslint-disable-line
     await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
     const countryCodeBytes = web3.utils.asciiToHex(countryCode);
-    await geoRegistryContract.endInit(countryCodeBytes);
+    // await geoRegistryContract.endInit(countryCodeBytes);
     assert.equal(
-      await geoRegistryContract.zoneInsideCountry(countryCodeBytes, web3.utils.asciiToHex('kr0ttse')),
+      await geoRegistryContract.zoneInsideBiggerZone(countryCodeBytes, web3.utils.asciiToHex('kr0ttse')),
       true,
       'should be inside',
     );
 
     assert.equal(
-      await geoRegistryContract.zoneInsideCountry(countryCodeBytes, web3.utils.asciiToHex('krrrrrr')),
+      await geoRegistryContract.zoneInsideBiggerZone(countryCodeBytes, web3.utils.asciiToHex('krrrrrr')),
       false,
       'should not be inside',
     );
 
     assert.equal(
-      await geoRegistryContract.zoneInsideCountry(countryCodeBytes, web3.utils.asciiToHex('kr0ttes')),
+      await geoRegistryContract.zoneInsideBiggerZone(countryCodeBytes, web3.utils.asciiToHex('kr0ttes')),
       true,
       'should not be inside',
     );
 
     assert.equal(
-      await geoRegistryContract.zoneInsideCountry(countryCodeBytes, web3.utils.asciiToHex('kqgtg75')),
+      await geoRegistryContract.zoneInsideBiggerZone(countryCodeBytes, web3.utils.asciiToHex('kqgtg75')),
       false,
       'should not be inside',
     );
@@ -345,13 +348,13 @@ contract('GeoRegistry', () => {
     await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE);
     const countryCodeBytes = web3.utils.asciiToHex(countryCode);
 
-    await geoRegistryContract.endInit(countryCodeBytes);
+    // await geoRegistryContract.endInit(countryCodeBytes);
 
     // should be now impossible to add new one in this countryCode
     try {
       await addCountry(owner, web3, geoRegistryContract, countryCode, BATCH_SIZE)
     } catch (err) {
-      if (!err.message.includes('country must not be filled'))
+      if (!err.message.includes('zone must not be enabled'))
         throw err;
       return;
     }
