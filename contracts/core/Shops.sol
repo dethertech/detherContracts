@@ -426,11 +426,11 @@ contract Shops {
       bytes32 description = toBytes32(_data, 47);
       bytes16 opening = toBytes16(_data, 79);
 
-      require(geo.countryIsEnabled(country), "country is disabled");
+      require(geo.zoneIsEnabled(country), "country is disabled");
       require(shopAddressToShop[sender].position == bytes12(0), "caller already has shop");
       require(positionToShopAddress[position] == address(0), "shop already exists at position");
       require(geo.validGeohashChars12(position), "invalid geohash characters in position");
-      require(geo.zoneInsideCountry(country, bytes4(position)), "zone is not inside country");
+      require(geo.zoneInsideBiggerZone(country, bytes4(position)), "zone is not inside country");
 
       // check the price for adding shop in this zone (geohash6)
       uint zoneValue = zoneLicencePrice[bytes6(position)] > floorLicencePrice ? zoneLicencePrice[bytes6(position)] : floorLicencePrice;

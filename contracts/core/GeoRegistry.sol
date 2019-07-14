@@ -20,17 +20,13 @@ contract GeoRegistry {
   //
   // ------------------------------------------------
 
+  //      zoneCode isEnabled
+  mapping(bytes2 => bool) public zoneIsEnabled;
+  mapping(bytes2 => bool) public zoneIsFilled;
 
-  //      countryCode licensePriceUSD
-  mapping(bytes2 => uint) public shopLicensePrice;
+  bytes2[] public enabledZone;
 
-  //      countryCode isEnabled
-  mapping(bytes2 => bool) public countryIsEnabled;
-  mapping(bytes2 => bool) public countryIsFilled;
-
-  bytes2[] public enabledCountries;
-
-  //      countryCode       geohashFirst3 bitmaskLevel4
+  //      zoneCode       geohashFirst3 bitmaskLevel4
   mapping(bytes2 => mapping(bytes3 => bytes4)) public level_2;
 
   // ------------------------------------------------
@@ -39,8 +35,6 @@ contract GeoRegistry {
   //
   // ------------------------------------------------
 
-  event GeoRegistryCountryEnabled(bytes2 indexed country);
-  event GeoRegistryCountryDisabled(bytes2 indexed country);
 
   // ------------------------------------------------
   //
@@ -159,13 +153,13 @@ contract GeoRegistry {
   }
 
   // @NOTE: _zone can be any length of bytes
-  function zoneInsideCountry(bytes2 _countryCode, bytes4 _zone)
+  function zoneInsideBiggerZone(bytes2 _zoneCode, bytes4 _zone)
     public
     view
     returns (bool)
   {
     bytes3 level2key = bytes3(_zone);
-    bytes4 level3bits = level_2[_countryCode][level2key];
+    bytes4 level3bits = level_2[_zoneCode][level2key];
 
     bytes1 fourthByte = bytes1(_zone[3]);
     bytes4 fourthByteBitPosMask = charToBitmask[fourthByte];
@@ -182,52 +176,55 @@ contract GeoRegistry {
   // Functions Setters Public
   //
   // ------------------------------------------------
-  function updateLevel2(bytes2 _countryCode, bytes3 _letter, bytes4 _subLetters)
+  function updateLevel2(bytes2 _zoneCode, bytes3 _letter, bytes4 _subLetters)
     public
   {
-    require(!countryIsFilled[_countryCode], "country must not be filled");
-    level_2[_countryCode][_letter] = _subLetters;
+    require(!zoneIsFilled[_zoneCode], "zone must not be filled");
+    level_2[_zoneCode][_letter] = _subLetters;
   }
-  function updateLevel2batch(bytes2 _countryCode, bytes3[] memory _letters, bytes4[] memory _subLetters)
+  function updateLevel2batch(bytes2 _zoneCode, bytes3[] memory _letters, bytes4[] memory _subLetters)
     public
   {
-    require(!countryIsFilled[_countryCode], "country must not be filled");
+    require(!zoneIsFilled[_zoneCode], "zone must not be filled");
     for (uint i = 0; i < _letters.length; i++) {
-      level_2[_countryCode][_letters[i]] = _subLetters[i];
+      level_2[_zoneCode][_letters[i]] = _subLetters[i];
     }
   }
-  function endInit(bytes2 _countryCode)
+  function endInit(bytes2 _zoneCode)
     external
   {
-    countryIsFilled[_countryCode] = true;
+    require(!zoneIsEnabled[_zoneCode], "zone already enabled");
+    zoneIsFilled[_zoneCode] = true;
+    zoneIsEnabled[_zoneCode] = true;
+    enabledZone.push(_zoneCode);
   }
-  function enableCountry(bytes2 _country)
-    external
-  {
-    require(!countryIsEnabled[_country], "country already enabled");
+  // function enableCountry(bytes2 _country)
+  //   external
+  // {
+  //   require(!zoneIsEnabled[_country], "country already enabled");
 
-    countryIsEnabled[_country] = true;
-    enabledCountries.push(_country);
+  //   zoneIsEnabled[_country] = true;
+  //   enabledCountries.push(_country);
 
-    emit GeoRegistryCountryEnabled(_country);
-  }
+  //   emit GeoRegistryCountryEnabled(_country);
+  // }
 
-  function disableCountry(bytes2 _country)
-    external
-  {
-    require(countryIsEnabled[_country], "country already disabled");
+  // function disableCountry(bytes2 _country)
+  //   external
+  // {
+  //   require(zoneIsEnabled[_country], "country already disabled");
 
-    countryIsEnabled[_country] = false;
+  //   zoneIsEnabled[_country] = false;
 
-    for (uint i = 0; i < enabledCountries.length; i++) {
-      if (enabledCountries[i] == _country) {
-        // replace the to-be-deleted country with the last country in the list
-        enabledCountries[i] = enabledCountries[enabledCountries.length - 1];
-        enabledCountries.length--;
-        break;
-      }
-    }
+  //   for (uint i = 0; i < enabledCountries.length; i++) {
+  //     if (enabledCountries[i] == _country) {
+  //       // replace the to-be-deleted country with the last country in the list
+  //       enabledCountries[i] = enabledCountries[enabledCountries.length - 1];
+  //       enabledCountries.length--;
+  //       break;
+  //     }
+  //   }
 
-    emit GeoRegistryCountryDisabled(_country);
-  }
+  //   emit GeoRegistryCountryDisabled(_country);
+  // }
 }

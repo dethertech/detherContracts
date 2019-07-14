@@ -105,8 +105,8 @@ contract Teller {
     _;
   }
 
-  modifier onlyWhenCountryEnabled {
-    require(geo.countryIsEnabled(zone.country()), "country is disabled");
+  modifier onlyWhenZoneEnabled {
+    require(geo.zoneIsEnabled(zone.country()), "country is disabled");
     _;
   }
 
@@ -312,7 +312,7 @@ contract Teller {
   )
     external
     onlyWhenInited
-    onlyWhenCountryEnabled
+    onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
     onlyWhenHasNoTeller
@@ -352,7 +352,7 @@ contract Teller {
   function addComment(bytes32 _commentHash)
     external
     onlyWhenInited
-    onlyWhenCountryEnabled
+    onlyWhenZoneEnabled
     updateState
     onlyWhenZoneHasOwner
     onlyWhenCallerIsNotZoneOwner

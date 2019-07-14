@@ -197,8 +197,8 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
 
     bytes2 country = toBytes2(_data, 0);
     bytes6 geohash = toBytes6(_data, 2);
-    require(geo.countryIsEnabled(country), "country is disabled");
-    require(geo.zoneInsideCountry(country, bytes4(geohash)), "zone is not inside country");
+    require(geo.zoneIsEnabled(country), "country is disabled");
+    require(geo.zoneInsideBiggerZone(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
 
     // deploy zone + teller contract

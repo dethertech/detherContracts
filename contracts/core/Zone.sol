@@ -131,8 +131,8 @@ contract Zone is IERC223ReceivingContract {
     _;
   }
 
-  modifier onlyWhenCountryEnabled {
-    require(geo.countryIsEnabled(country), "country is disabled");
+  modifier onlyWhenZoneEnabled {
+    require(geo.zoneIsEnabled(country), "country is disabled");
     _;
   }
 
@@ -618,7 +618,7 @@ contract Zone is IERC223ReceivingContract {
     public
     onlyWhenInited
     onlyWhenTellerConnected
-    onlyWhenCountryEnabled
+    onlyWhenZoneEnabled
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
 
