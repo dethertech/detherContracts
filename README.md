@@ -21,6 +21,9 @@ At any time anyone can open a bid by staking more DTH that you, you will have 24
 When opening a bid, a bidder need to pay an entry fees of 1% of his stake, this entry fees is sent to the TaxCollector contract.
 The entry fees is here to avoid spamming the network with unmotivated auction.
 
+Its important to keep in mind that we dont handle the crypto which are buy and sell.
+The dether protocol manage only the zone. The trade itself dont need to be in-protocol, and keeping it outside the protocol allow to add more privacy, by enabling the possibilities to manage a zone with one wallet and do the trade with another wallet.
+
 On top of this system, any shops accepting cryptocurrencies will have the possibilities to advertise its shop on the map.   
 -> 2 possibilities here:   
 The shop is on an owned zone: the shop will need to pay a taxes (in DTH) to the zone owner (the zone owner will determine the amount)
