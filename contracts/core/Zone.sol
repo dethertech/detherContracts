@@ -65,7 +65,6 @@ contract Zone is IERC223ReceivingContract {
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
   uint private constant ENTRY_FEE_PERCENTAGE = 1; // 1%
   uint private constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
-  address private constant ADDRESS_BURN = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
 
   ZoneOwner private zoneOwner;
 

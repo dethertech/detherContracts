@@ -349,6 +349,45 @@ contract Teller {
     emit AddTeller(_position);
   }
 
+  function updateTeller(
+    bytes calldata _position,
+    uint8 _currencyId,
+    bytes16 _messenger,
+    int16 _sellRate,
+    int16 _buyRate,
+    bytes1 _settings,
+    bytes32 _description
+  )
+    external
+    onlyWhenInited
+    onlyWhenZoneEnabled
+    updateState
+    onlyWhenCallerIsZoneOwner
+    onlyWhenHasNoTeller
+    {
+      require(_position.length == 12, "expected position to be 12 bytes");
+      require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
+      require(geo.validGeohashChars(_position), "invalid position geohash characters");
+      if (_settings & isSellerBitMask != 0) { // seller bit is set => teller is a "seller"
+        require(_sellRate >= -9999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
+      } else {
+        require(_sellRate == 0, "cannot set sellRate if not set as seller");
+      }
+
+      if (_settings & isBuyerBitMask != 0) { // buyer bit is set => teller is a "buyer"
+        require(_buyRate >= -9999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
+      } else {
+        require(_buyRate == 0, "cannot set buyRate if not set as buyer");
+      }
+      teller.currencyId = _currencyId;
+      teller.messenger = _messenger;
+      teller.buyRate = _buyRate;
+      teller.sellRate = _sellRate;
+      teller.position = toBytes12(_position, 0);
+      teller.settings = _settings;
+      teller.description = _description;
+    }
+
   function addComment(bytes32 _commentHash)
     external
     onlyWhenInited
