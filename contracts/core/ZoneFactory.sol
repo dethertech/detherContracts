@@ -22,6 +22,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
   //      geohash   zoneContractAddress or 0x0 if it doesnt exist
   mapping(bytes6 => address) public geohashToZone;
   mapping(address => bytes6) public zoneToGeohash;
+  mapping(address => address) public ownerToZone;
 
   IDetherToken public dth;
   IGeoRegistry public geo;
@@ -200,7 +201,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
     require(geo.zoneIsEnabled(country), "country is disabled");
     require(geo.zoneInsideBiggerZone(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
-
+    require(ownerToZone[sender] == address(0), "address already own a zone");
     // deploy zone + teller contract
     address newZoneAddress = createClone(zoneImplementation);
     address newTellerAddress = createClone(tellerImplementation);
