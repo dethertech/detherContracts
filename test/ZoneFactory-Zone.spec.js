@@ -289,9 +289,10 @@ contract('ZoneFactory + Zone', (accounts) => {
         expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
 
         const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
-
+        const zoneFactoryGeohashZoneOwner = await zoneFactoryInstance.ownerToZone(zoneOwner.addr);
         const lastBlockTimestamp = await getLastBlockTimestamp();
 
+        expect(zoneAddress).to.equal(zoneFactoryGeohashZoneOwner);
         expect(zoneOwner.addr).to.equal(user1);
         expect(zoneOwner.startTime).to.be.bignumber.equal(str(lastBlockTimestamp));
         expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(str(lastBlockTimestamp));
@@ -327,11 +328,28 @@ contract('ZoneFactory + Zone', (accounts) => {
             'need at least minimum zone stake amount (100 DTH)',
           );
         });
+        it.only('should revert if call changeOwner of zoneFactory from not a zone', async () => {
+          await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
+          await expectRevert2(
+            zoneFactoryInstance.changeOwner(user1, user2, { from: user1 }),
+            'msg.sender is not a registered zone',
+          );
+
+        });
         it('should succeed if can claim free zone for minimum stake', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
+          const zoneAddress = await zoneFactoryInstance.geohashToZone(asciiToHex(VALID_CG_ZONE_GEOHASH));
+          const zoneFactoryGeohashZoneAddress = await zoneFactoryInstance.ownerToZone(user1);
+          expect(zoneFactoryGeohashZoneAddress).to.equal(zoneAddress);
           await zoneInstance.release({ from: user1 });
-          await claimFreeZone(user2, MIN_ZONE_DTH_STAKE, zoneInstance.address);
+          const zoneFactoryGeohashZoneAddress2 = await zoneFactoryInstance.ownerToZone(user1);
+          expect(zoneFactoryGeohashZoneAddress2).to.equal('0x0000000000000000000000000000000000000000');
 
+          const zoneFactoryGeohashZoneAddress3 = await zoneFactoryInstance.ownerToZone(user2);
+          expect(zoneFactoryGeohashZoneAddress3).to.equal('0x0000000000000000000000000000000000000000');
+          await claimFreeZone(user2, MIN_ZONE_DTH_STAKE, zoneInstance.address);
+          const zoneFactoryGeohashZoneAddress4 = await zoneFactoryInstance.ownerToZone(user2);
+          expect(zoneFactoryGeohashZoneAddress4).to.equal(zoneAddress);
           expect(dthInstance.balanceOf(user2)).to.eventually.be.bignumber.equal('0');
           expect(dthInstance.balanceOf(zoneFactoryInstance.address)).to.eventually.be.bignumber.equal('0');
           expect(dthInstance.balanceOf(zoneInstance.address)).to.eventually.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));

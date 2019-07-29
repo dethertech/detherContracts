@@ -391,7 +391,7 @@ contract Zone is IERC223ReceivingContract {
     if (teller.hasTeller()) {
       teller.removeTellerByZone();
     }
-
+    zoneFactory.changeOwner(address(0), zoneOwner.addr);
     zoneOwner.addr = address(0);
     zoneOwner.startTime = 0;
     zoneOwner.staked = 0;
@@ -458,7 +458,7 @@ contract Zone is IERC223ReceivingContract {
     } else {
       // we need to update the zone owner
       _removeZoneOwner();
-
+      zoneFactory.changeOwner(lastAuction.highestBidder, zoneOwner.addr);
       zoneOwner.addr = lastAuction.highestBidder;
       zoneOwner.startTime = auctionEndTime;
       zoneOwner.staked = highestBid; // entry fee is already deducted when user calls bid()
@@ -580,6 +580,7 @@ contract Zone is IERC223ReceivingContract {
     require(_dthAmount >= MIN_STAKE, "need at least minimum zone stake amount (100 DTH)");
 
     // NOTE: empty zone claim will not have entry fee deducted, its not bidding it's taking immediately
+    zoneFactory.changeOwner(_sender, zoneOwner.addr);
     zoneOwner.addr = _sender;
     zoneOwner.startTime = now;
     zoneOwner.staked = _dthAmount;

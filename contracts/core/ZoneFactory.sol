@@ -1,7 +1,5 @@
 pragma solidity ^0.5.10;
 
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
-
 import "../eip1167/EIP1167CloneFactory.sol";
 
 import "../interfaces/IERC223ReceivingContract.sol";
@@ -11,7 +9,7 @@ import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZone.sol";
 import "../interfaces/ITeller.sol";
 
-contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
+contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
 
   // ------------------------------------------------
   //
@@ -65,9 +63,19 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
     taxCollector = _taxCollector;
   }
 
+  /*
+   * Change geohash6 zone owner in ownerToZone mapping
+   */
+  function changeOwner( address _newOwner, address _oldOwner)
+  public
+  {
+    require(geohashToZone[zoneToGeohash[msg.sender]] == msg.sender, 'msg.sender is not a registered zone');
+    ownerToZone[_oldOwner] = address(0);
+    ownerToZone[_newOwner] = msg.sender;
+  }
   // ------------------------------------------------
   //
-  // Functions Private Getters
+  // Functions Private 
   //
   // ------------------------------------------------
 
@@ -218,6 +226,7 @@ contract ZoneFactory is IERC223ReceivingContract, Ownable, EIP1167CloneFactory {
     // store references
     geohashToZone[geohash] = newZoneAddress;
     zoneToGeohash[newZoneAddress] = geohash;
+    ownerToZone[sender] = newZoneAddress;
 
     // send all dth through to the new Zone contract
     dth.transfer(newZoneAddress, dthAmount, hex"40");
