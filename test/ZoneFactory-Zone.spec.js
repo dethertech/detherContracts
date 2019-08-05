@@ -328,7 +328,7 @@ contract('ZoneFactory + Zone', (accounts) => {
             'need at least minimum zone stake amount (100 DTH)',
           );
         });
-        it.only('should revert if call changeOwner of zoneFactory from not a zone', async () => {
+        it('should revert if call changeOwner of zoneFactory from not a zone', async () => {
           await timeTravel.inSecs(COOLDOWN_PERIOD + 1);
           await expectRevert2(
             zoneFactoryInstance.changeOwner(user1, user2, { from: user1 }),
@@ -1167,6 +1167,53 @@ contract('ZoneFactory + Zone', (accounts) => {
 
           // expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
           expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
+        });
+        it('should succeed if all args valid to update', async () => {
+          await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });
+
+          const zoneOwner = zoneOwnerToObj(await zoneInstance.getZoneOwner());
+          const teller = tellerToObj(await tellerInstance.getTeller());
+          const lastBlockTimestamp = await getLastBlockTimestamp();
+          expect(zoneInstance.auctionExists('0')).to.eventually.be.false;
+          expect(zoneInstance.auctionExists('1')).to.eventually.be.false;
+
+          expect(zoneOwner.addr).to.equal(user1);
+          expect(zoneOwner.lastTaxTime).to.be.bignumber.equal(str(lastBlockTimestamp));
+          expect(zoneOwner.staked).to.be.bignumber.equal(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.balance).to.be.bignumber.lte(ethToWei(MIN_ZONE_DTH_STAKE));
+          expect(zoneOwner.auctionId).to.be.bignumber.equal('0');
+
+          expect(teller.currencyId).to.be.bignumber.equal(TELLER_CG_CURRENCY_ID);
+          expect(teller.messenger).to.equal(asciiToHex(TELLER_CG_MESSENGER));
+          expect(teller.position).to.equal(asciiToHex(TELLER_CG_POSITION));
+          expect(teller.settings).to.equal(TELLER_CG_SETTINGS);
+          expect(teller.buyRate).to.be.bignumber.equal(TELLER_CG_BUYRATE);
+          expect(teller.sellRate).to.be.bignumber.equal(TELLER_CG_SELLRATE);
+          // expect(teller.funds).to.be.bignumber.equal('0');
+          expect(teller.referrer).to.equal(user5);
+
+          // expect(tellerInstance.getCertifiedComments()).to.eventually.be.an('array').with.lengthOf(0);
+          expect(tellerInstance.getComments()).to.eventually.be.an('array').with.lengthOf(0);
+
+          const NEW_POS = 'krcztsebeeee'
+          const NEW_CURRENCY_ID = '2'
+          const NEW_MESSENGER = 'new_messenger'
+          const NEW_SELLRATE = '123'
+          const NEW_BUYRATE = '321'
+          const NEW_SETTINGS = '0x03'
+          const NEW_DESCR = '2500-555-BTC/XMR/DOGE'
+          // update
+          await tellerInstance.updateTeller(asciiToHex(NEW_POS), NEW_CURRENCY_ID, asciiToHex(NEW_MESSENGER), NEW_SELLRATE, NEW_BUYRATE, NEW_SETTINGS, asciiToHex(NEW_DESCR), { from: user1 });
+          const teller2 = tellerToObj(await tellerInstance.getTeller());
+
+          expect(teller2.currencyId).to.be.bignumber.equal(NEW_CURRENCY_ID);
+          expect(teller2.position).to.equal(asciiToHex(NEW_POS));
+          expect(teller2.settings).to.equal(NEW_SETTINGS);
+          expect(teller2.buyRate).to.be.bignumber.equal(NEW_BUYRATE);
+          expect(teller2.sellRate).to.be.bignumber.equal(NEW_SELLRATE);
+          // expect(teller2.funds).to.be.bignumber.equal('0');
+          expect(teller2.referrer).to.equal(user5);
+
         });
         it('should succeed if optional arg "messenger" is bytes16(0)', async () => {
           await tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, '0x00000000000000000000000000000000', TELLER_CG_SELLRATE, TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, user5, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 });

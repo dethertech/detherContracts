@@ -72,6 +72,7 @@ contract Teller {
 
   event AddTeller(bytes position);
   event RemoveTeller(bytes12 position);
+  event UpdateTeller(bytes position);
 
   // ------------------------------------------------
   //
@@ -315,7 +316,7 @@ contract Teller {
     onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
-    onlyWhenHasNoTeller
+    // onlyWhenHasNoTeller
   {
     require(_position.length == 12, "expected position to be 12 bytes");
     require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
@@ -363,7 +364,6 @@ contract Teller {
     onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
-    onlyWhenHasNoTeller
     {
       require(_position.length == 12, "expected position to be 12 bytes");
       require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
@@ -386,6 +386,7 @@ contract Teller {
       teller.position = toBytes12(_position, 0);
       teller.settings = _settings;
       teller.description = _description;
+      emit UpdateTeller(_position);
     }
 
   function addComment(bytes32 _commentHash)
