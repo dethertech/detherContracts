@@ -268,7 +268,7 @@ contract Teller {
 
     // we dont remove comments here, so that zoneowner can not get rid
     // of negative comments by readding his teller ;)
-
+    teller.addr = address(0); // late add
     teller.currencyId = 0;
     teller.messenger = bytes16(0);
     teller.position = bytes12(0);

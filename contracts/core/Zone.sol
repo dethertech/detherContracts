@@ -63,7 +63,7 @@ contract Zone is IERC223ReceivingContract {
   uint public constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
   uint private constant BID_PERIOD = 24 * 1 hours;
   uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
-  uint private constant ENTRY_FEE_PERCENTAGE = 1; // 1%
+  uint private constant ENTRY_FEE_PERCENTAGE = 5; // 1%
   uint private constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
 
   ZoneOwner private zoneOwner;
