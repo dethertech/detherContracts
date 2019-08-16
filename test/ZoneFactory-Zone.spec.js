@@ -1101,13 +1101,13 @@ contract('ZoneFactory + Zone', (accounts) => {
         it('should revert if seller bit set -- sellrate less than -9999', async () => {
           await expectRevert(
             tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '-10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
-            'sellRate should be between -9999 and 9999',
+            'sellRate should be between -999 and 9999',
           );
         });
         it('should revert if seller bit set -- sellrate more than than 9999', async () => {
           await expectRevert(
             tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), '10000', TELLER_CG_BUYRATE, TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
-            'sellRate should be between -9999 and 9999',
+            'sellRate should be between -999 and 9999',
           );
         });
         it('should revert if seller bit not set -- sellrate is not zero', async () => {
@@ -1119,13 +1119,13 @@ contract('ZoneFactory + Zone', (accounts) => {
         it('should revert if buyer bit set -- buyrate less than -9999', async () => {
           await expectRevert(
             tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '-10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
-            'buyRate should be between -9999 and 9999',
+            'buyRate should be between -999 and 9999',
           );
         });
         it('should revert if buyer bit set -- buyrate more than than 9999', async () => {
           await expectRevert(
             tellerInstance.addTeller(asciiToHex(TELLER_CG_POSITION), TELLER_CG_CURRENCY_ID, asciiToHex(TELLER_CG_MESSENGER), TELLER_CG_SELLRATE, '10000', TELLER_CG_SETTINGS, ADDRESS_ZERO, TELLER_CG_REFFEE, asciiToHex('ETH-BTC'), { from: user1 }),
-            'buyRate should be between -9999 and 9999',
+            'buyRate should be between -999 and 9999',
           );
         });
         it('should revert if buyer bit not set -- buyrate is not zero', async () => {

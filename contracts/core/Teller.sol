@@ -52,7 +52,7 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  bool inited;
+  bool public inited;
 
   IZone public zone;
   IGeoRegistry public geo;
@@ -164,7 +164,7 @@ contract Teller {
     public view
     returns (uint referrerAmount)
   {
-    referrerAmount = _value.div(1000).mul(teller.refFee);
+    referrerAmount = _value.mul(teller.refFee).div(1000);
   }
 
   function getTeller()
@@ -333,13 +333,13 @@ contract Teller {
     // _messenger can be 0x0 if he has no telegram
 
     if (_settings & isSellerBitMask != 0) { // seller bit is set => teller is a "seller"
-      require(_sellRate >= -9999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
+      require(_sellRate >= -999 && _sellRate <= 9999, "sellRate should be between -999 and 9999");
     } else {
       require(_sellRate == 0, "cannot set sellRate if not set as seller");
     }
 
     if (_settings & isBuyerBitMask != 0) { // buyer bit is set => teller is a "buyer"
-      require(_buyRate >= -9999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
+      require(_buyRate >= -999 && _buyRate <= 9999, "buyRate should be between -999 and 9999");
     } else {
       require(_buyRate == 0, "cannot set buyRate if not set as buyer");
     }

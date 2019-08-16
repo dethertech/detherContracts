@@ -60,14 +60,6 @@ contract Zone is IERC223ReceivingContract {
   //
   // ------------------------------------------------
 
-  uint public constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
-  // uint private constant BID_PERIOD = 24 * 1 hours; // mainnet params
-  // uint private constant COOLDOWN_PERIOD = 48 * 1 hours; // mainnet params
-  uint private constant BID_PERIOD = 30 * 1 minutes;
-  uint private constant COOLDOWN_PERIOD = 5 * 1 minutes;
-  uint private constant ENTRY_FEE_PERCENTAGE = 5; // 1%
-  uint private constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
-
   ZoneOwner private zoneOwner;
 
   mapping(uint => Auction) private auctionIdToAuction;
@@ -77,6 +69,14 @@ contract Zone is IERC223ReceivingContract {
   // Variables Public
   //
   // ------------------------------------------------
+
+  uint public constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
+  // uint private constant BID_PERIOD = 24 * 1 hours; // mainnet params
+  // uint private constant COOLDOWN_PERIOD = 48 * 1 hours; // mainnet params
+  uint public constant BID_PERIOD = 30 * 1 minutes; // testnet params
+  uint public constant COOLDOWN_PERIOD = 5 * 1 minutes; // testnet params
+  uint public constant ENTRY_FEE_PERCENTAGE = 5; // 1%
+  uint public constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
 
   bool private inited;
   bool private tellerConnected;
@@ -251,7 +251,7 @@ contract Zone is IERC223ReceivingContract {
     view
     returns (uint burnAmount, uint bidAmount)
   {
-    burnAmount = _value.div(100).mul(ENTRY_FEE_PERCENTAGE); // 1%
+    burnAmount = _value.mul(ENTRY_FEE_PERCENTAGE).div(100); // 1%
     bidAmount = _value.sub(burnAmount); // 99%
   }
 
@@ -390,12 +390,13 @@ contract Zone is IERC223ReceivingContract {
       teller.removeTellerByZone();
     }
     zoneFactory.changeOwner(address(0), zoneOwner.addr);
-    zoneOwner.addr = address(0);
-    zoneOwner.startTime = 0;
-    zoneOwner.staked = 0;
-    zoneOwner.balance = 0;
-    zoneOwner.lastTaxTime = 0;
-    zoneOwner.auctionId = 0;
+    delete zoneOwner;
+    // zoneOwner.addr = address(0);
+    // zoneOwner.startTime = 0;
+    // zoneOwner.staked = 0;
+    // zoneOwner.balance = 0;
+    // zoneOwner.lastTaxTime = 0;
+    // zoneOwner.auctionId = 0;
   }
   /*
    * calculate harberger taxes and send dth to taxCollector and referrer (if exist)
@@ -411,7 +412,7 @@ contract Zone is IERC223ReceivingContract {
 
     (uint taxAmount, uint keepAmount) = calcHarbergerTax(zoneOwner.lastTaxTime, now, zoneOwner.staked);
 
-    if (taxAmount >= zoneOwner.balance) {
+    if (taxAmount > zoneOwner.balance) {
       // zone owner does not have enough balance, remove him as zone owner
       uint oldZoneOwnerBalance = zoneOwner.balance;
             (address referrer, uint refFee) = teller.getReferrer();
@@ -445,8 +446,9 @@ contract Zone is IERC223ReceivingContract {
 
     uint highestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
     uint auctionEndTime = auctionIdToAuction[currentAuctionId].endTime;
+    address highestBidder = lastAuction.highestBidder;
 
-    if (zoneOwner.addr == lastAuction.highestBidder) {
+    if (zoneOwner.addr == highestBidder) {
       // current zone owner won the auction, extend his zone ownershp
       zoneOwner.staked = zoneOwner.staked.add(highestBid);
       zoneOwner.balance = zoneOwner.balance.add(highestBid);
@@ -456,8 +458,8 @@ contract Zone is IERC223ReceivingContract {
     } else {
       // we need to update the zone owner
       _removeZoneOwner();
-      zoneFactory.changeOwner(lastAuction.highestBidder, zoneOwner.addr);
-      zoneOwner.addr = lastAuction.highestBidder;
+      zoneFactory.changeOwner(highestBidder, zoneOwner.addr);
+      zoneOwner.addr = highestBidder;
       zoneOwner.startTime = auctionEndTime;
       zoneOwner.staked = highestBid; // entry fee is already deducted when user calls bid()
       zoneOwner.balance = highestBid;
@@ -468,7 +470,7 @@ contract Zone is IERC223ReceivingContract {
     (uint taxAmount, uint keepAmount) = calcHarbergerTax(auctionEndTime, now, zoneOwner.staked);
     zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
     zoneOwner.lastTaxTime = now;
-    emit AuctionEnded(lastAuction.highestBidder, currentAuctionId,  highestBid);
+    emit AuctionEnded(highestBidder, currentAuctionId,  highestBid);
   }
   function processState()
     external

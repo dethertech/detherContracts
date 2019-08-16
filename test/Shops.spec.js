@@ -623,7 +623,7 @@ contract('Shops', (accounts) => {
                 await timeTravel.inSecs(ONE_WEEK_IN_SEC * 4);
                 timeElapsed += ONE_WEEK_IN_SEC * 4;
 
-                const taxRates = Number(await shopsInstance.DAILY_TAX());
+                const taxRates = Number(await shopsInstance.TAX());
 
                 const shop1 = await shopsInstance.getShopByAddr(user1);
                 const shop3 = await shopsInstance.getShopByAddr(user3);
@@ -726,7 +726,7 @@ contract('Shops', (accounts) => {
                 await timeTravel.inSecs(ONE_WEEK_IN_SEC * 4);
                 timeElapsed += ONE_WEEK_IN_SEC * 4;
 
-                const taxRates = Number(await shopsInstance.DAILY_TAX());
+                const taxRates = Number(await shopsInstance.TAX());
 
                 const timeNow = (await web3.eth.getBlock("latest")).timestamp
                 const shop1 = await shopsInstance.getShopByAddr(user1);
@@ -800,7 +800,7 @@ contract('Shops', (accounts) => {
                     'caller is not shop',
                 );
             });
-            it.only('RemoveShop [success]', async () => {
+            it('RemoveShop [success]', async () => {
                 await enableAndLoadCountry(COUNTRY_CG);
 
                 await dthInstance.mint(user1, ethToWei(CG_SHOP_LICENSE_PRICE), { from: owner });
