@@ -176,7 +176,6 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
   //
   // ------------------------------------------------
 
-
   function zoneExists(bytes6 _geohash)
     external
     view
@@ -215,13 +214,19 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     address newTellerAddress = createClone(tellerImplementation);
 
     // init zone + teller contract
-
     IZone(newZoneAddress).init(
       country, geohash, sender, dthAmount,
-      address(dth), address(geo), address(this), taxCollector
+      address(dth), address(geo), address(this), taxCollector, newTellerAddress // audit feedback
     );
     ITeller(newTellerAddress).init(address(geo), newZoneAddress);
-    IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
+    // IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
+
+    // IZone(newZoneAddress).init(
+    //   country, geohash, sender, dthAmount,
+    //   address(dth), address(geo), address(this), taxCollector
+    // );
+    // ITeller(newTellerAddress).init(address(geo), newZoneAddress);
+    // IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
 
     // store references
     geohashToZone[geohash] = newZoneAddress;
@@ -229,7 +234,7 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     ownerToZone[sender] = newZoneAddress;
 
     // send all dth through to the new Zone contract
-    dth.transfer(newZoneAddress, dthAmount, hex"40");
+    require(dth.transfer(newZoneAddress, dthAmount, hex"40"));
     emit NewZoneCreated(geohash, newZoneAddress);
   }
 }

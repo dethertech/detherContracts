@@ -61,8 +61,10 @@ contract Zone is IERC223ReceivingContract {
   // ------------------------------------------------
 
   uint public constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
-  uint private constant BID_PERIOD = 24 * 1 hours;
-  uint private constant COOLDOWN_PERIOD = 48 * 1 hours;
+  // uint private constant BID_PERIOD = 24 * 1 hours; // mainnet params
+  // uint private constant COOLDOWN_PERIOD = 48 * 1 hours; // mainnet params
+  uint private constant BID_PERIOD = 30 * 1 minutes;
+  uint private constant COOLDOWN_PERIOD = 5 * 1 minutes;
   uint private constant ENTRY_FEE_PERCENTAGE = 5; // 1%
   uint private constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
 
@@ -145,11 +147,6 @@ contract Zone is IERC223ReceivingContract {
     _;
   }
 
-  modifier onlyWhenCallerIsNotZoneOwner {
-    require(msg.sender != zoneOwner.addr, "can not be called by zoneowner");
-    _;
-  }
-
   modifier onlyWhenCallerIsZoneOwner {
     require(msg.sender == zoneOwner.addr, "caller is not zoneowner");
     _;
@@ -180,7 +177,8 @@ contract Zone is IERC223ReceivingContract {
     address _dth,
     address _geo,
     address _zoneFactory,
-    address _taxCollector
+    address _taxCollector,
+    address _teller
   )
     onlyWhenNotInited
     external
@@ -204,17 +202,17 @@ contract Zone is IERC223ReceivingContract {
 
     inited = true;
     currentAuctionId = 0;
-  }
-
-  function connectToTellerContract(address _teller)
-    onlyWhenInited
-    onlyWhenTellerNotConnected
-    external
-  {
     teller = ITeller(_teller);
-
-    tellerConnected = true;
   }
+
+  // function connectToTellerContract(address _teller)
+  //   onlyWhenInited
+  //   onlyWhenTellerNotConnected
+  //   external
+  // {
+  //   teller = ITeller(_teller);
+  //   // tellerConnected = true;
+  // }
 
   // ------------------------------------------------
   //
@@ -418,7 +416,7 @@ contract Zone is IERC223ReceivingContract {
       uint oldZoneOwnerBalance = zoneOwner.balance;
             (address referrer, uint refFee) = teller.getReferrer();
       _removeZoneOwner();
-      dth.transfer(taxCollector, oldZoneOwnerBalance);
+      require(dth.transfer(taxCollector, oldZoneOwnerBalance));
     } else {
       // zone owner can pay due taxes
       zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
@@ -426,10 +424,10 @@ contract Zone is IERC223ReceivingContract {
       (address referrer, uint refFee) = teller.getReferrer();
       if (referrer != address(0x00) && refFee > 0) {
         uint referralFee =  taxAmount.mul(refFee).div(1000) ;
-        dth.transfer(referrer, referralFee);
-        dth.transfer(taxCollector, taxAmount - referralFee);
+        require(dth.transfer(referrer, referralFee));
+        require(dth.transfer(taxCollector, taxAmount - referralFee));
       } else {
-        dth.transfer(taxCollector, taxAmount);
+        require(dth.transfer(taxCollector, taxAmount));
       }
     }
   }
@@ -518,7 +516,7 @@ contract Zone is IERC223ReceivingContract {
         (uint burnAmount, uint bidAmount) = calcEntryFee(_dthAmount);
         require(bidAmount > currentHighestBid, "bid is less than current highest");
         auctionBids[currentAuctionId][_sender] = bidAmount;
-        dth.transfer(taxCollector, burnAmount);
+        require(dth.transfer(taxCollector, burnAmount));
       } else {
         // not the first bid, no entry fee
         uint newUserTotalBid = auctionBids[currentAuctionId][_sender].add(_dthAmount);
@@ -551,7 +549,7 @@ contract Zone is IERC223ReceivingContract {
 
     auctionBids[newAuctionId][_sender] = bidAmount;
 
-    dth.transfer(taxCollector, burnAmount);
+    require(dth.transfer(taxCollector, burnAmount));
     emit AuctionCreated(_sender, _dthAmount, newAuctionId);
   }
   /// @notice private function to update the current auction state
@@ -617,7 +615,6 @@ contract Zone is IERC223ReceivingContract {
   function tokenFallback(address _from, uint _value, bytes memory _data)
     public
     onlyWhenInited
-    onlyWhenTellerConnected
     onlyWhenZoneEnabled
   {
     require(msg.sender == address(dth), "can only be called by dth contract");
@@ -646,7 +643,6 @@ contract Zone is IERC223ReceivingContract {
   function release() // GAS COST +/- 72.351
     external
     onlyWhenInited
-    onlyWhenTellerConnected
     updateState
     onlyWhenCallerIsZoneOwner
   {
@@ -661,7 +657,7 @@ contract Zone is IERC223ReceivingContract {
     // if msg.sender is a contract, the DTH ERC223 contract will try to call tokenFallback
     // on msg.sender, this could lead to a reentrancy. But we prevent this by resetting
     // zoneOwner before we do dth.transfer(msg.sender)
-    dth.transfer(msg.sender, ownerBalance);
+    require(dth.transfer(msg.sender, ownerBalance));
   }
 
   // offer three different withdraw functions, single auction, multiple auctions, all auctions
@@ -671,7 +667,6 @@ contract Zone is IERC223ReceivingContract {
   function withdrawFromAuction(uint _auctionId) // GAS COST +/- 125.070
     external
     onlyWhenInited
-    onlyWhenTellerConnected
     updateState
   {
     // even when country is disabled, otherwise users cannot withdraw their bids
@@ -684,14 +679,13 @@ contract Zone is IERC223ReceivingContract {
     uint withdrawAmount = auctionBids[_auctionId][msg.sender];
     auctionBids[_auctionId][msg.sender] = 0;
 
-    dth.transfer(msg.sender, withdrawAmount);
+    require(dth.transfer(msg.sender, withdrawAmount));
   }
 
   /// @notice withdraw from a given list of auction ids
   function withdrawFromAuctions(uint[] calldata _auctionIds) // GAS COST +/- 127.070
     external
     onlyWhenInited
-    onlyWhenTellerConnected
     updateState
   {
     // even when country is disabled, can withdraw
@@ -718,7 +712,7 @@ contract Zone is IERC223ReceivingContract {
 
     require(withdrawAmountTotal > 0, "nothing to withdraw");
 
-    dth.transfer(msg.sender, withdrawAmountTotal);
+    require(dth.transfer(msg.sender, withdrawAmountTotal));
   }
 
   // - bids in past auctions
@@ -726,7 +720,6 @@ contract Zone is IERC223ReceivingContract {
   function withdrawDth()
     external
     onlyWhenInited
-    onlyWhenTellerConnected
     updateState
   {
     uint dthWithdraw = withdrawableDth[msg.sender];
@@ -734,7 +727,7 @@ contract Zone is IERC223ReceivingContract {
 
     if (dthWithdraw > 0) {
       withdrawableDth[msg.sender] = 0;
-      dth.transfer(msg.sender, dthWithdraw);
+      require(dth.transfer(msg.sender, dthWithdraw));
     }
   }
 }

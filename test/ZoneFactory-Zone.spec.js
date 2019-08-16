@@ -1328,13 +1328,13 @@ contract('ZoneFactory + Zone', (accounts) => {
       describe('Zone.calcEntryFee(uint _bid)', () => {
         it('returns correct result for 100 dth', async () => {
           const res = await zoneInstance.calcEntryFee(ethToWei(100));
-          expect(res.burnAmount).to.be.bignumber.equal(ethToWei(1));
-          expect(res.bidAmount).to.be.bignumber.equal(ethToWei(99));
+          expect(res.burnAmount).to.be.bignumber.equal(ethToWei(5)); // entry fee now 5%
+          expect(res.bidAmount).to.be.bignumber.equal(ethToWei(95));
         });
         it('returns correct result for 101 dth', async () => {
           const res = await zoneInstance.calcEntryFee(ethToWei(101));
-          expect(res.burnAmount).to.be.bignumber.equal(ethToWei(1.01));
-          expect(res.bidAmount).to.be.bignumber.equal(ethToWei(99.99));
+          expect(res.burnAmount).to.be.bignumber.equal(ethToWei(5.05));
+          expect(res.bidAmount).to.be.bignumber.equal(ethToWei(95.95));
         });
       });
       describe('Zone.calcHarbergerTax(uint _startTime, uint _endTime, uint _dthAmount)', () => {

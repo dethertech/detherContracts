@@ -96,10 +96,6 @@ contract Shops {
   // Events
   //
   // ------------------------------------------------
-  event logShopData(bytes16 _name, uint _staked, uint _licencePrice, uint _lastTaxTime);
-  event logUint(uint _uint, string _log);
-  event logString(string _string);
-  event TaxPayedToBy(uint amount, address to, address by);
   event TaxTotalPaidTo(uint amount, address to);
   // ------------------------------------------------
   //
@@ -260,6 +256,12 @@ contract Shops {
   // Functions Getters Private
   //
   // ------------------------------------------------
+  // audit feedback
+  function isContract(address addr) private view returns (bool) {
+    uint size;
+    assembly { size := extcodesize(addr) }
+    return size > 0;
+  }
 
   function toBytes1(bytes memory _bytes, uint _start)
     private
@@ -358,7 +360,6 @@ contract Shops {
     require(_priceDTH > floorLicencePrice, "price should be superior to the floor price");
     zoneLicencePrice[_zoneGeohash] = _priceDTH;
   }
-//   event logShopData(bytes16 _name, uint _staked, uint _licencePrice, uint _startTime, _lastTaxTime);
 
   function calcShopTax(uint _startTime, uint _endTime, uint _licencePrice)
     public
@@ -378,7 +379,7 @@ contract Shops {
     // require(msg.sender == zoneOwner, "only zone owner can collect taxes");
 
     address[] memory shopsinZone = zoneToShopAddresses[_zoneGeohash];
-    require(_end - _start <= shopsinZone.length, "start and end value are bigger than address[]");
+    require(_end - _start <= shopsinZone.length && _end <= shopsinZone.length, "start and end value are bigger than address[]");
     // loop on all shops present on his zone and:
     // collect taxes if possible
     // delete point if no more enough stake
@@ -398,8 +399,7 @@ contract Shops {
         shopAddressToShop[shopsinZone[i]].lastTaxTime = now;
       }
     }
-    emit logUint(taxToSendToZoneOwner, 'tax to send zone owner');
-    dth.transfer(zoneOwner, taxToSendToZoneOwner);
+    require(dth.transfer(zoneOwner, taxToSendToZoneOwner));
     stakedDth = stakedDth.sub(taxToSendToZoneOwner);
     emit TaxTotalPaidTo(taxToSendToZoneOwner, zoneOwner);
   }
@@ -409,7 +409,8 @@ contract Shops {
     onlyWhenCallerIsDTH
   {
     require(_data.length == 95, "addShop expects 95 bytes as data");
-
+    // audite feedback
+    require(!isContract(_from), 'shops cannot be a contract');
     address sender = _from;
     uint dthAmount = _value;
 
@@ -472,8 +473,6 @@ contract Shops {
   {
     bytes12 position = shopAddressToShop[shopAddress].position;
 
-    delete shopAddressToShop[shopAddress];
-
     positionToShopAddress[position] = address(0);
 
     delete positionToShopAddress[shopAddressToShop[shopAddress].position];
@@ -493,7 +492,7 @@ contract Shops {
 
     _deleteShop(msg.sender);
 
-    dth.transfer(msg.sender, shopStake);
+    require(dth.transfer(msg.sender, shopStake));
     stakedDth = stakedDth.sub(shopStake);
   }
 
@@ -512,7 +511,7 @@ contract Shops {
 
     _deleteShop(_shopAddress);
 
-    dth.transfer(_shopAddress, shopStake);
+    require(dth.transfer(_shopAddress, shopStake));
     stakedDth = stakedDth.sub(shopStake);
   }
 
@@ -523,7 +522,7 @@ contract Shops {
     require(dthWithdraw > 0, "nothing to withdraw");
 
     withdrawableDth[msg.sender] = 0;
-    dth.transfer(msg.sender, dthWithdraw);
+    require(dth.transfer(msg.sender, dthWithdraw));
     stakedDth = stakedDth.sub(dthWithdraw);
   }
 
