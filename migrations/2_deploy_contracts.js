@@ -77,7 +77,7 @@ module.exports = async (deployer, network) => {
   await deployer.deploy(GeoRegistry, { gas: 6500000 });
   const geo = await GeoRegistry.deployed();
 
-  await deployer.deploy(Zone, { gas: 6600000 });
+  await deployer.deploy(Zone, { gas: 6700000 });
   const zoneImplementation = await Zone.deployed();
 
   await deployer.deploy(Teller, { gas: 6500000 });

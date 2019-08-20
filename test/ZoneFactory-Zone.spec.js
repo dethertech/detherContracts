@@ -1010,6 +1010,7 @@ contract("ZoneFactory + Zone", accounts => {
       });
       describe("Zone.withdrawFromAuctions(uint[] _auctionIds)", () => {
         it("should succeed to withdraw all of a users withdrawable bids", async () => {
+          // TO DO: modify the test with MIN_RAISE of 5%
           // auction 1
           await timeTravel.inSecs(COOLDOWN_PERIOD + ONE_HOUR);
           await placeBid(user2, MIN_ZONE_DTH_STAKE + 10, zoneInstance.address); // loser

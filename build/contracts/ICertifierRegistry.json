@@ -1,0 +1,2150 @@
+{
+  "contractName": "ICertifierRegistry",
+  "abi": [
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_url",
+          "type": "string"
+        }
+      ],
+      "name": "createCertifier",
+      "outputs": [
+        {
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_certifierId",
+          "type": "address"
+        },
+        {
+          "name": "_newUrl",
+          "type": "string"
+        }
+      ],
+      "name": "modifyUrl",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_certifierId",
+          "type": "address"
+        },
+        {
+          "name": "ref",
+          "type": "int8"
+        },
+        {
+          "name": "description",
+          "type": "string"
+        }
+      ],
+      "name": "addCertificationType",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_certifierId",
+          "type": "address"
+        },
+        {
+          "name": "_delegate",
+          "type": "address"
+        }
+      ],
+      "name": "addDelegate",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_certifierId",
+          "type": "address"
+        },
+        {
+          "name": "_delegate",
+          "type": "address"
+        }
+      ],
+      "name": "removeDelegate",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_certifierId",
+          "type": "address"
+        },
+        {
+          "name": "_who",
+          "type": "address"
+        },
+        {
+          "name": "_type",
+          "type": "int8"
+        }
+      ],
+      "name": "certify",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": false,
+      "inputs": [
+        {
+          "name": "_certifierId",
+          "type": "address"
+        },
+        {
+          "name": "_who",
+          "type": "address"
+        }
+      ],
+      "name": "revoke",
+      "outputs": [],
+      "payable": false,
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_certifierId",
+          "type": "address"
+        },
+        {
+          "name": "_who",
+          "type": "address"
+        }
+      ],
+      "name": "isDelegate",
+      "outputs": [
+        {
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "constant": true,
+      "inputs": [
+        {
+          "name": "_who",
+          "type": "address"
+        }
+      ],
+      "name": "getCerts",
+      "outputs": [
+        {
+          "components": [
+            {
+              "name": "certifier",
+              "type": "address"
+            },
+            {
+              "name": "ref",
+              "type": "int8"
+            },
+            {
+              "name": "timestamp",
+              "type": "uint256"
+            }
+          ],
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "payable": false,
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "metadata": "{\"compiler\":{\"version\":\"0.5.10+commit.5a6ea5b1\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_delegate\",\"type\":\"address\"}],\"name\":\"removeDelegate\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_who\",\"type\":\"address\"},{\"name\":\"_type\",\"type\":\"int8\"}],\"name\":\"certify\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"isDelegate\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_newUrl\",\"type\":\"string\"}],\"name\":\"modifyUrl\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"getCerts\",\"outputs\":[{\"components\":[{\"name\":\"certifier\",\"type\":\"address\"},{\"name\":\"ref\",\"type\":\"int8\"},{\"name\":\"timestamp\",\"type\":\"uint256\"}],\"name\":\"\",\"type\":\"tuple[]\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_who\",\"type\":\"address\"}],\"name\":\"revoke\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"_delegate\",\"type\":\"address\"}],\"name\":\"addDelegate\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_url\",\"type\":\"string\"}],\"name\":\"createCertifier\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_certifierId\",\"type\":\"address\"},{\"name\":\"ref\",\"type\":\"int8\"},{\"name\":\"description\",\"type\":\"string\"}],\"name\":\"addCertificationType\",\"outputs\":[],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"methods\":{}},\"userdoc\":{\"methods\":{}}},\"settings\":{\"compilationTarget\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol\":\"ICertifierRegistry\"},\"evmVersion\":\"petersburg\",\"libraries\":{},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol\":{\"keccak256\":\"0x664649b5d6270e2c9962d44074044cda3b2091c5bcea96810f13ded1cde7d55e\",\"urls\":[\"bzzr://fcb6b50ecdbf9e59fb94138bf7889388ec7a910ae5cd962ada32a2993e1c5fc8\",\"dweb:/ipfs/Qmd7SmZ6dUp8N9d2s2BxHb1U15vrRDoti1ZFTUNfydPxhX\"]}},\"version\":1}",
+  "bytecode": "0x",
+  "deployedBytecode": "0x",
+  "sourceMap": "",
+  "deployedSourceMap": "",
+  "source": "pragma solidity ^0.5.10;\npragma experimental ABIEncoderV2;\n\ncontract ICertifierRegistry {\n    struct Certification {\n\t\taddress certifier;\n\t\tint8 ref;\n        uint timestamp;\n\t}\n    function createCertifier(string memory _url) public returns (address );\n    function modifyUrl(address _certifierId, string memory _newUrl) public;\n    function addCertificationType(address _certifierId, int8 ref, string memory description) public;\n    function addDelegate(address _certifierId, address _delegate) public;\n\tfunction removeDelegate(address _certifierId, address _delegate) public;\n\tfunction certify(address _certifierId, address _who, int8 _type) public;\n    function revoke(address _certifierId, address _who) public;\n    function isDelegate(address _certifierId, address _who) public view returns(bool);\n    function getCerts( address _who) public view returns(Certification[] memory);\n}\n",
+  "sourcePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol",
+  "ast": {
+    "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol",
+    "exportedSymbols": {
+      "ICertifierRegistry": [
+        7872
+      ]
+    },
+    "id": 7873,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 7793,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".10"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:13"
+      },
+      {
+        "id": 7794,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:13"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 7872,
+        "linearizedBaseContracts": [
+          7872
+        ],
+        "name": "ICertifierRegistry",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "ICertifierRegistry.Certification",
+            "id": 7801,
+            "members": [
+              {
+                "constant": false,
+                "id": 7796,
+                "name": "certifier",
+                "nodeType": "VariableDeclaration",
+                "scope": 7801,
+                "src": "119:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 7795,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "119:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 7798,
+                "name": "ref",
+                "nodeType": "VariableDeclaration",
+                "scope": 7801,
+                "src": "140:8:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_int8",
+                  "typeString": "int8"
+                },
+                "typeName": {
+                  "id": 7797,
+                  "name": "int8",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "140:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int8",
+                    "typeString": "int8"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 7800,
+                "name": "timestamp",
+                "nodeType": "VariableDeclaration",
+                "scope": 7801,
+                "src": "158:14:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 7799,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "158:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Certification",
+            "nodeType": "StructDefinition",
+            "scope": 7872,
+            "src": "94:82:13",
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7808,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "createCertifier",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7804,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7803,
+                  "name": "_url",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7808,
+                  "src": "206:18:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 7802,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "206:6:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "205:20:13"
+            },
+            "returnParameters": {
+              "id": 7807,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7806,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7808,
+                  "src": "242:7:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7805,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "242:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "241:10:13"
+            },
+            "scope": 7872,
+            "src": "181:71:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7815,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "modifyUrl",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7813,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7810,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7815,
+                  "src": "276:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7809,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "276:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7812,
+                  "name": "_newUrl",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7815,
+                  "src": "298:21:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 7811,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "298:6:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "275:45:13"
+            },
+            "returnParameters": {
+              "id": 7814,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "327:0:13"
+            },
+            "scope": 7872,
+            "src": "257:71:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7824,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "addCertificationType",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7822,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7817,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7824,
+                  "src": "363:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7816,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "363:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7819,
+                  "name": "ref",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7824,
+                  "src": "385:8:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int8",
+                    "typeString": "int8"
+                  },
+                  "typeName": {
+                    "id": 7818,
+                    "name": "int8",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "385:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int8",
+                      "typeString": "int8"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7821,
+                  "name": "description",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7824,
+                  "src": "395:25:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 7820,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "395:6:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "362:59:13"
+            },
+            "returnParameters": {
+              "id": 7823,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "428:0:13"
+            },
+            "scope": 7872,
+            "src": "333:96:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7831,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "addDelegate",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7829,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7826,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7831,
+                  "src": "455:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7825,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "455:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7828,
+                  "name": "_delegate",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7831,
+                  "src": "477:17:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7827,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "477:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "454:41:13"
+            },
+            "returnParameters": {
+              "id": 7830,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "502:0:13"
+            },
+            "scope": 7872,
+            "src": "434:69:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7838,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "removeDelegate",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7836,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7833,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7838,
+                  "src": "529:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7832,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "529:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7835,
+                  "name": "_delegate",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7838,
+                  "src": "551:17:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7834,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "551:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "528:41:13"
+            },
+            "returnParameters": {
+              "id": 7837,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "576:0:13"
+            },
+            "scope": 7872,
+            "src": "505:72:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7847,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "certify",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7845,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7840,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7847,
+                  "src": "596:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7839,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "596:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7842,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7847,
+                  "src": "618:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7841,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "618:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7844,
+                  "name": "_type",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7847,
+                  "src": "632:10:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int8",
+                    "typeString": "int8"
+                  },
+                  "typeName": {
+                    "id": 7843,
+                    "name": "int8",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "632:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int8",
+                      "typeString": "int8"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "595:48:13"
+            },
+            "returnParameters": {
+              "id": 7846,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "650:0:13"
+            },
+            "scope": 7872,
+            "src": "579:72:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7854,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "revoke",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7852,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7849,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7854,
+                  "src": "672:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7848,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "672:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7851,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7854,
+                  "src": "694:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7850,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "694:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "671:36:13"
+            },
+            "returnParameters": {
+              "id": 7853,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "714:0:13"
+            },
+            "scope": 7872,
+            "src": "656:59:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7863,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "isDelegate",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7859,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7856,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7863,
+                  "src": "740:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7855,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "740:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7858,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7863,
+                  "src": "762:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7857,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "762:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "739:36:13"
+            },
+            "returnParameters": {
+              "id": 7862,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7861,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7863,
+                  "src": "796:4:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 7860,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "796:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "795:6:13"
+            },
+            "scope": 7872,
+            "src": "720:82:13",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7871,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getCerts",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7866,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7865,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7871,
+                  "src": "826:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7864,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "826:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "824:15:13"
+            },
+            "returnParameters": {
+              "id": 7870,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7869,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7871,
+                  "src": "860:22:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_struct$_Certification_$7801_memory_$dyn_memory_ptr",
+                    "typeString": "struct ICertifierRegistry.Certification[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "contractScope": null,
+                      "id": 7867,
+                      "name": "Certification",
+                      "nodeType": "UserDefinedTypeName",
+                      "referencedDeclaration": 7801,
+                      "src": "860:13:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_Certification_$7801_storage_ptr",
+                        "typeString": "struct ICertifierRegistry.Certification"
+                      }
+                    },
+                    "id": 7868,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "860:15:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_struct$_Certification_$7801_storage_$dyn_storage_ptr",
+                      "typeString": "struct ICertifierRegistry.Certification[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "859:24:13"
+            },
+            "scope": 7872,
+            "src": "807:77:13",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 7873,
+        "src": "60:826:13"
+      }
+    ],
+    "src": "0:887:13"
+  },
+  "legacyAST": {
+    "absolutePath": "/Users/mehdi/code/dether/contractV2/contracts/interfaces/ICertifierRegistry.sol",
+    "exportedSymbols": {
+      "ICertifierRegistry": [
+        7872
+      ]
+    },
+    "id": 7873,
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 7793,
+        "literals": [
+          "solidity",
+          "^",
+          "0.5",
+          ".10"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "0:24:13"
+      },
+      {
+        "id": 7794,
+        "literals": [
+          "experimental",
+          "ABIEncoderV2"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "25:33:13"
+      },
+      {
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": null,
+        "fullyImplemented": false,
+        "id": 7872,
+        "linearizedBaseContracts": [
+          7872
+        ],
+        "name": "ICertifierRegistry",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "ICertifierRegistry.Certification",
+            "id": 7801,
+            "members": [
+              {
+                "constant": false,
+                "id": 7796,
+                "name": "certifier",
+                "nodeType": "VariableDeclaration",
+                "scope": 7801,
+                "src": "119:17:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 7795,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "119:7:13",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 7798,
+                "name": "ref",
+                "nodeType": "VariableDeclaration",
+                "scope": 7801,
+                "src": "140:8:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_int8",
+                  "typeString": "int8"
+                },
+                "typeName": {
+                  "id": 7797,
+                  "name": "int8",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "140:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int8",
+                    "typeString": "int8"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 7800,
+                "name": "timestamp",
+                "nodeType": "VariableDeclaration",
+                "scope": 7801,
+                "src": "158:14:13",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 7799,
+                  "name": "uint",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "158:4:13",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "value": null,
+                "visibility": "internal"
+              }
+            ],
+            "name": "Certification",
+            "nodeType": "StructDefinition",
+            "scope": 7872,
+            "src": "94:82:13",
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7808,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "createCertifier",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7804,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7803,
+                  "name": "_url",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7808,
+                  "src": "206:18:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 7802,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "206:6:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "205:20:13"
+            },
+            "returnParameters": {
+              "id": 7807,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7806,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7808,
+                  "src": "242:7:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7805,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "242:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "241:10:13"
+            },
+            "scope": 7872,
+            "src": "181:71:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7815,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "modifyUrl",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7813,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7810,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7815,
+                  "src": "276:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7809,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "276:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7812,
+                  "name": "_newUrl",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7815,
+                  "src": "298:21:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 7811,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "298:6:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "275:45:13"
+            },
+            "returnParameters": {
+              "id": 7814,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "327:0:13"
+            },
+            "scope": 7872,
+            "src": "257:71:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7824,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "addCertificationType",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7822,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7817,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7824,
+                  "src": "363:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7816,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "363:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7819,
+                  "name": "ref",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7824,
+                  "src": "385:8:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int8",
+                    "typeString": "int8"
+                  },
+                  "typeName": {
+                    "id": 7818,
+                    "name": "int8",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "385:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int8",
+                      "typeString": "int8"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7821,
+                  "name": "description",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7824,
+                  "src": "395:25:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 7820,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "395:6:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "362:59:13"
+            },
+            "returnParameters": {
+              "id": 7823,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "428:0:13"
+            },
+            "scope": 7872,
+            "src": "333:96:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7831,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "addDelegate",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7829,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7826,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7831,
+                  "src": "455:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7825,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "455:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7828,
+                  "name": "_delegate",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7831,
+                  "src": "477:17:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7827,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "477:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "454:41:13"
+            },
+            "returnParameters": {
+              "id": 7830,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "502:0:13"
+            },
+            "scope": 7872,
+            "src": "434:69:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7838,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "removeDelegate",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7836,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7833,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7838,
+                  "src": "529:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7832,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "529:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7835,
+                  "name": "_delegate",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7838,
+                  "src": "551:17:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7834,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "551:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "528:41:13"
+            },
+            "returnParameters": {
+              "id": 7837,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "576:0:13"
+            },
+            "scope": 7872,
+            "src": "505:72:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7847,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "certify",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7845,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7840,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7847,
+                  "src": "596:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7839,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "596:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7842,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7847,
+                  "src": "618:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7841,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "618:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7844,
+                  "name": "_type",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7847,
+                  "src": "632:10:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_int8",
+                    "typeString": "int8"
+                  },
+                  "typeName": {
+                    "id": 7843,
+                    "name": "int8",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "632:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_int8",
+                      "typeString": "int8"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "595:48:13"
+            },
+            "returnParameters": {
+              "id": 7846,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "650:0:13"
+            },
+            "scope": 7872,
+            "src": "579:72:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7854,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "revoke",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7852,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7849,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7854,
+                  "src": "672:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7848,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "672:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7851,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7854,
+                  "src": "694:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7850,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "694:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "671:36:13"
+            },
+            "returnParameters": {
+              "id": 7853,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "714:0:13"
+            },
+            "scope": 7872,
+            "src": "656:59:13",
+            "stateMutability": "nonpayable",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7863,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "isDelegate",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7859,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7856,
+                  "name": "_certifierId",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7863,
+                  "src": "740:20:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7855,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "740:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 7858,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7863,
+                  "src": "762:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7857,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "762:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "739:36:13"
+            },
+            "returnParameters": {
+              "id": 7862,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7861,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7863,
+                  "src": "796:4:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 7860,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "796:4:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "795:6:13"
+            },
+            "scope": 7872,
+            "src": "720:82:13",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          },
+          {
+            "body": null,
+            "documentation": null,
+            "id": 7871,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getCerts",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 7866,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7865,
+                  "name": "_who",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7871,
+                  "src": "826:12:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 7864,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "826:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "824:15:13"
+            },
+            "returnParameters": {
+              "id": 7870,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 7869,
+                  "name": "",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 7871,
+                  "src": "860:22:13",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_struct$_Certification_$7801_memory_$dyn_memory_ptr",
+                    "typeString": "struct ICertifierRegistry.Certification[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "contractScope": null,
+                      "id": 7867,
+                      "name": "Certification",
+                      "nodeType": "UserDefinedTypeName",
+                      "referencedDeclaration": 7801,
+                      "src": "860:13:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_Certification_$7801_storage_ptr",
+                        "typeString": "struct ICertifierRegistry.Certification"
+                      }
+                    },
+                    "id": 7868,
+                    "length": null,
+                    "nodeType": "ArrayTypeName",
+                    "src": "860:15:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_struct$_Certification_$7801_storage_$dyn_storage_ptr",
+                      "typeString": "struct ICertifierRegistry.Certification[]"
+                    }
+                  },
+                  "value": null,
+                  "visibility": "internal"
+                }
+              ],
+              "src": "859:24:13"
+            },
+            "scope": 7872,
+            "src": "807:77:13",
+            "stateMutability": "view",
+            "superFunction": null,
+            "visibility": "public"
+          }
+        ],
+        "scope": 7873,
+        "src": "60:826:13"
+      }
+    ],
+    "src": "0:887:13"
+  },
+  "compiler": {
+    "name": "solc",
+    "version": "0.5.10+commit.5a6ea5b1.Emscripten.clang"
+  },
+  "networks": {},
+  "schemaVersion": "3.0.11",
+  "updatedAt": "2019-08-19T09:13:56.087Z",
+  "devdoc": {
+    "methods": {}
+  },
+  "userdoc": {
+    "methods": {}
+  }
+}
