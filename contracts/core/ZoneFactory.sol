@@ -194,12 +194,12 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
   /*
    * Change geohash6 zone owner in ownerToZone mapping
    */
-  function changeOwner( address _newOwner, address _oldOwner)
+  function changeOwner( address _newOwner, address _oldOwner, address _zone)
   public
   onlyZone
   {
     ownerToZone[_oldOwner] = address(0);
-    ownerToZone[_newOwner] = msg.sender;
+    ownerToZone[_newOwner] = _zone;
   }
 
   /*

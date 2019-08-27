@@ -12,7 +12,7 @@ contract IZoneFactory {
     function users() view public returns(address);
     // function getActiveBidderZone(address _bidder) view public returns(address);
     function transferOwnership(address newOwner) public;
-    function changeOwner( address _newOwner, address _oldOwner) public;
+    function changeOwner( address _newOwner, address _oldOwner, address _zone) public;
     function zoneExists(bytes6 _geohash) view external returns(bool);
     function proxyUpdateUserDailySold(bytes2 _countryCode, address _from, address _to, uint256 _amount) external;
     function emitAuctionCreated(bytes6 zoneFrom, address sender, uint auctionId, uint bidAmount) public;

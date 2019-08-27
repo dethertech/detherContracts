@@ -462,7 +462,7 @@ contract Shops {
       positionToShopAddress[position] = sender;
 
       // a zone is a 6 character geohash, we keep track of all shops in a given zone
-      shop._index = zoneToShopAddresses[bytes6(position)].push(sender);
+      shop._index = zoneToShopAddresses[bytes6(position)].push(sender) - 1;
     }
   }
 
@@ -474,20 +474,38 @@ contract Shops {
     stakedDth = stakedDth.add(_dthAmount);
   }
 
+  // function _deleteShop(address shopAddress)
+  //   private
+  // {
+  //   bytes12 position = shopAddressToShop[shopAddress].position;
+  //   delete shopAddressToShop[shopAddress];
+  //   positionToShopAddress[position] = address(0);
+
+  //   delete positionToShopAddress[shopAddressToShop[shopAddress].position];
+  //   uint indexToRemove = shopAddressToShop[shopAddress]._index;
+  //   zoneToShopAddresses[bytes6(position)][indexToRemove] = zoneToShopAddresses[bytes6(position)][zoneToShopAddresses[bytes6(position)].length - 1];
+  //   shopAddressToShop[zoneToShopAddresses[bytes6(position)][indexToRemove]]._index = indexToRemove;
+  //   // zoneToShopAddresses[bytes6(position)].length--;
+  //   zoneToShopAddresses[bytes6(position)].pop();
+  //   delete shopAddressToShop[shopAddress];
+  // }
+
   function _deleteShop(address shopAddress)
     private
   {
     bytes12 position = shopAddressToShop[shopAddress].position;
-    delete shopAddressToShop[shopAddress];
-    positionToShopAddress[position] = address(0);
-
-    delete positionToShopAddress[shopAddressToShop[shopAddress].position];
     uint indexToRemove = shopAddressToShop[shopAddress]._index;
+
+    // remove shop address from list of shop addresses in zone
+    // move last existing shop address to the position of the shop-to-remove
     zoneToShopAddresses[bytes6(position)][indexToRemove] = zoneToShopAddresses[bytes6(position)][zoneToShopAddresses[bytes6(position)].length - 1];
+    // update the index of the last shop that was moved into the position fo the shop-to-remove
     shopAddressToShop[zoneToShopAddresses[bytes6(position)][indexToRemove]]._index = indexToRemove;
-    // zoneToShopAddresses[bytes6(position)].length--;
+    // remove the last item, which was moved to the position of shop-to-remove
     zoneToShopAddresses[bytes6(position)].pop();
+
     delete shopAddressToShop[shopAddress];
+    delete positionToShopAddress[shopAddressToShop[shopAddress].position];
   }
 
   function removeShop()

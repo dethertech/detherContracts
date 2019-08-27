@@ -252,7 +252,7 @@ contract Zone is IERC223ReceivingContract {
 
     uint highestBid = auctionBids[_auctionId][auction.highestBidder];
 
-    // for current zone owner his existing zone stake is added to his bid
+    // If auction is ongoing, for current zone owner his existing zone stake is added to his bid
     if (auction.state == AuctionState.Started &&
         auction.highestBidder == zoneOwner.addr)
     {
@@ -303,15 +303,18 @@ contract Zone is IERC223ReceivingContract {
   //
   // ------------------------------------------------
 
-  function _removeZoneOwner()
+  function _removeZoneOwner(bool fromRelease)
     private
   {
-    withdrawableDth[zoneOwner.addr] = withdrawableDth[zoneOwner.addr].add(zoneOwner.balance);
+    // if we call this function from release() we shouldn't update withdrawableDth as we already send dth 
+    if (!fromRelease) {
+      withdrawableDth[zoneOwner.addr] = withdrawableDth[zoneOwner.addr].add(zoneOwner.balance);
+    }
 
     if (teller.hasTeller()) {
       teller.removeTellerByZone();
     }
-    zoneFactory.changeOwner(address(0), zoneOwner.addr);
+    zoneFactory.changeOwner(address(0), zoneOwner.addr, address(0));
     delete zoneOwner;
   }
   /*
@@ -331,8 +334,8 @@ contract Zone is IERC223ReceivingContract {
     if (taxAmount > zoneOwner.balance) {
       // zone owner does not have enough balance, remove him as zone owner
       uint oldZoneOwnerBalance = zoneOwner.balance;
-            (address referrer, uint refFee) = teller.getReferrer();
-      _removeZoneOwner();
+      _removeZoneOwner(false);
+
       require(dth.transfer(taxCollector, oldZoneOwnerBalance));
     } else {
       // zone owner can pay due taxes
@@ -373,8 +376,8 @@ contract Zone is IERC223ReceivingContract {
       zoneOwner.auctionId = currentAuctionId; // the (last) auctionId that gave the zoneOwner zone ownership
     } else {
       // we need to update the zone owner
-      _removeZoneOwner();
-      zoneFactory.changeOwner(highestBidder, zoneOwner.addr);
+      _removeZoneOwner(false);
+      zoneFactory.changeOwner(highestBidder, zoneOwner.addr, address(this));
       zoneOwner.addr = highestBidder;
       zoneOwner.startTime = auctionEndTime;
       zoneOwner.staked = highestBid; // entry fee is already deducted when user calls bid()
@@ -483,6 +486,7 @@ contract Zone is IERC223ReceivingContract {
     require(dth.transfer(taxCollector, burnAmount));
     //
     zoneFactory.fillCurrentZoneBidder(_sender);
+    zoneFactory.fillCurrentZoneBidder(zoneOwner.addr);
     zoneFactory.emitAuctionCreated(geohash, _sender, newAuctionId, _dthAmount);
   }
   /// @notice private function to update the current auction state
@@ -512,7 +516,7 @@ contract Zone is IERC223ReceivingContract {
     require(zoneFactory.ownerToZone(_sender) == address(0), "sender own already one zone");
 
     // NOTE: empty zone claim will not have entry fee deducted, its not bidding it's taking immediately
-    zoneFactory.changeOwner(_sender, zoneOwner.addr);
+    zoneFactory.changeOwner(_sender, zoneOwner.addr, address(this));
     zoneOwner.addr = _sender;
     zoneOwner.startTime = now;
     zoneOwner.staked = _dthAmount;
@@ -578,7 +582,7 @@ contract Zone is IERC223ReceivingContract {
   /// @dev can only be called by current zone owner, when there is no running auction
   function release() // GAS COST +/- 72.351
     external
-    onlyWhenInited
+    // onlyWhenInited
     updateState
     onlyWhenCallerIsZoneOwner
   {
@@ -588,7 +592,7 @@ contract Zone is IERC223ReceivingContract {
 
     uint ownerBalance = zoneOwner.balance;
 
-    _removeZoneOwner();
+    _removeZoneOwner(true);
 
     // if msg.sender is a contract, the DTH ERC223 contract will try to call tokenFallback
     // on msg.sender, this could lead to a reentrancy. But we prevent this by resetting
@@ -603,7 +607,7 @@ contract Zone is IERC223ReceivingContract {
   /// @param _auctionId The auction id
   function withdrawFromAuction(uint _auctionId) // GAS COST +/- 125.070
     external
-    onlyWhenInited
+    // onlyWhenInited
     updateState
   {
     // even when country is disabled, otherwise users cannot withdraw their bids
@@ -615,7 +619,10 @@ contract Zone is IERC223ReceivingContract {
 
     uint withdrawAmount = auctionBids[_auctionId][msg.sender];
     auctionBids[_auctionId][msg.sender] = 0;
-
+    if (withdrawableDth[msg.sender] > 0) {
+      withdrawAmount = withdrawAmount.add(withdrawableDth[msg.sender]);
+      withdrawableDth[msg.sender] = 0;
+    }
     zoneFactory.removeActiveBidder(msg.sender);
     require(dth.transfer(msg.sender, withdrawAmount));
   }
@@ -623,7 +630,7 @@ contract Zone is IERC223ReceivingContract {
   /// @notice withdraw from a given list of auction ids
   function withdrawFromAuctions(uint[] calldata _auctionIds) // GAS COST +/- 127.070
     external
-    onlyWhenInited
+    // onlyWhenInited
     updateState
   {
     // even when country is disabled, can withdraw
@@ -647,6 +654,10 @@ contract Zone is IERC223ReceivingContract {
         withdrawAmountTotal = withdrawAmountTotal.add(withdrawAmount);
       }
     }
+    if (withdrawableDth[msg.sender] > 0) {
+      withdrawAmountTotal = withdrawAmountTotal.add(withdrawableDth[msg.sender]);
+      withdrawableDth[msg.sender] = 0;
+    }
     zoneFactory.removeActiveBidder(msg.sender);
 
     require(withdrawAmountTotal > 0, "nothing to withdraw");
@@ -658,12 +669,12 @@ contract Zone is IERC223ReceivingContract {
   // - zone owner stake
   function withdrawDth()
     external
-    onlyWhenInited
+    // onlyWhenInited
     updateState
   {
     uint dthWithdraw = withdrawableDth[msg.sender];
     require(dthWithdraw > 0, "nothing to withdraw");
-
+    zoneFactory.removeActiveBidder(msg.sender);
     if (dthWithdraw > 0) {
       withdrawableDth[msg.sender] = 0;
       require(dth.transfer(msg.sender, dthWithdraw));
