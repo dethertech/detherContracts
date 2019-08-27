@@ -67,10 +67,10 @@ contract Zone is IERC223ReceivingContract {
   // uint private constant COOLDOWN_PERIOD = 48 * 1 hours; // mainnet params
   uint public constant BID_PERIOD = 30 * 1 minutes; // testnet params
   uint public constant COOLDOWN_PERIOD = 5 * 1 minutes; // testnet params
-  uint public constant ENTRY_FEE_PERCENTAGE = 5; // 1%
+  uint public constant ENTRY_FEE_PERCENTAGE = 4; // in %
   uint public constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
   
-  uint public constant MIN_RAISE = 5; // everybid should raise at least 5%
+  uint public constant MIN_RAISE = 6; // everybid should be more than x% that the previous highestbid
 
   bool private inited;
 
