@@ -263,11 +263,11 @@ contract Shops {
   //
   // ------------------------------------------------
   // audit feedback
-  function isContract(address addr) private view returns (bool) {
-    uint size;
-    assembly { size := extcodesize(addr) }
-    return size > 0;
-  }
+  // function isContract(address addr) private view returns (bool) {
+  //   uint size;
+  //   assembly { size := extcodesize(addr) }
+  //   return size > 0;
+  // }
 
   function toBytes1(bytes memory _bytes, uint _start)
     private
@@ -385,7 +385,7 @@ contract Shops {
     // require(msg.sender == zoneOwner, "only zone owner can collect taxes");
 
     address[] memory shopsinZone = zoneToShopAddresses[_zoneGeohash];
-    require(_end - _start <= shopsinZone.length && _end <= shopsinZone.length, "start and end value are bigger than address[]");
+    require(_start < _end && _end <= shopsinZone.length, "start and end value are bigger than address[]");
     // loop on all shops present on his zone and:
     // collect taxes if possible
     // delete point if no more enough stake
@@ -415,8 +415,8 @@ contract Shops {
     onlyWhenCallerIsDTH
   {
     require(_data.length == 95, "addShop expects 95 bytes as data");
-    // audit feedback
-    require(!isContract(_from), 'shops cannot be a contract');
+    // // audit feedback
+    // require(!isContract(_from), 'shops cannot be a contract');
     address sender = _from;
     uint dthAmount = _value;
 
@@ -536,7 +536,11 @@ contract Shops {
 
     _deleteShop(_shopAddress);
 
-    require(dth.transfer(_shopAddress, shopStake));
+    // to avoid Dos with revert in case shop is a contract
+    bytes memory payload = abi.encodeWithSignature("transfer(address,uint256)", _shopAddress, shopStake);
+    address(dth).call(payload);
+
+    // require(dth.transfer(_shopAddress, shopStake));
     stakedDth = stakedDth.sub(shopStake);
   }
 

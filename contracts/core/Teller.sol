@@ -205,11 +205,11 @@ contract Teller {
   //
   // ------------------------------------------------
   // audit feedback
-  function isContract(address addr) private view returns (bool) {
-    uint size;
-    assembly { size := extcodesize(addr) }
-    return size > 0;
-  }
+  // function isContract(address addr) private view returns (bool) {
+  //   uint size;
+  //   assembly { size := extcodesize(addr) }
+  //   return size > 0;
+  // }
 
   function toBytes7(bytes memory _bytes, uint _start)
     private
@@ -273,15 +273,16 @@ contract Teller {
 
     // we dont remove comments here, so that zoneowner can not get rid
     // of negative comments by readding his teller ;)
-    teller.addr = address(0); // late add
-    teller.currencyId = 0;
-    teller.messenger = bytes16(0);
-    teller.position = bytes12(0);
-    teller.settings = bytes1(0);
-    teller.buyRate = 0;
-    teller.sellRate = 0;
-    teller.referrer = address(0);
     emit RemoveTeller(teller.position);
+    delete teller;
+    // teller.addr = address(0); // late add
+    // teller.currencyId = 0;
+    // teller.messenger = bytes16(0);
+    // teller.position = bytes12(0);
+    // teller.settings = bytes1(0);
+    // teller.buyRate = 0;
+    // teller.sellRate = 0;
+    // teller.referrer = address(0);
   }
 
   function removeTellerByZone()
@@ -322,9 +323,9 @@ contract Teller {
     onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
-    // onlyWhenHasNoTeller
+    onlyWhenHasNoTeller
   {
-    require(!isContract(_referrer), 'referrer cannot be a contract');
+    // require(!isContract(_referrer), 'referrer cannot be a contract');
     require(_position.length == 12, "expected position to be 12 bytes");
     require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
@@ -377,13 +378,13 @@ contract Teller {
       require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
       require(geo.validGeohashChars(_position), "invalid position geohash characters");
       if (_settings & isSellerBitMask != 0) { // seller bit is set => teller is a "seller"
-        require(_sellRate >= -9999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
+        require(_sellRate >= -999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
       } else {
         require(_sellRate == 0, "cannot set sellRate if not set as seller");
       }
 
       if (_settings & isBuyerBitMask != 0) { // buyer bit is set => teller is a "buyer"
-        require(_buyRate >= -9999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
+        require(_buyRate >= -999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
       } else {
         require(_buyRate == 0, "cannot set buyRate if not set as buyer");
       }

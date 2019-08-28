@@ -62,11 +62,11 @@ contract Zone is IERC223ReceivingContract {
   //
   // ------------------------------------------------
 
-  uint public constant MIN_STAKE = 100 * 1 ether; // DTH, which is also 18 decimals!
+  uint public constant MIN_STAKE = 100 ether; // DTH, which is also 18 decimals!
   // uint private constant BID_PERIOD = 24 * 1 hours; // mainnet params
   // uint private constant COOLDOWN_PERIOD = 48 * 1 hours; // mainnet params
-  uint public constant BID_PERIOD = 30 * 1 minutes; // testnet params
-  uint public constant COOLDOWN_PERIOD = 5 * 1 minutes; // testnet params
+  uint public constant BID_PERIOD = 30 minutes; // testnet params
+  uint public constant COOLDOWN_PERIOD = 5 minutes; // testnet params
   uint public constant ENTRY_FEE_PERCENTAGE = 4; // in %
   uint public constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
   
@@ -99,14 +99,14 @@ contract Zone is IERC223ReceivingContract {
   //
   // ------------------------------------------------
 
-  modifier onlyWhenInited() {
-    require(inited == true, "contract not yet initialized");
-    _;
-  }
-  modifier onlyWhenNotInited() {
-    require(inited == false, "contract already initialized");
-    _;
-  }
+  // modifier onlyWhenInited() {
+  //   require(inited == true, "contract not yet initialized");
+  //   _;
+  // }
+  // modifier onlyWhenNotInited() {
+  //   require(inited == false, "contract already initialized");
+  //   _;
+  // }
 
   modifier onlyWhenZoneEnabled {
     require(geo.zoneIsEnabled(country), "country is disabled");
@@ -156,9 +156,11 @@ contract Zone is IERC223ReceivingContract {
     address _taxCollector,
     address _teller
   )
-    onlyWhenNotInited
+    // onlyWhenNotInited
     external
   {
+        require(inited == false, "contract already initialized");
+
     require(_dthAmount >= MIN_STAKE, "zone dth stake shoulld be at least minimum (100DTH)");
 
     country = _countryCode;
@@ -344,7 +346,12 @@ contract Zone is IERC223ReceivingContract {
       (address referrer, uint refFee) = teller.getReferrer();
       if (referrer != address(0x00) && refFee > 0) {
         uint referralFee =  taxAmount.mul(refFee).div(1000) ;
-        require(dth.transfer(referrer, referralFee));
+
+        // to avoid Dos with revert if referrer is contract
+        bytes memory payload = abi.encodeWithSignature("transfer(address,uint256)", referrer, referralFee);
+        address(dth).call(payload);
+
+        // require(dth.transfer(referrer, referralFee));
         require(dth.transfer(taxCollector, taxAmount - referralFee));
       } else {
         require(dth.transfer(taxCollector, taxAmount));
@@ -428,7 +435,7 @@ contract Zone is IERC223ReceivingContract {
     require(zoneFactory.ownerToZone(_sender) == address(0)
     || zoneFactory.ownerToZone(_sender) == address(this), "sender own already another zone");
 
-    require(_sender != lastAuction.highestBidder, "highest bidder cannot bid");
+    // require(_sender != lastAuction.highestBidder, "highest bidder cannot bid");
 
     uint currentHighestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
 
@@ -553,9 +560,9 @@ contract Zone is IERC223ReceivingContract {
   /// @param _data Additional bytes data sent
   function tokenFallback(address _from, uint _value, bytes memory _data)
     public
-    onlyWhenInited
     onlyWhenZoneEnabled
   {
+    require(inited == true, "contract not yet initialized");
     require(msg.sender == address(dth), "can only be called by dth contract");
     // require caller neither zone owner, neither active bidder
 
@@ -582,7 +589,6 @@ contract Zone is IERC223ReceivingContract {
   /// @dev can only be called by current zone owner, when there is no running auction
   function release() // GAS COST +/- 72.351
     external
-    // onlyWhenInited
     updateState
     onlyWhenCallerIsZoneOwner
   {
@@ -607,7 +613,6 @@ contract Zone is IERC223ReceivingContract {
   /// @param _auctionId The auction id
   function withdrawFromAuction(uint _auctionId) // GAS COST +/- 125.070
     external
-    // onlyWhenInited
     updateState
   {
     // even when country is disabled, otherwise users cannot withdraw their bids
@@ -630,7 +635,6 @@ contract Zone is IERC223ReceivingContract {
   /// @notice withdraw from a given list of auction ids
   function withdrawFromAuctions(uint[] calldata _auctionIds) // GAS COST +/- 127.070
     external
-    // onlyWhenInited
     updateState
   {
     // even when country is disabled, can withdraw
@@ -669,7 +673,6 @@ contract Zone is IERC223ReceivingContract {
   // - zone owner stake
   function withdrawDth()
     external
-    // onlyWhenInited
     updateState
   {
     uint dthWithdraw = withdrawableDth[msg.sender];

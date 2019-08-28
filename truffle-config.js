@@ -10,7 +10,7 @@ module.exports = {
       host: "localhost",
       port: 8545,
       network_id: "*", // Match any network id
-      gas: 8000000
+      gas: 6700000
     },
     kovan: {
       provider: () =>
@@ -21,7 +21,7 @@ module.exports = {
 
       // provider: () => new HDWalletProvider(MNEMONIC, 'http://localhost:8545'),
       network_id: 42,
-      // gas: 4700000,
+      gas: 6700000,
       gasPrice: 20000000000,
       skipDryRun: true
       // from: '0x6AAb2B0913B70270E840B14c2b23B716C0a43522',
