@@ -300,9 +300,13 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     address newTellerAddress = createClone(tellerImplementation);
 
     // init zone + teller contract
+    // IZone(newZoneAddress).init(
+    //   country, geohash, sender, dthAmount,
+    //   address(dth), address(geo), address(this), taxCollector, newTellerAddress // audit feedback
+    // );
     IZone(newZoneAddress).init(
       country, geohash, sender, dthAmount,
-      address(dth), address(geo), address(this), taxCollector, newTellerAddress // audit feedback
+      address(dth), address(this), taxCollector, newTellerAddress // audit feedback
     );
     ITeller(newTellerAddress).init(address(geo), newZoneAddress);
     // IZone(newZoneAddress).connectToTellerContract(newTellerAddress);

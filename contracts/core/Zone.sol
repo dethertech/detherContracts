@@ -4,7 +4,7 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../interfaces/IERC223ReceivingContract.sol";
 import "../interfaces/IDetherToken.sol";
-import "../interfaces/IGeoRegistry.sol";
+// import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZoneFactory.sol";
 import "../interfaces/IZone.sol";
 import "../interfaces/ITeller.sol";
@@ -65,8 +65,8 @@ contract Zone is IERC223ReceivingContract {
   uint public constant MIN_STAKE = 100 ether; // DTH, which is also 18 decimals!
   // uint private constant BID_PERIOD = 24 * 1 hours; // mainnet params
   // uint private constant COOLDOWN_PERIOD = 48 * 1 hours; // mainnet params
-  uint public constant BID_PERIOD = 30 minutes; // testnet params
-  uint public constant COOLDOWN_PERIOD = 5 minutes; // testnet params
+  uint public constant BID_PERIOD = 8 minutes; // testnet params
+  uint public constant COOLDOWN_PERIOD = 1 minutes; // testnet params
   uint public constant ENTRY_FEE_PERCENTAGE = 4; // in %
   uint public constant TAX_PERCENTAGE = 4; // 0,04% daily / around 15% yearly
   
@@ -76,7 +76,7 @@ contract Zone is IERC223ReceivingContract {
 
 
   IDetherToken public dth;
-  IGeoRegistry public geo;
+  // IGeoRegistry public geo;
   IZoneFactory public zoneFactory;
   ITeller public teller;
   ZoneOwner public zoneOwner;
@@ -108,10 +108,10 @@ contract Zone is IERC223ReceivingContract {
   //   _;
   // }
 
-  modifier onlyWhenZoneEnabled {
-    require(geo.zoneIsEnabled(country), "country is disabled");
-    _;
-  }
+  // modifier onlyWhenZoneEnabled {
+  //   require(geo.zoneIsEnabled(country), "country is disabled");
+  //   _;
+  // }
 
   modifier updateState {
     _processState();
@@ -128,10 +128,10 @@ contract Zone is IERC223ReceivingContract {
     _;
   }
 
-  modifier onlyByTellerContract {
-    require(msg.sender == address(teller), "can only be called by teller contract");
-    _;
-  }
+  // modifier onlyByTellerContract {
+  //   require(msg.sender == address(teller), "can only be called by teller contract");
+  //   _;
+  // }
 
   modifier onlyWhenZoneHasNoOwner {
     require(zoneOwner.addr == address(0), "can not claim zone with owner");
@@ -151,7 +151,7 @@ contract Zone is IERC223ReceivingContract {
     address _zoneOwner,
     uint _dthAmount,
     address _dth,
-    address _geo,
+    // address _geo,
     address _zoneFactory,
     address _taxCollector,
     address _teller
@@ -167,7 +167,7 @@ contract Zone is IERC223ReceivingContract {
     geohash = _geohash;
 
     dth = IDetherToken(_dth);
-    geo = IGeoRegistry(_geo);
+    // geo = IGeoRegistry(_geo);
     zoneFactory = IZoneFactory(_zoneFactory);
     taxCollector = _taxCollector;
 
@@ -435,8 +435,6 @@ contract Zone is IERC223ReceivingContract {
     require(zoneFactory.ownerToZone(_sender) == address(0)
     || zoneFactory.ownerToZone(_sender) == address(this), "sender own already another zone");
 
-    // require(_sender != lastAuction.highestBidder, "highest bidder cannot bid");
-
     uint currentHighestBid = auctionBids[currentAuctionId][lastAuction.highestBidder];
 
 
@@ -476,7 +474,7 @@ contract Zone is IERC223ReceivingContract {
     require(zoneFactory.ownerToZone(_sender) == address(0), "sender own already a zone");
 
     (uint burnAmount, uint bidAmount) = calcEntryFee(_dthAmount);
-    require(bidAmount > zoneOwner.staked, "bid is lower than current zone stake");
+    require(bidAmount > zoneOwner.staked.add(zoneOwner.staked.mul(MIN_RAISE).div(100)), "bid is lower than current zone stake");
 
     // save the new Auction
     uint newAuctionId = ++currentAuctionId;
@@ -521,6 +519,7 @@ contract Zone is IERC223ReceivingContract {
   {
     require(_dthAmount >= MIN_STAKE, "need at least minimum zone stake amount (100 DTH)");
     require(zoneFactory.ownerToZone(_sender) == address(0), "sender own already one zone");
+    require(zoneFactory.activeBidderToZone(_sender) == address(0), "sender is currently involved in an auction (Zone)");
 
     // NOTE: empty zone claim will not have entry fee deducted, its not bidding it's taking immediately
     zoneFactory.changeOwner(_sender, zoneOwner.addr, address(this));
@@ -560,7 +559,7 @@ contract Zone is IERC223ReceivingContract {
   /// @param _data Additional bytes data sent
   function tokenFallback(address _from, uint _value, bytes memory _data)
     public
-    onlyWhenZoneEnabled
+    // onlyWhenZoneEnabled
   {
     require(inited == true, "contract not yet initialized");
     require(msg.sender == address(dth), "can only be called by dth contract");
@@ -569,10 +568,6 @@ contract Zone is IERC223ReceivingContract {
     bytes1 func = toBytes1(_data, 0);
 
     // require(func == bytes1(0x40) || func == bytes1(0x41) || func == bytes1(0x42) || func == bytes1(0x43), "did not match Zone function");
-
-    // if (func == bytes1(0x40)) { // zone was created by factory, sending through DTH
-    //   return; // just retun success
-    // }
 
     _processState();
 
