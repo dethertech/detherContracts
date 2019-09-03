@@ -63,8 +63,7 @@ contract Zone is IERC223ReceivingContract {
   // ------------------------------------------------
 
   uint public constant MIN_STAKE = 100 ether; // DTH, which is also 18 decimals!
-  // uint private constant BID_PERIOD = 24 * 1 hours; // mainnet params
-  // uint private constant COOLDOWN_PERIOD = 48 * 1 hours; // mainnet params
+
   uint public constant BID_PERIOD = 8 minutes; // testnet params
   uint public constant COOLDOWN_PERIOD = 1 minutes; // testnet params
   uint public constant ENTRY_FEE_PERCENTAGE = 4; // in %
@@ -212,8 +211,8 @@ contract Zone is IERC223ReceivingContract {
     view
     returns (uint burnAmount, uint bidAmount)
   {
-    burnAmount = _value.mul(ENTRY_FEE_PERCENTAGE).div(100); // 1%
-    bidAmount = _value.sub(burnAmount); // 99%
+    burnAmount = _value.mul(ENTRY_FEE_PERCENTAGE).div(100); // 4%
+    bidAmount = _value.sub(burnAmount); // 96%
   }
 
   function auctionExists(uint _auctionId)
@@ -397,7 +396,7 @@ contract Zone is IERC223ReceivingContract {
     zoneOwner.balance = zoneOwner.balance.sub(taxAmount);
     zoneOwner.lastTaxTime = now;
     zoneFactory.removeActiveBidder(highestBidder);
-    zoneFactory.removeCurrentZoneBidder();
+    zoneFactory.removeCurrentZoneBidders();
     zoneFactory.emitAuctionEnded(geohash, highestBidder, currentAuctionId,  highestBid);
   }
   function processState()
@@ -441,7 +440,7 @@ contract Zone is IERC223ReceivingContract {
     if (_sender == zoneOwner.addr) {
       uint dthAddedBidsAmount = auctionBids[currentAuctionId][_sender].add(_dthAmount); 
       // the current zone owner's stake also counts in his bid
-      require(zoneOwner.staked.add(dthAddedBidsAmount) > currentHighestBid.add(currentHighestBid.mul(MIN_RAISE).div(100)), "bid + already staked is less than current highest + MIN_RAISE");
+      require(zoneOwner.staked.add(dthAddedBidsAmount) >= currentHighestBid.add(currentHighestBid.mul(MIN_RAISE).div(100)), "bid + already staked is less than current highest + MIN_RAISE");
 
       auctionBids[currentAuctionId][_sender] = dthAddedBidsAmount;
     } else {
@@ -449,14 +448,14 @@ contract Zone is IERC223ReceivingContract {
       if (auctionBids[currentAuctionId][_sender] == 0) {
         // this is the first bid of this challenger, deduct entry fee
         (uint burnAmount, uint bidAmount) = calcEntryFee(_dthAmount);
-        require(bidAmount > currentHighestBid.add(currentHighestBid.mul(MIN_RAISE).div(100)), "bid is less than current highest + MIN_RAISE");
+        require(bidAmount >= currentHighestBid.add(currentHighestBid.mul(MIN_RAISE).div(100)), "bid is less than current highest + MIN_RAISE");
 
         auctionBids[currentAuctionId][_sender] = bidAmount;
         require(dth.transfer(taxCollector, burnAmount));
       } else {
         // not the first bid, no entry fee
         uint newUserTotalBid = auctionBids[currentAuctionId][_sender].add(_dthAmount);
-        require(newUserTotalBid > currentHighestBid.add(currentHighestBid.mul(MIN_RAISE).div(100)), "bid is less than current highest + MIN_RAISE");
+        require(newUserTotalBid >= currentHighestBid.add(currentHighestBid.mul(MIN_RAISE).div(100)), "bid is less than current highest + MIN_RAISE");
 
         auctionBids[currentAuctionId][_sender] = newUserTotalBid;
       }

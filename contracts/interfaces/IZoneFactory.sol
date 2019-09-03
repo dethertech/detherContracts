@@ -22,6 +22,6 @@ contract IZoneFactory {
     function emitReleaseZone(bytes6 zoneFrom, address sender) public;
     function fillCurrentZoneBidder(address bidder) public;
     function removeActiveBidder(address activeBidder) public;
-    function removeCurrentZoneBidder() public;
+    function removeCurrentZoneBidders() public;
     function tokenFallback(address _from, uint256 _value, bytes memory _data) public;
 }

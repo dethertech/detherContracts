@@ -78,12 +78,12 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  modifier onlyWhenInited() {
-    // NOTE: somehow if w add an error message, we get 'out of gas' on deploy?!
-    // require(inited == true);
-    require(inited == true, "contract not yet initialized");
-    _;
-  }
+  // modifier onlyWhenInited() {
+  //   // NOTE: somehow if w add an error message, we get 'out of gas' on deploy?!
+  //   // require(inited == true);
+  //   require(inited == true, "contract not yet initialized");
+  //   _;
+  // }
   modifier onlyWhenNotInited() {
     require(inited == false, "contract already initialized");
     _;
@@ -104,10 +104,10 @@ contract Teller {
     _;
   }
 
-  modifier onlyWhenZoneEnabled {
-    require(geo.zoneIsEnabled(zone.country()), "country is disabled");
-    _;
-  }
+  // modifier onlyWhenZoneEnabled {
+  //   require(geo.zoneIsEnabled(zone.country()), "country is disabled");
+  //   _;
+  // }
 
   modifier updateState {
     zone.processState();
@@ -259,14 +259,6 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  // function _removeComments()
-  //   private
-  //   onlyWhenInited
-  //   onlyByZoneContract
-  // {
-  //   delete commentsFree;
-  // }
-
   function _remove()
     private
   {
@@ -275,14 +267,7 @@ contract Teller {
     // of negative comments by readding his teller ;)
     emit RemoveTeller(teller.position);
     delete teller;
-    // teller.addr = address(0); // late add
-    // teller.currencyId = 0;
-    // teller.messenger = bytes16(0);
-    // teller.position = bytes12(0);
-    // teller.settings = bytes1(0);
-    // teller.buyRate = 0;
-    // teller.sellRate = 0;
-    // teller.referrer = address(0);
+
   }
 
   function removeTellerByZone()
@@ -296,7 +281,7 @@ contract Teller {
 
   function removeTeller()
     external
-    onlyWhenInited
+    // onlyWhenInited
     updateState
     onlyWhenCallerIsZoneOwner
     onlyWhenHasTeller
@@ -319,8 +304,8 @@ contract Teller {
     bytes32 _description
   )
     external
-    onlyWhenInited
-    onlyWhenZoneEnabled
+    // onlyWhenInited
+    // onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
     onlyWhenHasNoTeller
@@ -368,8 +353,8 @@ contract Teller {
     bytes32 _description
   )
     external
-    onlyWhenInited
-    onlyWhenZoneEnabled
+    // onlyWhenInited
+    // onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
     onlyWhenHasTeller // audit feedback
@@ -400,8 +385,8 @@ contract Teller {
 
   function addComment(bytes32 _commentHash)
     external
-    onlyWhenInited
-    onlyWhenZoneEnabled
+    // onlyWhenInited
+    // onlyWhenZoneEnabled
     updateState
     onlyWhenZoneHasOwner
     onlyWhenCallerIsNotZoneOwner

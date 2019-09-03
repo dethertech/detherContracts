@@ -209,8 +209,8 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
   public
   onlyZone
   {
-    require(zoneToAuctionBidders[msg.sender].length <= 21, 'there is already 21 bidder on this auction'); // no more than 21 bidder at the same time
     if (activeBidderToZone[bidder] == address(0)) {
+      require(zoneToAuctionBidders[msg.sender].length <= 21, 'there is already 21 bidder on this auction'); // no more than 21 bidder at the same time
       zoneToAuctionBidders[msg.sender].push(bidder);
       activeBidderToZone[bidder] = msg.sender;
     }
@@ -219,7 +219,7 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
   /*
    * Remove current zone bidder when an auction end
    */
-  function removeCurrentZoneBidder()
+  function removeCurrentZoneBidders()
   public
   onlyZone
   {
@@ -299,24 +299,12 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     address newZoneAddress = createClone(zoneImplementation);
     address newTellerAddress = createClone(tellerImplementation);
 
-    // init zone + teller contract
-    // IZone(newZoneAddress).init(
-    //   country, geohash, sender, dthAmount,
-    //   address(dth), address(geo), address(this), taxCollector, newTellerAddress // audit feedback
-    // );
     IZone(newZoneAddress).init(
       country, geohash, sender, dthAmount,
       address(dth), address(this), taxCollector, newTellerAddress // audit feedback
     );
     ITeller(newTellerAddress).init(address(geo), newZoneAddress);
-    // IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
 
-    // IZone(newZoneAddress).init(
-    //   country, geohash, sender, dthAmount,
-    //   address(dth), address(geo), address(this), taxCollector
-    // );
-    // ITeller(newTellerAddress).init(address(geo), newZoneAddress);
-    // IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
 
     // store references
     geohashToZone[geohash] = newZoneAddress;

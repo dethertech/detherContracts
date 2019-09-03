@@ -45,11 +45,15 @@ module.exports = {
     mainnet: {
       // provider: () => new HDWalletProvider(MNEMONIC_MAIN, 'http://localhost:8545'),
       provider: () =>
-        new HDWalletProvider(MNEMONIC_MAIN, "https://mainnet.infura.io/"),
+        new HDWalletProvider(
+          MNEMONIC,
+          "https://mainnet.infura.io/v3/f19f6c9d405a460f91964949efe0e78e"
+        ),
       // provider: () => new PKWalletProvider(PRIVKEY_MAIN, 'http://localhost:8545'),
       network_id: 1,
-      gasPrice: 20000000000,
-      gas: 6500000
+      gasPrice: 5100000000,
+      gas: 6700000,
+      skipDryRun: true
       // gasPrice: 25000000000,
     }
   },

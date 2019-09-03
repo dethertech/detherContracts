@@ -504,8 +504,8 @@ contract Shops {
     // remove the last item, which was moved to the position of shop-to-remove
     zoneToShopAddresses[bytes6(position)].pop();
 
-    delete shopAddressToShop[shopAddress];
     delete positionToShopAddress[shopAddressToShop[shopAddress].position];
+    delete shopAddressToShop[shopAddress];
   }
 
   function removeShop()
