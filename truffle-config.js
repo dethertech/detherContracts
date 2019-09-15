@@ -13,11 +13,7 @@ module.exports = {
       gas: 6700000
     },
     kovan: {
-      provider: () =>
-        new HDWalletProvider(
-          MNEMONIC,
-          "https://kovan.infura.io/v3/f19f6c9d405a460f91964949efe0e78e"
-        ),
+      provider: () => new HDWalletProvider(MNEMONIC, "https://kovan.infura.io"),
 
       // provider: () => new HDWalletProvider(MNEMONIC, 'http://localhost:8545'),
       network_id: 42,
@@ -45,13 +41,10 @@ module.exports = {
     mainnet: {
       // provider: () => new HDWalletProvider(MNEMONIC_MAIN, 'http://localhost:8545'),
       provider: () =>
-        new HDWalletProvider(
-          MNEMONIC,
-          "https://mainnet.infura.io/v3/f19f6c9d405a460f91964949efe0e78e"
-        ),
+        new HDWalletProvider(MNEMONIC, "https://mainnet.infura.io"),
       // provider: () => new PKWalletProvider(PRIVKEY_MAIN, 'http://localhost:8545'),
       network_id: 1,
-      gasPrice: 5100000000,
+      gasPrice: 23100000000,
       gas: 6700000,
       skipDryRun: true
       // gasPrice: 25000000000,
