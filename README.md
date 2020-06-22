@@ -1,4 +1,4 @@
-# Dether - Ethereum smart contracts
+# Dether - Ethereum smart contracts - V.2
 
 [![Join the chat at https://gitter.im/dethertech/detherContracts](https://badges.gitter.im/dethertech/detherContracts.svg)](https://gitter.im/dethertech/detherContracts?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
