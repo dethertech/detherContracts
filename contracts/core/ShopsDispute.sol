@@ -7,8 +7,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../interfaces/IUsers.sol";
 import "../interfaces/IShops.sol";
 import "../interfaces/IKlerosArbitrable.sol";
-// NB -- CONTRACT TO REVIEW
-// TO REVIEW BASED ON AUDIT
+// NOT USED
 contract ShopsDispute is Ownable {
   // ------------------------------------------------
   //
@@ -165,7 +164,7 @@ contract ShopsDispute is Ownable {
   {
     ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
-    // to review based on audit
+ 
     if (dispute.status == IKlerosArbitrable.DisputeStatus.Solved) {
       // rule() in this contract was called, it set status to Solved and set the final Ruling
       disputeRuling = dispute.ruling;
