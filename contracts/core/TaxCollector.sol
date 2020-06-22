@@ -8,7 +8,6 @@ import "../interfaces/IDetherToken.sol";
 
 contract TaxCollector is IERC223ReceivingContract, Ownable {
 
-    uint public taxBalance;
     // Address where collected taxes are sent to
     address public taxRecipient;
     bool public unchangeable;
@@ -28,12 +27,12 @@ contract TaxCollector is IERC223ReceivingContract, Ownable {
         unchangeable = true;
     }
 
-    function changeRecipient(address _newOwner)
+    function changeRecipient(address _newRecipient)
       external 
       onlyOwner
     {
         require(!unchangeable, 'Impossible to change the recipient');
-        taxRecipient = _newOwner;
+        taxRecipient = _newRecipient;
     }
 
     function collect()

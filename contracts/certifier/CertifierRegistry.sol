@@ -1,4 +1,3 @@
-
 pragma solidity ^0.5.10;
 pragma experimental ABIEncoderV2;
 
@@ -49,8 +48,14 @@ contract CertifierRegistry {
 	// Modifiers
 	//
 	// ------------------------------------------------
-	modifier only_certification_owner(address _certifierId, address _who) { require(certifier[_certifierId].owner == _who); _; }
-	modifier only_delegate(address _certifierId, address _who) { require(certifier[_certifierId].delegate[_who]); _; }
+	modifier only_certification_owner(address _certifierId, address _who) {
+		require(certifier[_certifierId].owner == _who, "caller must be certification owner");
+		_;
+	}
+	modifier only_delegate(address _certifierId, address _who) {
+		require(certifier[_certifierId].delegate[_who], "caller must be delegate"); 
+		_;
+	}
 
 
 	// ------------------------------------------------

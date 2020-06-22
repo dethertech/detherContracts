@@ -56,7 +56,7 @@ contract Shops {
   //
   // ------------------------------------------------
 
-  uint stakedDth;
+  uint public stakedDth;
 
   // links to other contracts
   IDetherToken public dth;
@@ -68,8 +68,8 @@ contract Shops {
   bool disputeEnabled = false;
 
   // constant
-  uint public constant DAILY_TAX= 42; // 1/42 daily
-  uint public floorLicencePrice = 42000000000000000000;
+  uint public constant TAX= 42; // 1/42 daily
+  uint public constant floorLicencePrice = 42 ether; // 18 decimal in DTH
 
     //    bytes6 geohash priceDTH
   mapping(bytes6 =>   uint) public zoneLicencePrice;
@@ -96,10 +96,6 @@ contract Shops {
   // Events
   //
   // ------------------------------------------------
-  event logShopData(bytes16 _name, uint _staked, uint _licencePrice, uint _lastTaxTime);
-  event logUint(uint _uint, string _log);
-  event logString(string _string);
-  event TaxPayedToBy(uint amount, address to, address by);
   event TaxTotalPaidTo(uint amount, address to);
   // ------------------------------------------------
   //
@@ -107,13 +103,19 @@ contract Shops {
   //
   // ------------------------------------------------
 
-  modifier onlyWhenDisputeEnabled {
-    require(disputeEnabled, "Can only be called when dispute is enabled");
-    _;
-  }
+  // modifier onlyWhenDisputeEnabled {
+  //   require(disputeEnabled, "Can only be called when dispute is enabled");
+  //   _;
+  // }
+
+  // modifier onlyWhenCallerIsShopsDispute {
+  //   require(msg.sender == shopsDispute, "can only be called by shopsDispute contract");
+  //   _;
+  // }
 
   modifier onlyWhenCallerIsShopsDispute {
     require(msg.sender == shopsDispute, "can only be called by shopsDispute contract");
+    require(disputeEnabled, "Can only be called when dispute is enabled");
     _;
   }
 
@@ -164,14 +166,14 @@ contract Shops {
     external
   {
     require(_shopsDispute != address(0), "shops dispute contract cannot be 0x0");
-    require(msg.sender == disputeStarter);
-    require(disputeEnabled == false);
+    require(msg.sender == disputeStarter,"caller must be dispute starter");
+    require(disputeEnabled == false,"dispute must be enabled");
     shopsDispute = _shopsDispute;
   }
   function enableDispute()
     external 
     {
-      require(msg.sender == disputeStarter);
+      require(msg.sender == disputeStarter,"caller must be dispute starter");
       require(shopsDispute != address(0), "shopsDispute contract has not been set");
       disputeEnabled = true;
     }
@@ -260,6 +262,12 @@ contract Shops {
   // Functions Getters Private
   //
   // ------------------------------------------------
+  // audit feedback
+  // function isContract(address addr) private view returns (bool) {
+  //   uint size;
+  //   assembly { size := extcodesize(addr) }
+  //   return size > 0;
+  // }
 
   function toBytes1(bytes memory _bytes, uint _start)
     private
@@ -358,14 +366,13 @@ contract Shops {
     require(_priceDTH > floorLicencePrice, "price should be superior to the floor price");
     zoneLicencePrice[_zoneGeohash] = _priceDTH;
   }
-//   event logShopData(bytes16 _name, uint _staked, uint _licencePrice, uint _startTime, _lastTaxTime);
 
   function calcShopTax(uint _startTime, uint _endTime, uint _licencePrice)
     public
     view
     returns (uint taxAmount)
   {
-    taxAmount = _licencePrice.mul(_endTime.sub(_startTime)).div(DAILY_TAX).div(1 days);
+    taxAmount = _licencePrice.mul(_endTime.sub(_startTime)).div(TAX).div(1 days);
   }
 
   function collectTax(bytes6 _zoneGeohash, uint _start, uint _end)
@@ -378,7 +385,7 @@ contract Shops {
     // require(msg.sender == zoneOwner, "only zone owner can collect taxes");
 
     address[] memory shopsinZone = zoneToShopAddresses[_zoneGeohash];
-    require(_end - _start <= shopsinZone.length, "start and end value are bigger than address[]");
+    require(_start < _end && _end <= shopsinZone.length, "start and end value are bigger than address[]");
     // loop on all shops present on his zone and:
     // collect taxes if possible
     // delete point if no more enough stake
@@ -398,8 +405,7 @@ contract Shops {
         shopAddressToShop[shopsinZone[i]].lastTaxTime = now;
       }
     }
-    emit logUint(taxToSendToZoneOwner, 'tax to send zone owner');
-    dth.transfer(zoneOwner, taxToSendToZoneOwner);
+    require(dth.transfer(zoneOwner, taxToSendToZoneOwner));
     stakedDth = stakedDth.sub(taxToSendToZoneOwner);
     emit TaxTotalPaidTo(taxToSendToZoneOwner, zoneOwner);
   }
@@ -409,7 +415,8 @@ contract Shops {
     onlyWhenCallerIsDTH
   {
     require(_data.length == 95, "addShop expects 95 bytes as data");
-
+    // // audit feedback
+    // require(!isContract(_from), 'shops cannot be a contract');
     address sender = _from;
     uint dthAmount = _value;
 
@@ -455,7 +462,7 @@ contract Shops {
       positionToShopAddress[position] = sender;
 
       // a zone is a 6 character geohash, we keep track of all shops in a given zone
-      shop._index = zoneToShopAddresses[bytes6(position)].push(sender);
+      shop._index = zoneToShopAddresses[bytes6(position)].push(sender) - 1;
     }
   }
 
@@ -467,20 +474,37 @@ contract Shops {
     stakedDth = stakedDth.add(_dthAmount);
   }
 
+  // function _deleteShop(address shopAddress)
+  //   private
+  // {
+  //   bytes12 position = shopAddressToShop[shopAddress].position;
+  //   delete shopAddressToShop[shopAddress];
+  //   positionToShopAddress[position] = address(0);
+
+  //   delete positionToShopAddress[shopAddressToShop[shopAddress].position];
+  //   uint indexToRemove = shopAddressToShop[shopAddress]._index;
+  //   zoneToShopAddresses[bytes6(position)][indexToRemove] = zoneToShopAddresses[bytes6(position)][zoneToShopAddresses[bytes6(position)].length - 1];
+  //   shopAddressToShop[zoneToShopAddresses[bytes6(position)][indexToRemove]]._index = indexToRemove;
+  //   // zoneToShopAddresses[bytes6(position)].length--;
+  //   zoneToShopAddresses[bytes6(position)].pop();
+  //   delete shopAddressToShop[shopAddress];
+  // }
+
   function _deleteShop(address shopAddress)
     private
   {
     bytes12 position = shopAddressToShop[shopAddress].position;
+    uint indexToRemove = shopAddressToShop[shopAddress]._index;
 
-    delete shopAddressToShop[shopAddress];
-
-    positionToShopAddress[position] = address(0);
+    // remove shop address from list of shop addresses in zone
+    // move last existing shop address to the position of the shop-to-remove
+    zoneToShopAddresses[bytes6(position)][indexToRemove] = zoneToShopAddresses[bytes6(position)][zoneToShopAddresses[bytes6(position)].length - 1];
+    // update the index of the last shop that was moved into the position fo the shop-to-remove
+    shopAddressToShop[zoneToShopAddresses[bytes6(position)][indexToRemove]]._index = indexToRemove;
+    // remove the last item, which was moved to the position of shop-to-remove
+    zoneToShopAddresses[bytes6(position)].pop();
 
     delete positionToShopAddress[shopAddressToShop[shopAddress].position];
-    uint indexToRemove = shopAddressToShop[shopAddress]._index;
-    zoneToShopAddresses[bytes6(position)][indexToRemove] = zoneToShopAddresses[bytes6(position)][zoneToShopAddresses[bytes6(position)].length - 1];
-    shopAddressToShop[zoneToShopAddresses[bytes6(position)][indexToRemove]]._index = indexToRemove;
-    zoneToShopAddresses[bytes6(position)].length--;
     delete shopAddressToShop[shopAddress];
   }
 
@@ -493,7 +517,7 @@ contract Shops {
 
     _deleteShop(msg.sender);
 
-    dth.transfer(msg.sender, shopStake);
+    require(dth.transfer(msg.sender, shopStake));
     stakedDth = stakedDth.sub(shopStake);
   }
 
@@ -512,7 +536,11 @@ contract Shops {
 
     _deleteShop(_shopAddress);
 
-    dth.transfer(_shopAddress, shopStake);
+    // to avoid Dos with revert in case shop is a contract
+    bytes memory payload = abi.encodeWithSignature("transfer(address,uint256)", _shopAddress, shopStake);
+    address(dth).call(payload);
+
+    // require(dth.transfer(_shopAddress, shopStake));
     stakedDth = stakedDth.sub(shopStake);
   }
 
@@ -523,7 +551,7 @@ contract Shops {
     require(dthWithdraw > 0, "nothing to withdraw");
 
     withdrawableDth[msg.sender] = 0;
-    dth.transfer(msg.sender, dthWithdraw);
+    require(dth.transfer(msg.sender, dthWithdraw));
     stakedDth = stakedDth.sub(dthWithdraw);
   }
 
@@ -534,7 +562,6 @@ contract Shops {
   function setDispute(address _shopAddress, uint _disputeID)
     external
     onlyWhenCallerIsShopsDispute
-    onlyWhenDisputeEnabled
   {
     require(shopAddressToShop[_shopAddress].position != bytes12(0), "shop does not exist");
     shopAddressToShop[_shopAddress].hasDispute = true;
@@ -544,7 +571,6 @@ contract Shops {
   function unsetDispute(address _shopAddress)
     external
     onlyWhenCallerIsShopsDispute
-    onlyWhenDisputeEnabled
   {
     require(shopAddressToShop[_shopAddress].position != bytes12(0), "shop does not exist");
     shopAddressToShop[_shopAddress].hasDispute = false;
@@ -553,7 +579,6 @@ contract Shops {
 
   function removeDisputedShop(address _shopAddress, address _challenger)
     external
-    onlyWhenDisputeEnabled
     onlyWhenCallerIsShopsDispute
   {
     uint shopStake = shopAddressToShop[_shopAddress].staked;

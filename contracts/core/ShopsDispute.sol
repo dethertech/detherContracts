@@ -7,7 +7,7 @@ import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
 import "../interfaces/IUsers.sol";
 import "../interfaces/IShops.sol";
 import "../interfaces/IKlerosArbitrable.sol";
-// NB -- CONTRACT TO REVIEW
+// NOT USED
 contract ShopsDispute is Ownable {
   // ------------------------------------------------
   //
@@ -164,6 +164,7 @@ contract ShopsDispute is Ownable {
   {
     ShopDispute memory dispute = disputeIdToDispute[_disputeID];
 
+ 
     if (dispute.status == IKlerosArbitrable.DisputeStatus.Solved) {
       // rule() in this contract was called, it set status to Solved and set the final Ruling
       disputeRuling = dispute.ruling;
@@ -239,7 +240,8 @@ contract ShopsDispute is Ownable {
     emit Dispute(address(arbitrator), disputeID, _metaEvidenceId);
     emit Evidence(address(arbitrator), disputeID, msg.sender, _evidenceLink);
 
-    uint excessEth = arbitrationCost.sub(msg.value);
+    // uint excessEth = arbitrationCost.sub(msg.value);
+    uint excessEth = msg.value.sub(arbitrationCost) ; // audit feedback
     if (excessEth > 0) msg.sender.transfer(excessEth);
   }
 
@@ -252,9 +254,9 @@ contract ShopsDispute is Ownable {
     uint disputeID = shops.getShopDisputeID(_shopAddress);
 
     ShopDispute storage dispute = disputeIdToDispute[disputeID];
-    require(getDisputeStatus(dispute.id) == IKlerosArbitrable.DisputeStatus.Appealable, "dispute is not appealable");
+    require(getDisputeStatus(disputeID) == IKlerosArbitrable.DisputeStatus.Appealable, "dispute is not appealable");
 
-    RulingOptions currentRuling = getDisputeRuling(dispute.id);
+    RulingOptions currentRuling = getDisputeRuling(disputeID);
     if (currentRuling == RulingOptions.ShopWins) {
       require(msg.sender == dispute.challenger, "shop ruled to win, only challenger can appeal");
     } else if (currentRuling == RulingOptions.ChallengerWins) {
@@ -263,14 +265,15 @@ contract ShopsDispute is Ownable {
       require(msg.sender == dispute.challenger, "no ruling given, only challenger can appeal");
     }
 
-    uint appealCost = arbitrator.appealCost(dispute.id, arbitratorExtraData);
+    uint appealCost = arbitrator.appealCost(disputeID, arbitratorExtraData);
     require(msg.value >= appealCost, "sent eth is lower than appeal cost");
 
-    arbitrator.appeal.value(appealCost)(dispute.id, arbitratorExtraData);
+    arbitrator.appeal.value(appealCost)(disputeID, arbitratorExtraData);
 
-    emit Evidence(address(arbitrator), dispute.id, msg.sender, _evidenceLink);
+    emit Evidence(address(arbitrator), disputeID, msg.sender, _evidenceLink);
 
-    uint excessEth = appealCost.sub(msg.value);
+    // uint excessEth = appealCost.sub(msg.value);
+    uint excessEth = msg.value.sub(appealCost); // audit feedback
     if (excessEth > 0) msg.sender.transfer(excessEth);
   }
 

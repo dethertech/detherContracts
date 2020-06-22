@@ -12,7 +12,8 @@ contract IZone {
     function country() view public returns(bytes2);
     function geo() view public returns(address);
     function withdrawableEth(address) view public returns(uint256);
-    function init(bytes2 _countryCode, bytes6 _geohash, address _zoneOwner, uint256 _dthAmount, address _dth, address _geo, address _zoneFactory, address _taxCollector) external;
+    // function init(bytes2 _countryCode, bytes6 _geohash, address _zoneOwner, uint256 _dthAmount, address _dth, address _geo, address _zoneFactory, address _taxCollector, address _teller) external;
+    function init(bytes2 _countryCode, bytes6 _geohash, address _zoneOwner, uint256 _dthAmount, address _dth, address _zoneFactory, address _taxCollector, address _teller) external;
     function connectToTellerContract(address _teller) external;
     function ownerAddr() view external returns(address);
     function computeCSC(bytes6 _geohash, address _addr) pure public returns(bytes12);

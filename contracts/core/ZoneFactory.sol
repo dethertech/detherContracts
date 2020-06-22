@@ -21,6 +21,8 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
   mapping(bytes6 => address) public geohashToZone;
   mapping(address => bytes6) public zoneToGeohash;
   mapping(address => address) public ownerToZone;
+  mapping(address => address[]) public zoneToAuctionBidders;
+  mapping(address => address) public activeBidderToZone;
 
   IDetherToken public dth;
   IGeoRegistry public geo;
@@ -39,6 +41,28 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
 
   event NewZoneCreated(bytes6 zoneGeohash, address zoneAddr);
 
+  /*
+   * ZONE EVENT
+   */
+  event AuctionCreated(bytes6 indexed zoneFrom, address indexed sender, uint auctionId, uint bidAmount);
+  event AuctionEnded(bytes6 indexed zoneFrom, address indexed newOwner, uint auctionId,  uint winningBid);
+  event Bid(bytes6 indexed zoneFrom, address indexed sender, uint auctionId, uint bidAmount);
+  event ClaimFreeZone(bytes6 indexed zoneFrom, address indexed newOwner,  uint bidAmount);
+  event ReleaseZone(bytes6 indexed zoneFrom, address indexed zoneOwner);
+
+  // ------------------------------------------------
+  //
+  // Modifiers
+  //
+  // ------------------------------------------------
+
+  modifier onlyZone() {
+    // require(zoneToGeohash[msg.sender] != bytes6(0), "only zone can emit event");
+    require(geohashToZone[zoneToGeohash[msg.sender]] == msg.sender, 'msg.sender is not a registered zone');
+    _;
+  }
+
+  // 
   // ------------------------------------------------
   //
   // Constructor
@@ -63,16 +87,6 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     taxCollector = _taxCollector;
   }
 
-  /*
-   * Change geohash6 zone owner in ownerToZone mapping
-   */
-  function changeOwner( address _newOwner, address _oldOwner)
-  public
-  {
-    require(geohashToZone[zoneToGeohash[msg.sender]] == msg.sender, 'msg.sender is not a registered zone');
-    ownerToZone[_oldOwner] = address(0);
-    ownerToZone[_newOwner] = msg.sender;
-  }
   // ------------------------------------------------
   //
   // Functions Private 
@@ -109,20 +123,6 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     return tempBytes2;
   }
 
-  function toBytes7(bytes memory _bytes, uint _start)
-    private
-    pure
-    returns (bytes7)
-  {
-    require(_bytes.length >= (_start + 7), " not long enough");
-    bytes7 tempBytes7;
-
-    assembly {
-        tempBytes7 := mload(add(add(_bytes, 0x20), _start))
-    }
-
-    return tempBytes7;
-  }
   function toBytes6(bytes memory _bytes, uint _start)
     private
     pure
@@ -176,7 +176,6 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
   //
   // ------------------------------------------------
 
-
   function zoneExists(bytes6 _geohash)
     external
     view
@@ -185,11 +184,96 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     return geohashToZone[_geohash] != address(0);
   }
 
+
   // ------------------------------------------------
   //
   // Functions Setters Public
   //
   // ------------------------------------------------
+
+  /*
+   * Change geohash6 zone owner in ownerToZone mapping
+   */
+  function changeOwner( address _newOwner, address _oldOwner, address _zone)
+  public
+  onlyZone
+  {
+    ownerToZone[_oldOwner] = address(0);
+    ownerToZone[_newOwner] = _zone;
+  }
+
+  /*
+   * Get a registry of the current zone bidder on a zone
+   */
+  function fillCurrentZoneBidder(address bidder)
+  public
+  onlyZone
+  {
+    if (activeBidderToZone[bidder] == address(0)) {
+      require(zoneToAuctionBidders[msg.sender].length <= 21, 'there is already 21 bidder on this auction'); // no more than 21 bidder at the same time
+      zoneToAuctionBidders[msg.sender].push(bidder);
+      activeBidderToZone[bidder] = msg.sender;
+    }
+  }
+
+  /*
+   * Remove current zone bidder when an auction end
+   */
+  function removeCurrentZoneBidders()
+  public
+  onlyZone
+  {
+    delete zoneToAuctionBidders[msg.sender];
+  }
+
+  /*
+   * Auction is finish, delete activeBidder
+   */
+  function removeActiveBidder(address activeBidder)
+  public
+  onlyZone
+  {
+    activeBidderToZone[activeBidder] = address(0);
+  }
+
+  /*
+   * Event function wrapper for zone
+   */
+  function emitAuctionCreated(bytes6 zoneFrom, address sender, uint auctionId, uint bidAmount)
+  public
+  onlyZone
+  {
+    emit AuctionCreated( zoneFrom, sender, auctionId, bidAmount);
+  }
+
+  function emitAuctionEnded(bytes6 zoneFrom, address newOwner, uint auctionId,  uint winningBid)
+  public
+  onlyZone
+  {
+    emit AuctionEnded( zoneFrom, newOwner, auctionId, winningBid);
+  }
+
+  function emitBid(bytes6 zoneFrom, address sender, uint auctionId, uint bidAmount)
+  public
+  onlyZone
+  {
+    emit Bid(zoneFrom , sender, auctionId, bidAmount);
+  }
+
+  function emitClaimFreeZone(bytes6 zoneFrom, address newOwner,  uint bidAmount)
+  public
+  onlyZone
+  {
+    emit ClaimFreeZone(zoneFrom , newOwner, bidAmount);
+  }
+
+  function emitReleaseZone(bytes6 zoneFrom, address sender)
+  public
+  onlyZone
+  {
+    emit ReleaseZone(zoneFrom, sender);
+  }
+
 
   /*
    * Wait for a tranfer from DTH TOKEN CONTRACT to create zone and teller contract associated with the zone.
@@ -210,18 +294,17 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     require(geo.zoneInsideBiggerZone(country, bytes4(geohash)), "zone is not inside country");
     require(geohashToZone[geohash] == address(0), "zone already exists");
     require(ownerToZone[sender] == address(0), "address already own a zone");
+    require(activeBidderToZone[sender] == address(0), "sender is currently involved in an auction (zoneFactory)");
     // deploy zone + teller contract
     address newZoneAddress = createClone(zoneImplementation);
     address newTellerAddress = createClone(tellerImplementation);
 
-    // init zone + teller contract
-
     IZone(newZoneAddress).init(
       country, geohash, sender, dthAmount,
-      address(dth), address(geo), address(this), taxCollector
+      address(dth), address(this), taxCollector, newTellerAddress // audit feedback
     );
     ITeller(newTellerAddress).init(address(geo), newZoneAddress);
-    IZone(newZoneAddress).connectToTellerContract(newTellerAddress);
+
 
     // store references
     geohashToZone[geohash] = newZoneAddress;
@@ -229,7 +312,7 @@ contract ZoneFactory is IERC223ReceivingContract, EIP1167CloneFactory {
     ownerToZone[sender] = newZoneAddress;
 
     // send all dth through to the new Zone contract
-    dth.transfer(newZoneAddress, dthAmount, hex"40");
+    require(dth.transfer(newZoneAddress, dthAmount, hex"40"));
     emit NewZoneCreated(geohash, newZoneAddress);
   }
 }

@@ -42,9 +42,6 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  uint private constant REFERRER_FEE_PERCENTAGE = 1; // 0.1%
-  address private constant ADDRESS_BURN = 0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF;
-
   Teller_t private teller;
   bytes1 private constant isSellerBitMask = hex"01";
   bytes1 private constant isBuyerBitMask = hex"02";
@@ -55,14 +52,15 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  bool inited;
+  bool public inited;
 
   IZone public zone;
   IGeoRegistry public geo;
 
 
-  bytes32[] private commentsFree;
-  // bytes32[] private commentsCertified;
+  // bytes32[] private commentsFree;
+  // audit feedback
+  mapping (address => bytes32[]) private commentsFree;
 
   // ------------------------------------------------
   //
@@ -80,12 +78,12 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  modifier onlyWhenInited() {
-    // NOTE: somehow if w add an error message, we get 'out of gas' on deploy?!
-    // require(inited == true);
-    require(inited == true, "contract not yet initialized");
-    _;
-  }
+  // modifier onlyWhenInited() {
+  //   // NOTE: somehow if w add an error message, we get 'out of gas' on deploy?!
+  //   // require(inited == true);
+  //   require(inited == true, "contract not yet initialized");
+  //   _;
+  // }
   modifier onlyWhenNotInited() {
     require(inited == false, "contract already initialized");
     _;
@@ -106,10 +104,10 @@ contract Teller {
     _;
   }
 
-  modifier onlyWhenZoneEnabled {
-    require(geo.zoneIsEnabled(zone.country()), "country is disabled");
-    _;
-  }
+  // modifier onlyWhenZoneEnabled {
+  //   require(geo.zoneIsEnabled(zone.country()), "country is disabled");
+  //   _;
+  // }
 
   modifier updateState {
     zone.processState();
@@ -159,14 +157,14 @@ contract Teller {
     external view
     returns (bytes32[] memory)
   {
-    return commentsFree;
+    return commentsFree[teller.addr];
   }
 
   function calcReferrerFee(uint _value)
     public view
     returns (uint referrerAmount)
   {
-    referrerAmount = _value.div(1000).mul(teller.refFee);
+    referrerAmount = _value.mul(teller.refFee).div(1000);
   }
 
   function getTeller()
@@ -200,11 +198,18 @@ contract Teller {
     return teller.position != bytes12(0);
   }
 
+
   // ------------------------------------------------
   //
   // Functions Getters Private
   //
   // ------------------------------------------------
+  // audit feedback
+  // function isContract(address addr) private view returns (bool) {
+  //   uint size;
+  //   assembly { size := extcodesize(addr) }
+  //   return size > 0;
+  // }
 
   function toBytes7(bytes memory _bytes, uint _start)
     private
@@ -254,29 +259,15 @@ contract Teller {
   //
   // ------------------------------------------------
 
-  function _removeComments()
-    private
-    onlyWhenInited
-    onlyByZoneContract
-  {
-    delete commentsFree;
-  }
-
   function _remove()
     private
   {
 
     // we dont remove comments here, so that zoneowner can not get rid
     // of negative comments by readding his teller ;)
-    teller.addr = address(0); // late add
-    teller.currencyId = 0;
-    teller.messenger = bytes16(0);
-    teller.position = bytes12(0);
-    teller.settings = bytes1(0);
-    teller.buyRate = 0;
-    teller.sellRate = 0;
-    teller.referrer = address(0);
     emit RemoveTeller(teller.position);
+    delete teller;
+
   }
 
   function removeTellerByZone()
@@ -284,12 +275,13 @@ contract Teller {
     onlyByZoneContract
   {
     _remove();
-    _removeComments();
+    // audit feedback
+    // _removeComments();
   }
 
   function removeTeller()
     external
-    onlyWhenInited
+    // onlyWhenInited
     updateState
     onlyWhenCallerIsZoneOwner
     onlyWhenHasTeller
@@ -312,12 +304,13 @@ contract Teller {
     bytes32 _description
   )
     external
-    onlyWhenInited
-    onlyWhenZoneEnabled
+    // onlyWhenInited
+    // onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
-    // onlyWhenHasNoTeller
+    onlyWhenHasNoTeller
   {
+    // require(!isContract(_referrer), 'referrer cannot be a contract');
     require(_position.length == 12, "expected position to be 12 bytes");
     require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
     require(geo.validGeohashChars(_position), "invalid position geohash characters");
@@ -326,13 +319,13 @@ contract Teller {
     // _messenger can be 0x0 if he has no telegram
 
     if (_settings & isSellerBitMask != 0) { // seller bit is set => teller is a "seller"
-      require(_sellRate >= -9999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
+      require(_sellRate >= -999 && _sellRate <= 9999, "sellRate should be between -999 and 9999");
     } else {
       require(_sellRate == 0, "cannot set sellRate if not set as seller");
     }
 
     if (_settings & isBuyerBitMask != 0) { // buyer bit is set => teller is a "buyer"
-      require(_buyRate >= -9999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
+      require(_buyRate >= -999 && _buyRate <= 9999, "buyRate should be between -999 and 9999");
     } else {
       require(_buyRate == 0, "cannot set buyRate if not set as buyer");
     }
@@ -345,7 +338,7 @@ contract Teller {
     teller.position = toBytes12(_position, 0);
     teller.settings = _settings;
     teller.referrer = _referrer;
-    teller.refFee = _refFee >= 0 ? _refFee : 0;
+    teller.refFee = _refFee;
     teller.description = _description;
     emit AddTeller(_position);
   }
@@ -360,22 +353,23 @@ contract Teller {
     bytes32 _description
   )
     external
-    onlyWhenInited
-    onlyWhenZoneEnabled
+    // onlyWhenInited
+    // onlyWhenZoneEnabled
     updateState
     onlyWhenCallerIsZoneOwner
+    onlyWhenHasTeller // audit feedback
     {
       require(_position.length == 12, "expected position to be 12 bytes");
       require(toBytes6(_position, 0) == zone.geohash(), "position is not inside this zone");
       require(geo.validGeohashChars(_position), "invalid position geohash characters");
       if (_settings & isSellerBitMask != 0) { // seller bit is set => teller is a "seller"
-        require(_sellRate >= -9999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
+        require(_sellRate >= -999 && _sellRate <= 9999, "sellRate should be between -9999 and 9999");
       } else {
         require(_sellRate == 0, "cannot set sellRate if not set as seller");
       }
 
       if (_settings & isBuyerBitMask != 0) { // buyer bit is set => teller is a "buyer"
-        require(_buyRate >= -9999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
+        require(_buyRate >= -999 && _buyRate <= 9999, "buyRate should be between -9999 and 9999");
       } else {
         require(_buyRate == 0, "cannot set buyRate if not set as buyer");
       }
@@ -391,15 +385,15 @@ contract Teller {
 
   function addComment(bytes32 _commentHash)
     external
-    onlyWhenInited
-    onlyWhenZoneEnabled
+    // onlyWhenInited
+    // onlyWhenZoneEnabled
     updateState
     onlyWhenZoneHasOwner
     onlyWhenCallerIsNotZoneOwner
     onlyWhenHasTeller
   {
     require(_commentHash != bytes32(0), "comment hash cannot be 0x0");
-
-    commentsFree.push(_commentHash);
+    // audit feedback
+    commentsFree[teller.addr].push(_commentHash);
   }
 }

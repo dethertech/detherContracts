@@ -6,6 +6,7 @@
  *  @deployments: []
  */
 
+// Not used
 pragma solidity ^0.5.10;
 
 import "./Arbitrator.sol";
