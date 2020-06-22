@@ -1,7 +1,7 @@
 pragma solidity ^0.5.10;
 
 import "./CentralizedArbitrator.sol";
-
+// Not used
 /**
  *  @title AppealableArbitrator
  *  @author Enrique Piqueras - <epiquerass@gmail.com>

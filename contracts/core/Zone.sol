@@ -4,7 +4,6 @@ import "openzeppelin-solidity/contracts/math/SafeMath.sol";
 
 import "../interfaces/IERC223ReceivingContract.sol";
 import "../interfaces/IDetherToken.sol";
-// import "../interfaces/IGeoRegistry.sol";
 import "../interfaces/IZoneFactory.sol";
 import "../interfaces/IZone.sol";
 import "../interfaces/ITeller.sol";
@@ -32,10 +31,6 @@ contract Zone is IERC223ReceivingContract {
   //
   // ------------------------------------------------
 
-  // NOTE:
-  // evm will convert to uint256 when doing calculations, so 1 time higher storage cost
-  // will be less than all the increased gas costs if we were to use smaller uints in the struct
-
   struct ZoneOwner {
     address addr;
     uint startTime;
@@ -46,8 +41,6 @@ contract Zone is IERC223ReceivingContract {
   }
 
   struct Auction {
-    // since we do a lot of calcuations with these uints, it's best to leave them uint256
-    // evm will convert to uint256 anyways when doing calculations
     uint startTime;
     uint endTime;
     AuctionState state;
@@ -75,7 +68,6 @@ contract Zone is IERC223ReceivingContract {
 
 
   IDetherToken public dth;
-  // IGeoRegistry public geo;
   IZoneFactory public zoneFactory;
   ITeller public teller;
   ZoneOwner public zoneOwner;
@@ -98,20 +90,6 @@ contract Zone is IERC223ReceivingContract {
   //
   // ------------------------------------------------
 
-  // modifier onlyWhenInited() {
-  //   require(inited == true, "contract not yet initialized");
-  //   _;
-  // }
-  // modifier onlyWhenNotInited() {
-  //   require(inited == false, "contract already initialized");
-  //   _;
-  // }
-
-  // modifier onlyWhenZoneEnabled {
-  //   require(geo.zoneIsEnabled(country), "country is disabled");
-  //   _;
-  // }
-
   modifier updateState {
     _processState();
     _;
@@ -126,11 +104,6 @@ contract Zone is IERC223ReceivingContract {
     require(msg.sender == zoneOwner.addr, "caller is not zoneowner");
     _;
   }
-
-  // modifier onlyByTellerContract {
-  //   require(msg.sender == address(teller), "can only be called by teller contract");
-  //   _;
-  // }
 
   modifier onlyWhenZoneHasNoOwner {
     require(zoneOwner.addr == address(0), "can not claim zone with owner");
@@ -155,18 +128,15 @@ contract Zone is IERC223ReceivingContract {
     address _taxCollector,
     address _teller
   )
-    // onlyWhenNotInited
     external
   {
-        require(inited == false, "contract already initialized");
-
+    require(inited == false, "contract already initialized");
     require(_dthAmount >= MIN_STAKE, "zone dth stake shoulld be at least minimum (100DTH)");
 
     country = _countryCode;
     geohash = _geohash;
 
     dth = IDetherToken(_dth);
-    // geo = IGeoRegistry(_geo);
     zoneFactory = IZoneFactory(_zoneFactory);
     taxCollector = _taxCollector;
 
